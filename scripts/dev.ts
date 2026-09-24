@@ -6,7 +6,9 @@
  *  - App  : http://localhost:2026 (Vite, com proxy /api e /photos)
  */
 
+import { existsSync } from 'node:fs'
 import { spawn } from 'node:child_process'
+import { join } from 'node:path'
 
 const children: Array<ReturnType<typeof spawn>> = []
 
@@ -17,7 +19,11 @@ const api = spawn(
 )
 children.push(api)
 
-const vite = spawn('vite', [], { stdio: 'inherit', shell: true })
+// Resolve o binário do Vite localmente (node_modules/.bin), sem depender
+// do PATH — robusto também fora do contexto do npm.
+const localVite = join(process.cwd(), 'node_modules', '.bin', 'vite')
+const viteCommand = existsSync(localVite) ? localVite : 'vite'
+const vite = spawn(viteCommand, [], { stdio: 'inherit', shell: true })
 children.push(vite)
 
 function shutdown(): void {

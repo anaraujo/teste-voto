@@ -6,7 +6,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "node --experimental-strip-types scripts/dev.ts",
-    "start": "vite",
+    "start": "node --experimental-strip-types scripts/dev.ts",
+    "api": "node --experimental-sqlite --experimental-strip-types server/index.ts",
+    "ingest": "node --experimental-sqlite --experimental-strip-types scripts/ingest.ts",
     "api": "node --experimental-sqlite --experimental-strip-types server/index.ts",
     "ingest": "node --experimental-sqlite --experimental-strip-types scripts/ingest.ts",
     "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts",
