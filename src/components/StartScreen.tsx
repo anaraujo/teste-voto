@@ -2,12 +2,14 @@ interface StartScreenProps {
   questionCount: number
   candidateCount: number
   onStart: () => void
+  onShowCandidates: () => void
 }
 
 export function StartScreen({
   questionCount,
   candidateCount,
   onStart,
+  onShowCandidates,
 }: StartScreenProps) {
   return (
     <section>
@@ -18,6 +20,9 @@ export function StartScreen({
       </p>
       <button type="button" onClick={onStart}>
         Começar
+      </button>
+      <button type="button" onClick={onShowCandidates}>
+        Ver candidatos
       </button>
     </section>
   )

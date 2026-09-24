@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { candidates, questions } from './data/quiz.ts'
 import type { OptionId, QuestionId } from './data/quiz.ts'
 import { rankResults } from './lib/scoring.ts'
+import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { FairnessScreen } from './components/FairnessScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
 import { ResultScreen } from './components/ResultScreen.tsx'
@@ -9,6 +10,7 @@ import { StartScreen } from './components/StartScreen.tsx'
 
 type Screen =
   | { name: 'start' }
+  | { name: 'candidates' }
   | { name: 'question'; index: number }
   | { name: 'result' }
   | { name: 'fairness' }
@@ -51,6 +53,14 @@ function App() {
           questionCount={questions.length}
           candidateCount={candidates.length}
           onStart={handleStart}
+          onShowCandidates={() => setScreen({ name: 'candidates' })}
+        />
+      )}
+
+      {screen.name === 'candidates' && (
+        <CandidatesScreen
+          candidates={candidates}
+          onBack={() => setScreen({ name: 'start' })}
         />
       )}
 

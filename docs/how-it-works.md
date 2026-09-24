@@ -24,6 +24,11 @@ src/
 ├── lib/scoring.ts           Pontuação pura: ranking de candidatos
 ├── lib/distribution.ts      Auditoria pura de imparcialidade sobre as combinações
 ├── components/              Um componente por tela
+│   ├── StartScreen.tsx      Boas-vindas
+│   ├── CandidatesScreen.tsx Lista de candidatos e suas informações
+│   ├── QuestionStep.tsx     Uma pergunta e suas opções
+│   ├── ResultScreen.tsx     Ranking completo dos candidatos
+│   └── FairnessScreen.tsx   Auditoria de imparcialidade
 └── App.tsx                  A máquina de estados das telas
 scripts/check-distribution.ts  Auditoria de imparcialidade via CLI (type-stripping do Node 22)
 ```
@@ -57,14 +62,19 @@ combina com uma resposta — apenas que combina.
 
 ## O fluxo
 
-`App.tsx` é uma máquina de estados pequena, com quatro telas.
+`App.tsx` é uma máquina de estados pequena, com cinco telas.
 
 ```
-início ──▶ pergunta(0) ──▶ pergunta(1) ──▶ … ──▶ resultado ──▶ imparcialidade
-   ▲                                                │
-   └─────────────────── reinício ◀──────────────────┘
+início ──▶ candidatos ──┐
+   │                    │
+   ▼                    ▼
+pergunta(0) ──▶ … ──▶ resultado ──▶ imparcialidade
+   ▲                             │
+   └──────────── reinício ◀──────┘
 ```
 
+- A tela inicial pode levar direto à lista de **candidatos** (foto, nome e
+  descrição) ou ao quiz.
 - As respostas acumulam em um `Record<QuestionId, OptionId>`.
 - Escolher uma opção registra a resposta e avança para a próxima pergunta — ou
   para a tela de resultado, após a última.

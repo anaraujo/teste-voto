@@ -74,6 +74,7 @@ src/
 ├── lib/distribution.ts      Auditoria de imparcialidade sobre todas as combinações
 ├── components/
 │   ├── StartScreen.tsx      Tela de boas-vindas
+│   ├── CandidatesScreen.tsx Lista de candidatos e suas informações
 │   ├── QuestionStep.tsx     Uma pergunta, suas opções e o progresso
 │   ├── ResultScreen.tsx     Ranking de todos os candidatos, 1º destacado
 │   └── FairnessScreen.tsx   Auditoria de distribuição imparcial

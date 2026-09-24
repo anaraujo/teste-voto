@@ -9,6 +9,8 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- Página com a lista de todos os candidatos e suas informações (foto, nome e
+  descrição), acessível pela tela inicial.
 - Ao clicar em um candidato no resultado, detalhamento pergunta a pergunta: a
   resposta da pessoa, a resposta prevista pelo perfil do candidato e a
   indicação de Concorda (elemento nativo `<details>`).
