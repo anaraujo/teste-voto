@@ -59,23 +59,24 @@ export interface ZipEntry {
   size: number
 }
 
-/** Lista os arquivos dentro de um ZIP usando o binário `unzip`. */
+/**
+ * Lista os arquivos dentro de um ZIP usando `unzip -Z1` (apenas nomes).
+ * Evita depender do formato de data do `unzip -l`, que varia entre
+ * sistemas (MM-DD-AAAA ou AAAA-MM-DD).
+ */
 export function listZipEntries(zipPath: string): ZipEntry[] {
-  const spawned = spawnSync('unzip', ['-l', zipPath], { encoding: 'utf8' })
+  const spawned = spawnSync('unzip', ['-Z1', zipPath], { encoding: 'utf8' })
   if (spawned.status !== 0) {
     throw new Error(
-      `unzip -l falhou: ${spawned.stderr?.trim() ?? spawned.error?.message ?? 'erro'}`,
+      `unzip -Z1 falhou: ${spawned.stderr?.trim() ?? spawned.error?.message ?? 'erro'}`,
     )
   }
 
-  const entries: ZipEntry[] = []
-  for (const line of spawned.stdout.split('\n')) {
-    const match = /^\s*(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s+(.+)$/.exec(line)
-    if (match) {
-      entries.push({ name: match[3].trim(), size: Number(match[1]) })
-    }
-  }
-  return entries
+  return spawned.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .map((name) => ({ name, size: 0 }))
 }
 
 /** Extrai todo o ZIP em um diretório de destino (sobrescreve). */
