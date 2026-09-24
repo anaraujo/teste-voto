@@ -83,13 +83,17 @@ pontuação(candidato) = número de perguntas em que
 ```
 
 `rankResults` pondera todos os candidatos e ordena do maior para o menor número
-de correspondências. Os empates são resolvidos de forma determinística: entre
+de compatibilidades. Os empates são resolvidos de forma determinística: entre
 candidatos com a mesma pontuação, vale a ordem de declaração no array
 (`sort` estável). Assim, um mesmo conjunto de respostas sempre produz o mesmo
 ranking, sem ambiguidade.
 
 A tela de resultado exibe o ranking completo, com o primeiro colocado marcado
-como **"Melhor correspondência"** (elemento `<mark>` nativo nessa posição).
+como **"Melhor compatibilidade"** (elemento `<mark>` nativo nessa posição).
+Cada candidato pode ser expandido com o elemento nativo `<details>` para
+revelar o detalhamento pergunta a pergunta: o que a pessoa respondeu, o que o
+perfil do candidato previa e se houve correspondência (`questionMatches` em
+`src/lib/scoring.ts`).
 
 ### Falha graciosa
 
@@ -122,7 +126,7 @@ discordar.
 
 | Decisão                | Por quê                                                              |
 | ---------------------- | -------------------------------------------------------------------- |
-| Correspondência de perfil | Simples de entender e explicar ("você concordou em 4 de 5 perguntas"). |
+| Compatibilidade de perfil | Simples de entender e explicar ("você concordou em 4 de 5 perguntas"). |
 | Desempate determinístico | Todo conjunto de respostas precisa produzir um resultado inequívoco. |
 | Resultado como ranking | Transparência: a pessoa vê o grau de alinhamento de todos os candidatos. |
 | Módulos de lógica pura | A pontuação e a auditoria são livres de framework, testáveis e reutilizáveis pela CLI. |

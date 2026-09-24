@@ -68,6 +68,8 @@ function App() {
           <ResultScreen
             ranked={ranked}
             totalQuestions={questions.length}
+            answers={answers}
+            questions={questions}
             onRestart={handleRestart}
             onShowFairness={() => setScreen({ name: 'fairness' })}
           />

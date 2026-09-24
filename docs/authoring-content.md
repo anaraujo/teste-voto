@@ -42,7 +42,7 @@ mantendo o teste justo.
 
 Cada candidato é pontuado pelo número de respostas que coincide com o seu
 perfil. O resultado lista todos os candidatos, do maior para o menor número de
-coincidências, e o primeiro colocado ganha o destaque "Melhor correspondência".
+correspondências, e o primeiro colocado ganha o destaque "Melhor compatibilidade".
 
 Em caso de empate na pontuação, a ordem de declaração no array `candidates` é
 mantida (ordenação estável). Isso é determinístico, mas lembre-se: perfis

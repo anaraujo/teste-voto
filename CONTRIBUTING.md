@@ -68,11 +68,11 @@ parte da documentação do projeto.
 feat(results): adiciona ranking completo de candidatos
 
 O resultado agora lista todos os candidatos, da melhor para a pior
-correspondência, com destaque para o primeiro colocado.
+compatibilidade, com destaque para o primeiro colocado.
 
 - Pontua cada candidato pelo número de respostas iguais ao perfil
 - Ordena de forma decrescente com desempate determinístico
-- Marca o primeiro colocado com "Melhor correspondência"
+- Marca o primeiro colocado com "Melhor compatibilidade"
 ```
 
 Tipos convencionais (mantidos em inglês): `feat`, `fix`, `docs`, `refactor`,

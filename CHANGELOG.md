@@ -7,6 +7,12 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Adicionado
+
+- Ao clicar em um candidato no resultado, detalhamento pergunta a pergunta: a
+  resposta da pessoa, a resposta prevista pelo perfil do candidato e a
+  indicação de Concorda (elemento nativo `<details>`).
+
 ## [0.1.0] - 2026-09-23
 
 ### Adicionado
@@ -14,9 +20,9 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - Fluxo do quiz: tela inicial, perguntas sequenciais com foto por opção de
   resposta, tela de resultado e reinício.
 - Resultado como ranking completo dos candidatos, da melhor para a pior
-  correspondência, com destaque nativo para o primeiro colocado
-  ("Melhor correspondência").
-- Modelo de pontuação por correspondência de perfil, com desempate
+  compatibilidade, com destaque nativo para o primeiro colocado
+  ("Melhor compatibilidade").
+- Modelo de pontuação por compatibilidade de perfil, com desempate
   determinístico e falha graciosa caso o resultado não possa ser calculado.
 - Auditoria de imparcialidade: tela "Verificar imparcialidade" no app e um
   script de CLI que enumeram todas as 3⁵ = 243 combinações de respostas e

@@ -18,7 +18,7 @@ prédio inteiro: **"Em quem eu voto?"**
 
 Cada candidato é descrito por um *perfil* — as respostas que ele daria a cada
 pergunta. Você responde o quiz e recebe um **ranking de todos os candidatos**,
-da melhor correspondência para a pior.
+da melhor compatibilidade para a pior.
 
 ## Como funciona
 
@@ -70,7 +70,7 @@ npm start     # inicia o servidor de desenvolvimento → http://localhost:2026
 ```
 src/
 ├── data/quiz.ts             Tipos + conteúdo do quiz (perguntas, candidatos)
-├── lib/scoring.ts           Pontuação por correspondência de perfil (ranking)
+├── lib/scoring.ts           Pontuação por compatibilidade de perfil (ranking)
 ├── lib/distribution.ts      Auditoria de imparcialidade sobre todas as combinações
 ├── components/
 │   ├── StartScreen.tsx      Tela de boas-vindas

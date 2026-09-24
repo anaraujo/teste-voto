@@ -1,8 +1,12 @@
+import type { OptionId, Question, QuestionId } from '../data/quiz.ts'
+import { questionMatches } from '../lib/scoring.ts'
 import type { RankedEntry } from '../lib/scoring.ts'
 
 interface ResultScreenProps {
   ranked: readonly RankedEntry[]
   totalQuestions: number
+  answers: Record<QuestionId, OptionId>
+  questions: readonly Question[]
   onRestart: () => void
   onShowFairness: () => void
 }
@@ -10,6 +14,8 @@ interface ResultScreenProps {
 export function ResultScreen({
   ranked,
   totalQuestions,
+  answers,
+  questions,
   onRestart,
   onShowFairness,
 }: ResultScreenProps) {
@@ -26,16 +32,41 @@ export function ResultScreen({
       <ol>
         {ranked.map(({ candidate, matches }, index) => (
           <li key={candidate.id}>
-            {candidate.photo && (
-              <img
-                src={candidate.photo}
-                alt={candidate.name}
-                width="120"
-                height="90"
-              />
-            )}
-            <strong>{candidate.name}</strong> — {matches} de {totalQuestions}
-            {index === 0 && <mark>Melhor correspondência</mark>}
+            <details>
+              <summary>
+                {candidate.photo && (
+                  <img
+                    src={candidate.photo}
+                    alt={candidate.name}
+                    width="120"
+                    height="90"
+                  />
+                )}
+                <strong>{candidate.name}</strong> — {matches} de {totalQuestions}
+                {index === 0 && <mark>Melhor compatibilidade</mark>}
+              </summary>
+
+              <ul>
+                {questionMatches(answers, questions, candidate).map(
+                  ({ question, user, candidate: expected, matched }) => (
+                    <li key={question.id}>
+                      <p>
+                        <strong>{question.title}</strong>
+                      </p>
+                      <p>
+                        Sua resposta: {user?.label ?? '—'} · Perfil do
+                        candidato: {expected?.label ?? '—'} ·{' '}
+                        {matched ? (
+                          <mark>Concorda</mark>
+                        ) : (
+                          <strong>Não concorda</strong>
+                        )}
+                      </p>
+                    </li>
+                  ),
+                )}
+              </ul>
+            </details>
           </li>
         ))}
       </ol>

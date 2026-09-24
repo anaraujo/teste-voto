@@ -1,5 +1,6 @@
 import type {
   Candidate,
+  Option,
   OptionId,
   Question,
   QuestionId,
@@ -8,6 +9,34 @@ import type {
 export interface RankedEntry {
   candidate: Candidate
   matches: number
+}
+
+export interface QuestionMatch {
+  question: Question
+  user: Option | undefined
+  candidate: Option | undefined
+  matched: boolean
+}
+
+export function questionMatches(
+  answers: Record<QuestionId, OptionId>,
+  questions: readonly Question[],
+  candidate: Candidate,
+): QuestionMatch[] {
+  return questions.map((question) => {
+    const user = question.options.find(
+      (option) => option.id === answers[question.id],
+    )
+    const expected = question.options.find(
+      (option) => option.id === candidate.profile[question.id],
+    )
+    return {
+      question,
+      user,
+      candidate: expected,
+      matched: user?.id === expected?.id,
+    }
+  })
 }
 
 export function rankResults(
