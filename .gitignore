@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dados ingeridos do TSE (zips, banco local e fotos)
+data/
+!data/.gitkeep

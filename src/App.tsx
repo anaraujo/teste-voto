@@ -58,10 +58,7 @@ function App() {
       )}
 
       {screen.name === 'candidates' && (
-        <CandidatesScreen
-          candidates={candidates}
-          onBack={() => setScreen({ name: 'start' })}
-        />
+        <CandidatesScreen onBack={() => setScreen({ name: 'start' })} />
       )}
 
       {screen.name === 'question' && (

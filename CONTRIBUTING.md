@@ -23,7 +23,8 @@ trabalhar com o código e como mantê-lo assim.
 
 ```sh
 npm install
-npm start        # http://localhost:2026
+npm run ingest   # carrega os dados oficiais do TSE no SQLite (opcional nesta etapa)
+npm run dev      # http://localhost:2026 (app) + API na 2027
 ```
 
 ## O que verificar antes de enviar
@@ -32,6 +33,7 @@ npm start        # http://localhost:2026
 
 ```sh
 npm run lint
+npm run test      # parser CSV, normalização e repositório (node:test)
 npm run build
 npm run check:distribution
 ```
@@ -39,7 +41,10 @@ npm run check:distribution
 2. Confirme que sua mudança mantém a distribuição justa. Se você tocou em
    conteúdo ou em pontuação, a auditoria deve continuar mostrando cada
    candidato com vitórias aproximadamente iguais.
-3. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
+3. Se você mexeu no pipeline de dados, confirme que `npm run ingest` conclui e
+   que `npm test` continua passando. O schema do TSE muda entre eleições —
+   valide com `npm run ingest -- --inspect` quando o arquivo oficial mudar.
+4. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
    de identificadores permanecem em inglês.
 
 ## Enviando um pull request
