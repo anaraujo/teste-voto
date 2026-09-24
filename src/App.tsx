@@ -1,121 +1,97 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useMemo, useState } from 'react'
+import { candidates, questions } from './data/quiz.ts'
+import type { OptionId, QuestionId } from './data/quiz.ts'
+import { rankResults } from './lib/scoring.ts'
+import { FairnessScreen } from './components/FairnessScreen.tsx'
+import { QuestionStep } from './components/QuestionStep.tsx'
+import { ResultScreen } from './components/ResultScreen.tsx'
+import { StartScreen } from './components/StartScreen.tsx'
+
+type Screen =
+  | { name: 'start' }
+  | { name: 'question'; index: number }
+  | { name: 'result' }
+  | { name: 'fairness' }
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [screen, setScreen] = useState<Screen>({ name: 'start' })
+  const [answers, setAnswers] = useState<Record<QuestionId, OptionId>>({})
+
+  const ranked = useMemo(
+    () => rankResults(answers, questions, candidates),
+    [answers],
+  )
+
+  const handleStart = () => setScreen({ name: 'question', index: 0 })
+
+  const handleAnswer = (optionId: OptionId) => {
+    if (screen.name !== 'question') return
+
+    const { index } = screen
+    const question = questions[index]
+    const nextAnswers = { ...answers, [question.id]: optionId }
+
+    setAnswers(nextAnswers)
+    setScreen(
+      index === questions.length - 1
+        ? { name: 'result' }
+        : { name: 'question', index: index + 1 },
+    )
+  }
+
+  const handleRestart = () => {
+    setAnswers({})
+    setScreen({ name: 'start' })
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main>
+      {screen.name === 'start' && (
+        <StartScreen
+          questionCount={questions.length}
+          candidateCount={candidates.length}
+          onStart={handleStart}
+        />
+      )}
 
-      <div className="ticks"></div>
+      {screen.name === 'question' && (
+        <QuestionStep
+          question={questions[screen.index]}
+          index={screen.index}
+          total={questions.length}
+          onAnswer={handleAnswer}
+        />
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {screen.name === 'result' &&
+        (ranked.length > 0 ? (
+          <ResultScreen
+            ranked={ranked}
+            totalQuestions={questions.length}
+            onRestart={handleRestart}
+            onShowFairness={() => setScreen({ name: 'fairness' })}
+          />
+        ) : (
+          <section>
+            <h2>Não foi possível calcular o resultado</h2>
+            <p>Recarregue a página e tente novamente.</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+            >
+              Tentar novamente
+            </button>
+          </section>
+        ))}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {screen.name === 'fairness' && (
+        <FairnessScreen
+          questions={questions}
+          candidates={candidates}
+          onBack={() => setScreen({ name: 'result' })}
+        />
+      )}
+    </main>
   )
 }
 

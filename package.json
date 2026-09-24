@@ -1,12 +1,16 @@
 {
   "name": "teste-voto",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Um quiz imparcial para ajudar os eleitores a descobrir qual candidato combina com eles.",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:distribution": "node --experimental-strip-types scripts/check-distribution.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
