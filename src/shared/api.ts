@@ -19,6 +19,15 @@ export interface ApiCandidate {
   party: string | null
   partyAcronym: string | null
   coalition: string | null
+  candidacyType: string | null
+  federation: string | null
+  occupation: string | null
+  education: string | null
+  maritalStatus: string | null
+  birthDate: string | null
+  birthState: string | null
+  gender: string | null
+  race: string | null
   status: string | null
   city: string | null
   photoUrl: string | null
@@ -33,12 +42,6 @@ export interface ApiCandidatesResponse {
 
 export interface ApiCandidateDetail extends ApiCandidate {
   campaignStatus: string | null
-  candidacyType: string | null
-  occupation: string | null
-  education: string | null
-  birthDate: string | null
-  gender: string | null
-  race: string | null
   nationality: string | null
   email: string | null
   totalAssets: number | null

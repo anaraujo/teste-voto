@@ -9,6 +9,17 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- Na lista de candidatos, resumo por candidato com partido, agremiação
+  (federação/partido isolado), ocupação e detalhes expansíveis (`<details>`
+  "Mais informações") com escolaridade, estado civil, nascimento (data e UF),
+  sexo e cor/raça.
+- Novos campos mapeados do TSE no modelo e no banco: estado civil
+  (`DS_ESTADO_CIVIL`), estado de nascimento (`SG_UF_NASCIMENTO`) e composição
+  da federação (`DS_COMPOSICAO_FEDERACAO`), com migração automática de colunas
+  em bancos existentes.
+- Tratamento de sentinelas do TSE (`#NE`, `#NULO`, `NÃO DIVULGÁVEL`) durante a
+  normalização: esses valores viram `null` e deixam de aparecer na interface
+  (ex.: "Situação: #NE").
 - Página com a lista de todos os candidatos e suas informações (foto, nome e
   descrição), acessível pela tela inicial.
 - Ao clicar em um candidato no resultado, detalhamento pergunta a pergunta: a

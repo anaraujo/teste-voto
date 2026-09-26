@@ -60,6 +60,9 @@ interface CandidateRow {
   website: string | null
   photo_url: string | null
   total_assets: number | null
+  marital_status: string | null
+  birth_state: string | null
+  federation: string | null
   source_provider: string
   source_url: string
   source_dataset: string
@@ -106,6 +109,9 @@ function createSchema(db: DatabaseSync): void {
       website TEXT,
       photo_url TEXT,
       total_assets REAL,
+      marital_status TEXT,
+      birth_state TEXT,
+      federation TEXT,
       source_provider TEXT NOT NULL,
       source_url TEXT NOT NULL,
       source_dataset TEXT NOT NULL,
@@ -147,18 +153,37 @@ function createSchema(db: DatabaseSync): void {
   `)
 }
 
+/** Colunas adicionadas após a primeira versão do schema (migração leve). */
+const SCHEMA_MIGRATIONS: Array<{ column: string; ddl: string }> = [
+  { column: 'marital_status', ddl: 'TEXT' },
+  { column: 'birth_state', ddl: 'TEXT' },
+  { column: 'federation', ddl: 'TEXT' },
+]
+
+/** Adiciona colunas faltantes a um banco já existente (sem recriar dados). */
+function migrateSchema(db: DatabaseSync): void {
+  const columns = db.prepare('PRAGMA table_info(candidates)').all() as unknown as Array<{ name: string }>
+  const existing = new Set(columns.map((column) => column.name))
+  for (const migration of SCHEMA_MIGRATIONS) {
+    if (existing.has(migration.column)) continue
+    db.exec(`ALTER TABLE candidates ADD COLUMN ${migration.column} ${migration.ddl}`)
+  }
+}
+
 /** Abre (ou cria) o repositório em um caminho no disco. */
 export async function openRepository(filePath: string): Promise<DatabaseSync> {
   await mkdir(dirname(filePath), { recursive: true })
   const db = new DatabaseSync(filePath)
   db.exec('PRAGMA journal_mode = WAL;')
   createSchema(db)
+  migrateSchema(db)
   return db
 }
 
 /** Cria o schema sobre uma conexão já aberta (útil em testes com memória). */
 export function prepareDatabase(db: DatabaseSync): void {
   createSchema(db)
+  migrateSchema(db)
 }
 
 /** Converte um CandidateRecord nas colunas SQL. */
@@ -189,6 +214,9 @@ function toColumns(candidate: CandidateRecord) {
     website: candidate.website,
     photo_url: candidate.photoUrl,
     total_assets: candidate.totalAssets,
+    marital_status: candidate.maritalStatus,
+    birth_state: candidate.birthState,
+    federation: candidate.federation,
     source_provider: candidate.source.provider,
     source_url: candidate.source.url,
     source_dataset: candidate.source.dataset,
@@ -238,6 +266,9 @@ function toCandidate(row: CandidateRow): CandidateRecord {
     socialLinks: [],
     photoUrl: row.photo_url,
     totalAssets: row.total_assets,
+    maritalStatus: row.marital_status,
+    birthState: row.birth_state,
+    federation: row.federation,
     source,
     importedAt: row.imported_at,
     updatedAt: row.updated_at,
@@ -272,7 +303,8 @@ export function upsertCandidate(
         full_name, ballot_number, party, party_acronym, coalition, status,
         campaign_status, candidacy_type, occupation, education, birth_date,
         gender, race, nationality, city, email, website, photo_url,
-        total_assets, source_provider, source_url, source_dataset,
+        total_assets, marital_status, birth_state, federation,
+        source_provider, source_url, source_dataset,
         source_file, source_retrieved_at, source_updated_at, imported_at,
         updated_at, checksum, is_active
       ) VALUES (
@@ -280,7 +312,8 @@ export function upsertCandidate(
         $full_name, $ballot_number, $party, $party_acronym, $coalition, $status,
         $campaign_status, $candidacy_type, $occupation, $education, $birth_date,
         $gender, $race, $nationality, $city, $email, $website, $photo_url,
-        $total_assets, $source_provider, $source_url, $source_dataset,
+        $total_assets, $marital_status, $birth_state, $federation,
+        $source_provider, $source_url, $source_dataset,
         $source_file, $source_retrieved_at, $source_updated_at, $imported_at,
         $updated_at, $checksum, 1
       )`,
@@ -303,6 +336,8 @@ export function upsertCandidate(
       gender = $gender, race = $race, nationality = $nationality,
       city = $city, email = $email, website = $website,
       photo_url = $photo_url, total_assets = $total_assets,
+      marital_status = $marital_status, birth_state = $birth_state,
+      federation = $federation,
       source_provider = $source_provider, source_url = $source_url,
       source_dataset = $source_dataset, source_file = $source_file,
       source_retrieved_at = $source_retrieved_at,
@@ -331,6 +366,9 @@ export function upsertCandidate(
     website: columns.website,
     photo_url: columns.photo_url,
     total_assets: columns.total_assets,
+    marital_status: columns.marital_status,
+    birth_state: columns.birth_state,
+    federation: columns.federation,
     source_provider: columns.source_provider,
     source_url: columns.source_url,
     source_dataset: columns.source_dataset,

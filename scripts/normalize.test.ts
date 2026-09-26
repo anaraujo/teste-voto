@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   candidateChecksum,
   clean,
+  isTseSentinel,
   normalizeCandidate,
   parseDate,
   parseMoney,
@@ -29,6 +30,9 @@ function sampleRow(overrides: Partial<RawCandidateRow> = {}): RawCandidateRow {
     nationality: 'BRASILEIRA NATA',
     city: 'CURITIBA',
     email: 'maria@exemplo.com',
+    maritalStatus: 'CASADO(A)',
+    birthState: 'PR',
+    federation: 'FE BRASIL (13-PT, 14-PTB)',
     ...overrides,
   }
 }
@@ -51,6 +55,22 @@ test('clean normaliza vazio para null', () => {
   assert.equal(clean('  texto  '), 'texto')
   assert.equal(clean(''), null)
   assert.equal(clean('   '), null)
+})
+
+test('isTseSentinel reconhece sentinelas do TSE', () => {
+  assert.equal(isTseSentinel('#NE'), true)
+  assert.equal(isTseSentinel('#NULO'), true)
+  assert.equal(isTseSentinel('NÃO DIVULGÁVEL'), true)
+  assert.equal(isTseSentinel('   #NE   '), true)
+  assert.equal(isTseSentinel(''), true)
+  assert.equal(isTseSentinel('APTO'), false)
+})
+
+test('clean converte sentinelas do TSE para null', () => {
+  assert.equal(clean('#NE'), null)
+  assert.equal(clean('#NULO'), null)
+  assert.equal(clean('NÃO DIVULGÁVEL'), null)
+  assert.equal(clean('APTO'), 'APTO')
 })
 
 test('normalizeCandidate mapeia os campos', () => {
@@ -77,7 +97,24 @@ test('normalizeCandidate mapeia os campos', () => {
   assert.equal(candidate.email, 'maria@exemplo.com')
   assert.equal(candidate.photoUrl, null)
   assert.equal(candidate.totalAssets, null)
+  assert.equal(candidate.maritalStatus, 'CASADO(A)')
+  assert.equal(candidate.birthState, 'PR')
+  assert.equal(candidate.federation, 'FE BRASIL (13-PT, 14-PTB)')
   assert.deepEqual(candidate.socialLinks, [])
+})
+
+test('normalizeCandidate converte sentinelas em null', () => {
+  const candidate = normalizeCandidate(
+    sampleRow({ status: '#NE', email: 'NÃO DIVULGÁVEL', federation: '#NULO' }),
+    {
+      electionYear: 2026,
+      state: 'PR',
+      office: 'DEPUTADO FEDERAL',
+    },
+  )
+  assert.equal(candidate.status, null)
+  assert.equal(candidate.email, null)
+  assert.equal(candidate.federation, null)
 })
 
 test('normalizeCandidate sem nomes usa fallback', () => {
@@ -103,4 +140,17 @@ test('candidateChecksum muda quando o conteúdo muda', () => {
   })
   assert.notEqual(candidateChecksum(base), candidateChecksum(changed))
   assert.equal(candidateChecksum(base), candidateChecksum(base))
+
+  const federationChanged = normalizeCandidate(
+    sampleRow({ federation: '#NULO' }),
+    {
+      electionYear: 2026,
+      state: 'PR',
+      office: 'DEPUTADO FEDERAL',
+    },
+  )
+  assert.notEqual(
+    candidateChecksum(base),
+    candidateChecksum(federationChanged),
+  )
 })

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ApiCandidatesResponse } from '../shared/api.ts'
+import type { ApiCandidatesResponse, ApiCandidate } from '../shared/api.ts'
 
 interface CandidatesScreenProps {
   onBack: () => void
@@ -9,6 +9,19 @@ type LoadState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ready'; data: ApiCandidatesResponse }
+
+/** Converte data ISO "AAAA-MM-DD" em "DD/MM/AAAA". */
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split('-')
+  return `${day}/${month}/${year}`
+}
+
+/** Agremiação: federação, partido isolado ou tipo de agremiação. */
+function formatCandidacy(candidate: ApiCandidate): string | null {
+  if (candidate.federation) return `Federação: ${candidate.federation}`
+  if (candidate.candidacyType === 'PARTIDO ISOLADO') return 'Partido isolado'
+  return candidate.candidacyType
+}
 
 export function CandidatesScreen({ onBack }: CandidatesScreenProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -98,48 +111,101 @@ export function CandidatesScreen({ onBack }: CandidatesScreenProps) {
             </p>
 
             <ul>
-              {state.data.candidates.map((candidate) => (
-                <li key={candidate.id}>
-                  {candidate.photoUrl && (
-                    <img
-                      src={candidate.photoUrl}
-                      alt={candidate.ballotName}
-                      width="120"
-                      height="150"
-                      loading="lazy"
-                    />
-                  )}
-                  <p>
-                    <strong>{candidate.ballotName}</strong>
-                    {candidate.ballotNumber && (
-                      <span> ({candidate.ballotNumber})</span>
+              {state.data.candidates.map((candidate) => {
+                const birth =
+                  candidate.birthDate && candidate.birthState
+                    ? `${formatDate(candidate.birthDate)} (natural de ${candidate.birthState})`
+                    : candidate.birthDate
+                      ? formatDate(candidate.birthDate)
+                      : null
+                const city =
+                  candidate.city &&
+                  candidate.city.toUpperCase() !== state.data.election.state
+                    ? candidate.city
+                    : null
+                const candidacy = formatCandidacy(candidate)
+                return (
+                  <li key={candidate.id}>
+                    {candidate.photoUrl && (
+                      <img
+                        src={candidate.photoUrl}
+                        alt={candidate.ballotName}
+                        width="120"
+                        height="150"
+                        loading="lazy"
+                      />
                     )}
-                  </p>
-                  {candidate.partyAcronym && (
                     <p>
-                      <small>
-                        {candidate.partyAcronym}
-                        {candidate.party ? ` - ${candidate.party}` : ''}
-                      </small>
+                      <strong>{candidate.ballotName}</strong>
+                      {candidate.ballotNumber && (
+                        <span> ({candidate.ballotNumber})</span>
+                      )}
                     </p>
-                  )}
-                  {candidate.coalition && (
-                    <p>
-                      <small>Coligação: {candidate.coalition}</small>
-                    </p>
-                  )}
-                  {candidate.status && (
-                    <p>
-                      <small>Situação: {candidate.status}</small>
-                    </p>
-                  )}
-                  {candidate.city && (
-                    <p>
-                      <small>Município: {candidate.city}</small>
-                    </p>
-                  )}
-                </li>
-              ))}
+                    {candidate.partyAcronym && (
+                      <p>
+                        <small>
+                          {candidate.partyAcronym}
+                          {candidate.party
+                            ? ` - ${candidate.party}`
+                            : ''}
+                        </small>
+                      </p>
+                    )}
+                    {candidacy && (
+                      <p>
+                        <small>{candidacy}</small>
+                      </p>
+                    )}
+                    {candidate.occupation && (
+                      <p>
+                        <small>Ocupação: {candidate.occupation}</small>
+                      </p>
+                    )}
+                    {city && (
+                      <p>
+                        <small>Município: {city}</small>
+                      </p>
+                    )}
+                    <details>
+                      <summary>
+                        <small>Mais informações</small>
+                      </summary>
+                      <dl>
+                        {candidate.education && (
+                          <div>
+                            <dt>Escolaridade</dt>
+                            <dd>{candidate.education}</dd>
+                          </div>
+                        )}
+                        {candidate.maritalStatus && (
+                          <div>
+                            <dt>Estado civil</dt>
+                            <dd>{candidate.maritalStatus}</dd>
+                          </div>
+                        )}
+                        {birth && (
+                          <div>
+                            <dt>Nascimento</dt>
+                            <dd>{birth}</dd>
+                          </div>
+                        )}
+                        {candidate.gender && (
+                          <div>
+                            <dt>Sexo</dt>
+                            <dd>{candidate.gender}</dd>
+                          </div>
+                        )}
+                        {candidate.race && (
+                          <div>
+                            <dt>Cor/raça</dt>
+                            <dd>{candidate.race}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </details>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ))}

@@ -39,6 +39,9 @@ export interface CandidateRecord {
   socialLinks: string[]
   photoUrl: string | null
   totalAssets: number | null
+  maritalStatus: string | null
+  birthState: string | null
+  federation: string | null
   source: Source
   importedAt: string
   updatedAt: string

@@ -7,9 +7,22 @@ import type { CandidateRecord } from '../../shared/domain.ts'
 
 const EMPTY = /^\s*$/
 
+/**
+ * Valores sentinela usados pelo TSE para "sem informação", convertidos
+ * para null durante a normalização (ex.: #NE, #NULO, NÃO DIVULGÁVEL).
+ */
+const TSE_SENTINELS = new Set(['#NE', '#NULO', 'NÃO DIVULGÁVEL'])
+
+export function isTseSentinel(value: string): boolean {
+  const trimmed = value.trim()
+  if (trimmed === '') return true
+  return TSE_SENTINELS.has(trimmed.toUpperCase())
+}
+
 export function clean(value: string): string | null {
   const trimmed = value.trim()
-  return trimmed === '' ? null : trimmed
+  if (trimmed === '' || isTseSentinel(trimmed)) return null
+  return trimmed
 }
 
 /** Converte "DD/MM/AAAA" para ISO "AAAA-MM-DD". Null quando inválido/vazio. */
@@ -76,6 +89,9 @@ export function normalizeCandidate(
     socialLinks: [],
     photoUrl: null,
     totalAssets: null,
+    maritalStatus: clean(raw.maritalStatus),
+    birthState: clean(raw.birthState),
+    federation: clean(raw.federation),
   }
 }
 
@@ -103,5 +119,8 @@ export function candidateChecksum(
     city: candidate.city,
     email: candidate.email,
     photoUrl: candidate.photoUrl,
+    maritalStatus: candidate.maritalStatus,
+    birthState: candidate.birthState,
+    federation: candidate.federation,
   })
 }

@@ -170,7 +170,10 @@ ZIP do TSE → download → extração (unzip) → parse CSV → validação
    configurada (`SG_UF`, `DS_CARGO` e referência de ano); registros inválidos
    são agregados em `errors` em vez de derrubar a ingestão inteira.
 5. **Normalização** (`normalize.ts`): datas `DD/MM/AAAA → AAAA-MM-DD`, valores
-   monetários, limpeza de texto, nulos.
+   monetários, limpeza de texto, nulos. **Sentinelas do TSE** (`#NE`,
+   `#NULO`, `NÃO DIVULGÁVEL`) são convertidas em `null` — ex.: "Situação:
+   #NE" não aparece na interface, porque os dados ainda não trazem
+   resultado.
 6. **Persistência incremental** (`repository.ts`, `node:sqlite`): um checksum
    do conteúdo normalizado decide se o candidato é novo (`inserted`), mudou
    (`updated`) ou é idêntico (`unchanged`). Candidatos presentes no banco mas
@@ -205,6 +208,14 @@ preview, então o frontend enxerga tudo na mesma origem (porta 2026).
 
 `CandidatesScreen.tsx` busca `GET /api/candidates` e cobre quatro estados:
 carregando, erro (com sugestão de rodar `npm run ingest`), vazio e lista.
+Cada candidato mostra o **resumo**: foto, nome de urna, número, partido,
+agremiação (federação com composição ou "partido isolado") e ocupação. O
+elemento nativo `<details>` "Mais informações" expande escolaridade, estado
+civil, nascimento (data e UF), sexo e cor/raça — sempre omitindo campos que
+o TSE marcou como sentinela (vira `null` na normalização). A linha
+"Município" só aparece quando a Unidade Eleitoral difere da UF da eleição
+(para deputado federal, `NM_UE` é o estado inteiro, então não é exibida).
+
 Nesta rodada, **a única mudança visível** é essa página; o quiz continua com o
 conteúdo provisório em `src/data/quiz.ts`, que será substituído numa etapa
 futura a partir dos dados oficiais.

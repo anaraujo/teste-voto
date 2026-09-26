@@ -49,6 +49,9 @@ function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecor
     socialLinks: [],
     photoUrl: null,
     totalAssets: null,
+    maritalStatus: null,
+    birthState: null,
+    federation: null,
     source: {
       provider: 'TSE',
       url: 'https://exemplo.com/cand.zip',
@@ -76,6 +79,31 @@ test('upsertCandidate insere, atualiza e mantém inalterado', () => {
   assert.equal(stored?.city, 'LONDRINA')
   assert.equal(stored?.updatedAt, '2026-09-02T00:00:00.000Z')
   assert.equal(stored?.source.url, 'https://exemplo.com/cand.zip')
+})
+
+test('upsertCandidate persiste os campos novos', () => {
+  const db = openDatabase()
+  upsertCandidate(
+    db,
+    makeCandidate({
+      maritalStatus: 'CASADO(A)',
+      birthState: 'PR',
+      federation: 'FE BRASIL (13-PT)',
+    }),
+  )
+
+  const stored = getCandidate(db, '2026-PR-1')
+  assert.equal(stored?.maritalStatus, 'CASADO(A)')
+  assert.equal(stored?.birthState, 'PR')
+  assert.equal(stored?.federation, 'FE BRASIL (13-PT)')
+
+  const columns = db.prepare('PRAGMA table_info(candidates)').all() as unknown as Array<{
+    name: string
+  }>
+  const names = new Set(columns.map((column) => column.name))
+  assert.ok(names.has('marital_status'))
+  assert.ok(names.has('birth_state'))
+  assert.ok(names.has('federation'))
 })
 
 test('deactivateMissing marca removidos e lista apenas ativos', () => {

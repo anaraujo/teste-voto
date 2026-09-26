@@ -32,7 +32,10 @@ export const TSE_COLUMNS = {
   race: ['DS_COR_RACA'],
   nationality: ['DS_NACIONALIDADE'],
   city: ['NM_UE'],
-  email: ['NM_EMAIL'],
+  email: ['DS_EMAIL', 'NM_EMAIL'],
+  maritalStatus: ['DS_ESTADO_CIVIL'],
+  birthState: ['SG_UF_NASCIMENTO'],
+  federation: ['DS_COMPOSICAO_FEDERACAO'],
 } as const
 
 export type TseField = keyof typeof TSE_COLUMNS
@@ -95,6 +98,9 @@ export interface RawCandidateRow {
   nationality: string
   city: string
   email: string
+  maritalStatus: string
+  birthState: string
+  federation: string
 }
 
 export function mapRawRow(index: Map<string, number>, row: readonly string[]): RawCandidateRow {
@@ -122,6 +128,9 @@ export function mapRawRow(index: Map<string, number>, row: readonly string[]): R
     nationality: name('nationality'),
     city: name('city'),
     email: name('email'),
+    maritalStatus: name('maritalStatus'),
+    birthState: name('birthState'),
+    federation: name('federation'),
   }
 }
 
