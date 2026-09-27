@@ -20,16 +20,26 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
     `parliamentary_mandates`, `parliamentary_records` e `votes`, com
     sincronização idempotente e tolerante a falhas (70 mandatos, 41 registros,
     117 votos para 39 candidatos com histórico).
-  - **Página de ficha no app** (`CandidateDetailScreen`, abas Resumo/Mandato/
-    Votações/Posições/Fontes), acessível pela lista de candidatos e pelo
-    resultado do quiz; `GET /api/candidates/:id` estende o detalhe com
-    histórico parlamentar e editorial.
+  - **Página de ficha no app** (`CandidateDetailScreen`, abas Resumo/Mandato e
+    histórico/Posições anteriores/Votações/Posições/Fontes), acessível pela
+    lista de candidatos e pelo resultado do quiz; `GET /api/candidates/:id`
+    estende o detalhe com histórico parlamentar, posições anteriores e
+    editorial.
   - **Export aberto** (`npm run export:ficha`): CSV (`;`, BOM) e JSON com os
     428 candidatos em `data/ficha/`.
   - **Camada editorial** (`content/editorial/<id>.json`, templates gerados por
     `npm run editorial:templates`): posições com tipo de evidência e fonte.
+  - **Histórico de posições políticas** (`npm run sync:history`, tabela
+    `political_mandates`): todas as posições ocupadas nas eleições de 2004 a
+    2024 (vereador, prefeito, vice-prefeito, deputado estadual/federal, senador,
+    governador e vice-governador), eleitos **e suplentes**, baixadas das
+    consultas de candidatos abertas do TSE (streaming, com cache e tolerância
+    por ano) e casadas por nome normalizado + data de nascimento (638 mandatos
+    para 257/428 candidatos). Nova aba "Posições anteriores" na ficha e colunas
+    `historico_posicoes`/`historico_posicoes_total` no export CSV/JSON.
   - Testes novos (`scripts/parliament.test.ts`) para senado/identidade/export —
-    58 testes no total.
+    58 testes no total; depois `scripts/history.test.ts` (resultado, data,
+    casamento, resumo) — **73 testes no total**.
 
 ### Alterado
 

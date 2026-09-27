@@ -21,6 +21,11 @@ import {
   type EditorialFicha,
 } from '../../shared/ficha.ts'
 import { PAUTAS_CHAVE } from '../../shared/pautas.ts'
+import {
+  formatMandateSummary,
+  sortMandates,
+  type PoliticalMandate,
+} from '../tse/history.ts'
 
 export interface ParliamentSummary {
   mandates: Array<{ casa: string; legislatura: string; partido: string | null; uf: string | null }>
@@ -60,6 +65,8 @@ export interface FichaExportada {
   camara_despesas_total_reais: number | null
   camara_despesas_por_ano: string | null
   senado_legislaturas: string | null
+  historico_posicoes: string | null
+  historico_posicoes_total: number | null
   [votoKey: `voto_${string}`]: string
   [posicaoKey: `posicao_${string}`]: string
 }
@@ -89,6 +96,7 @@ export function emptyFichaParaCsv(
   incumbent: IncumbentRow | undefined,
   parliament: ParliamentSummary | undefined,
   editorial: EditorialFicha | null,
+  history: PoliticalMandate[] = [],
 ): FichaExportada {
   const linha: FichaExportada = {
     id: candidate.id,
@@ -121,6 +129,8 @@ export function emptyFichaParaCsv(
     camara_despesas_total_reais: null,
     camara_despesas_por_ano: null,
     senado_legislaturas: null,
+    historico_posicoes: null,
+    historico_posicoes_total: null,
   }
 
   const camara = parliament?.records.find((record) => record.casa === 'camara')
@@ -151,6 +161,13 @@ export function emptyFichaParaCsv(
     linha.senado_legislaturas = senadoMandates
       .map((m) => `${m.legislatura}ª (${m.partido ?? '?'})`)
       .join(', ')
+  }
+
+  if (history.length > 0) {
+    linha.historico_posicoes = sortMandates(history)
+      .map(formatMandateSummary)
+      .join(' | ')
+    linha.historico_posicoes_total = history.length
   }
 
   const votePorPauta = new Map(parliament?.votes.map((vote) => [vote.votacaoId, vote]) ?? [])

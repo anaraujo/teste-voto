@@ -95,6 +95,16 @@ export interface ApiParliamentary {
   votes: ApiVote[]
 }
 
+export interface ApiPoliticalMandate {
+  ano: number
+  cargo: string
+  uf: string | null
+  municipio: string | null
+  partidoSigla: string | null
+  status: 'eleito' | 'suplente'
+  turno: number
+}
+
 export interface ApiCandidateDetail extends ApiCandidate {
   campaignStatus: string | null
   nationality: string | null
@@ -108,4 +118,6 @@ export interface ApiCandidateDetail extends ApiCandidate {
   parliamentary: ApiParliamentary | null
   /** Posições/propostas editoriais; null quando não há ficha editorial. */
   editorial: Record<string, ApiEditorialField> | null
+  /** Mandatos/posições políticas anteriores (TSE, 2004+). */
+  politicalMandates: ApiPoliticalMandate[]
 }

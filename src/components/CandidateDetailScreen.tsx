@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import type { ApiCandidateDetail, ApiMandate, ApiParliamentaryRecord } from '../shared/api.ts'
+import type { ApiCandidateDetail, ApiMandate, ApiParliamentaryRecord, ApiPoliticalMandate } from '../shared/api.ts'
 import { useCandidateDetail } from '../hooks/useCandidateDetail.ts'
 import { EDITORIAL_THEMES, hasEvidence, tipoEvidenciaLabel } from '../shared/ficha.ts'
 import { TEMA_LABEL } from '../shared/pautas.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 
-type Tab = 'resumo' | 'mandato' | 'votacoes' | 'posicoes' | 'fontes'
+type Tab = 'resumo' | 'mandato' | 'historico' | 'votacoes' | 'posicoes' | 'fontes'
 
 interface CandidateDetailScreenProps {
   candidateId: string
@@ -66,6 +66,7 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
       <nav aria-label="Ficha do candidato">
         <button type="button" onClick={() => setTab('resumo')}>Resumo</button>
         <button type="button" onClick={() => setTab('mandato')}>Mandato e histórico</button>
+        <button type="button" onClick={() => setTab('historico')}>Posições anteriores</button>
         <button type="button" onClick={() => setTab('votacoes')}>Votações</button>
         <button type="button" onClick={() => setTab('posicoes')}>Posições</button>
         <button type="button" onClick={() => setTab('fontes')}>Fontes</button>
@@ -73,6 +74,7 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
 
       {tab === 'resumo' && <ResumoTab dado={candidate} />}
       {tab === 'mandato' && <MandatoTab dado={candidate} />}
+      {tab === 'historico' && <HistoricoTab dado={candidate} />}
       {tab === 'votacoes' && <VotacoesTab dado={candidate} />}
       {tab === 'posicoes' && <PosicoesTab dado={candidate} />}
       {tab === 'fontes' && <FontesTab dado={candidate} />}
@@ -172,9 +174,8 @@ function MandatoTab({ dado }: { dado: ApiCandidateDetail }) {
         </p>
         <p>
           <small>
-            Não são considerados outros mandatos até aqui. Se você souber de um
-            mandato parlamentar, utilize a seção “Posições” para registrá-lo
-            com fonte.
+            Os mandatos anteriores em outras posições políticas (vereador,
+            prefeito, deputado estadual etc.) ficam na aba “Posições anteriores”.
           </small>
         </p>
       </div>
@@ -221,6 +222,70 @@ function MandatoTab({ dado }: { dado: ApiCandidateDetail }) {
         <small>
           Presença em Plenário e emendas orçamentárias não têm API oficial da
           Câmara — não estão incluídas na ficha.
+        </small>
+      </p>
+    </div>
+  )
+}
+
+function statusLabel(status: ApiPoliticalMandate['status']): string {
+  return status === 'eleito' ? 'Eleito' : 'Suplente'
+}
+
+function HistoricoTab({ dado }: { dado: ApiCandidateDetail }) {
+  const mandates = dado.politicalMandates
+  if (mandates.length === 0) {
+    return (
+      <div>
+        <p>
+          Não encontramos registros de posições políticas anteriores deste
+          candidato nas consultas do TSE (2004–2024) para o Paraná.
+        </p>
+        <p>
+          <small>
+            Consideramos mandatos eleitos e suplentes em todas as posições:
+            vereador, prefeito, vice-prefeito, deputado estadual, deputado
+            federal, senador, governador e vice-governador.
+          </small>
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <h3>Posições políticas anteriores</h3>
+      <ol>
+        {[...mandates]
+          .sort((a, b) => a.ano - b.ano || a.cargo.localeCompare(b.cargo))
+          .map((mandate) => {
+            const lugar = mandate.municipio
+              ? `${mandate.municipio}${mandate.uf ? `/${mandate.uf}` : ''}`
+              : mandate.uf
+            return (
+              <li key={`${mandate.ano}-${mandate.cargo}-${mandate.turno}`}>
+                <p>
+                  <strong>
+                    {mandate.ano} · {mandate.cargo}
+                  </strong>
+                  {lugar && <span> · {lugar}</span>}
+                  {mandate.partidoSigla && <span> · {mandate.partidoSigla}</span>}
+                  {' — '}
+                  <mark>{statusLabel(mandate.status)}</mark>
+                </p>
+                {mandate.turno > 1 && (
+                  <p>
+                    <small>2º turno</small>
+                  </p>
+                )}
+              </li>
+            )
+          })}
+      </ol>
+      <p>
+        <small>
+          Histórico montado com as consultas de candidatos das eleições de 2004
+          a 2024 (TSE), incluindo eleitos e suplentes que tenham assumido.
         </small>
       </p>
     </div>

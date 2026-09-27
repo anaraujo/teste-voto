@@ -14,7 +14,7 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, normalize } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, getParliamentary, type IncumbentRow } from '../src/data-sources/repository.ts'
+import { openRepository, listCandidates, listIncumbents, getParliamentary, getPoliticalMandates, type IncumbentRow } from '../src/data-sources/repository.ts'
 import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
@@ -26,6 +26,7 @@ import type {
   ApiMandate,
   ApiParliamentary,
   ApiParliamentaryRecord,
+  ApiPoliticalMandate,
   ApiVote,
 } from '../src/shared/api.ts'
 import type { CandidateRecord } from '../src/shared/domain.ts'
@@ -85,6 +86,7 @@ async function toApiDetail(
   const db = await openRepository(join(DATA_DIR, 'tse.db'))
   try {
     const { mandates, records, votes } = getParliamentary(db, candidate.id)
+    const politicalMandates = getPoliticalMandates(db, candidate.id)
     const editorial = await readEditorialFicha(candidate.id)
 
     const parliamentary: ApiParliamentary | null =
@@ -108,6 +110,7 @@ async function toApiDetail(
       updatedAt: candidate.updatedAt,
       parliamentary,
       editorial: editorial ? toApiEditorial(editorial) : null,
+      politicalMandates: politicalMandates.map(toApiPoliticalMandate),
     }
   } finally {
     db.close()
@@ -124,6 +127,20 @@ function toApiMandate(mandate: Awaited<ReturnType<typeof getParliamentary>>['man
     uf: mandate.uf,
     dataInicio: mandate.dataInicio,
     dataFim: mandate.dataFim,
+  }
+}
+
+function toApiPoliticalMandate(
+  mandate: Awaited<ReturnType<typeof getPoliticalMandates>>[number],
+): ApiPoliticalMandate {
+  return {
+    ano: mandate.ano,
+    cargo: mandate.cargo,
+    uf: mandate.uf,
+    municipio: mandate.municipio,
+    partidoSigla: mandate.partidoSigla,
+    status: mandate.status,
+    turno: mandate.turno,
   }
 }
 

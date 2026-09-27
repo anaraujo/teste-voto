@@ -26,6 +26,14 @@ separando o que é de cada camada.
    **evidência e fonte**. Cada campo editorial tem um tipo de evidência
    (`proposta`, `declaração`, `histórico parlamentar`) e uma URL de fonte.
 
+4. **Histórico de posições políticas** (`npm run sync:history`, tabela
+   `political_mandates`): todas as posições que o candidato já ocupou nas
+   eleições de **2004 a 2024** (vereador, prefeito, vice-prefeito, deputado
+   estadual, deputado federal, senador, governador e vice-governador), tiradas
+   das consultas de candidatos abertas do TSE. Consideramos **eleitos e
+   suplentes** (quem assume vaga de suplente manda no mandato). O casamento com
+   os 428 candidatos usa nome normalizado + data de nascimento.
+
 ## A regra de ouro
 
 > **O candidato afirma X** (camada editorial) ≠ **o histórico parlamentar mostra
@@ -38,15 +46,19 @@ votos ou métricas por conta própria.
 
 ## Como a ficha é exibida
 
-- Página de detalhe no app (`CandidateDetailScreen`), com 5 abas:
+- Página de detalhe no app (`CandidateDetailScreen`), com 6 abas:
   **Resumo** (TSE), **Mandato e histórico** (mandatos, proposições, comissões,
-  despesas), **Votações** (voto nominal por pauta + link para o registro
-  oficial), **Posições** (camada editorial) e **Fontes** (todas as URLs usadas).
+  despesas), **Posições anteriores** (mandatos eleitos/suplentes desde 2004,
+  com cargo, município e partido), **Votações** (voto nominal por pauta + link
+  para o registro oficial), **Posições** (camada editorial) e **Fontes** (todas
+  as URLs usadas).
 - A aba "Posições" mostra "Não encontrei evidência suficiente" enquanto o
   template editorial estiver vazio.
 - Export aberto: `npm run export:ficha` gera
-  `data/ficha/ficha-2026-pr-deputado-federal.csv` (BOM, `;`, 49 colunas) e
+  `data/ficha/ficha-2026-pr-deputado-federal.csv` (BOM, `;`, 51 colunas) e
   `.json`, cobrindo os 428 candidatos com as três camadas em uma linha cada.
+  As colunas `historico_posicoes` e `historico_posicoes_total` resumem a
+  trajetória política anterior ("2008 Vereador em Curitiba/PR (PTE) · eleito | …").
 
 ## Limitações documentadas
 
@@ -60,11 +72,16 @@ votos ou métricas por conta própria.
 - Votos são da Câmara apenas (o Senado não os expõe).
 - A sincronização é idempotente e tolerante a falhas (retry em 5xx/429); se
   uma votação retorna 0 votos, a pauta é pulada sem gravar `null`.
+- O histórico de posições anteriores depende dos arquivos históricos do TSE;
+  anos sem arquivo disponível são ignorados com aviso. O casamento por nome +
+  data de nascimento pode deixar de fora quem mudou completamente o nome (ex.:
+  mudou sobrenome após casamento).
 
 ## Comandos
 
 ```bash
 npm run sync:parliament   # Câmara + Senado -> tabelas parliament_*
+npm run sync:history      # TSE 2004–2024 -> tabela political_mandates
 npm run editorial:templates  # gera/atualiza content/editorial/<id>.json
 npm run export:ficha      # gera CSV + JSON em data/ficha/
 ```

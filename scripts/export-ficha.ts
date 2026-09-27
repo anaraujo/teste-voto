@@ -8,7 +8,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, listParliamentary } from '../src/data-sources/repository.ts'
+import { openRepository, listCandidates, listIncumbents, listParliamentary, listPoliticalMandates } from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
 import { emptyFichaParaCsv, type FichaExportada } from '../src/data-sources/parliament/export.ts'
@@ -28,6 +28,7 @@ try {
   const candidates = listCandidates(db, filter)
   const incumbents = listIncumbents(db)
   const parliament = listParliamentary(db)
+  const history = listPoliticalMandates(db)
 
   const fichas: FichaExportada[] = []
   for (const candidate of candidates) {
@@ -38,6 +39,7 @@ try {
         incumbents.get(candidate.id),
         parliament.get(candidate.id),
         editorial,
+        history.get(candidate.id) ?? [],
       ),
     )
   }
@@ -98,6 +100,8 @@ function toCsv(rows: readonly FichaExportada[]): string {
     'camara_despesas_total_reais',
     'camara_despesas_por_ano',
     'senado_legislaturas',
+    'historico_posicoes',
+    'historico_posicoes_total',
     'voto_reforma-tributaria',
     'voto_marco-temporal',
     'voto_plataformas',

@@ -12,6 +12,7 @@ import { DatabaseSync, type SQLInputValue } from 'node:sqlite'
 import type { CandidateRecord, Source } from '../shared/domain.ts'
 import { candidateChecksum } from './tse/normalize.ts'
 import type { ParliamentaryData } from './parliament/types.ts'
+import type { PoliticalMandate } from './tse/history.ts'
 
 export type UpsertStatus = 'inserted' | 'updated' | 'unchanged'
 
@@ -226,6 +227,20 @@ function createSchema(db: DatabaseSync): void {
       voto TEXT,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (candidate_id, votacao_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS political_mandates (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      ano INTEGER NOT NULL,
+      cargo TEXT NOT NULL,
+      uf TEXT,
+      municipio TEXT,
+      partido_sigla TEXT,
+      status TEXT NOT NULL,
+      turno INTEGER NOT NULL DEFAULT 0,
+      sq_candidato TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, ano, cargo, turno)
     );
   `)
 }
@@ -890,5 +905,97 @@ export function listParliamentary(
   for (const mandate of mandates) get(mandate.candidateId).mandates.push(mandate)
   for (const record of records) get(record.candidateId).records.push(record)
   for (const vote of votes) get(vote.candidateId).votes.push(vote)
+  return byCandidate
+}
+
+interface PoliticalMandateDbRow {
+  candidate_id: string
+  ano: number
+  cargo: string
+  uf: string | null
+  municipio: string | null
+  partido_sigla: string | null
+  status: string
+  turno: number
+  sq_candidato: string | null
+  updated_at: string
+}
+
+function toPoliticalMandateRow(row: PoliticalMandateDbRow): PoliticalMandate {
+  return {
+    candidateId: row.candidate_id,
+    ano: row.ano,
+    cargo: row.cargo,
+    uf: row.uf,
+    municipio: row.municipio,
+    partidoSigla: row.partido_sigla,
+    status: row.status as PoliticalMandate['status'],
+    turno: row.turno,
+    sqCandidato: row.sq_candidato,
+  }
+}
+
+/**
+ * Substitui todo o histórico de posições políticas (eleitos + suplentes) de
+ * uma vez, em transação. O script de sincronização recalcula o conjunto inteiro.
+ */
+export function replacePoliticalMandates(db: DatabaseSync, data: PoliticalMandate[]): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM political_mandates`).run()
+    const stmt = db.prepare(
+      `INSERT INTO political_mandates (
+        candidate_id, ano, cargo, uf, municipio, partido_sigla, status, turno, sq_candidato, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const mandate of data) {
+      stmt.run(
+        mandate.candidateId,
+        mandate.ano,
+        mandate.cargo,
+        mandate.uf ?? null,
+        mandate.municipio ?? null,
+        mandate.partidoSigla ?? null,
+        mandate.status,
+        mandate.turno,
+        mandate.sqCandidato ?? null,
+        now,
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+/** Posições políticas anteriores de um candidato (ordenadas por ano/cargo). */
+export function getPoliticalMandates(
+  db: DatabaseSync,
+  candidateId: string,
+): PoliticalMandate[] {
+  return (
+    db.prepare(
+      `SELECT * FROM political_mandates WHERE candidate_id = ? ORDER BY ano, cargo`,
+    ).all(candidateId) as unknown as PoliticalMandateDbRow[]
+  ).map(toPoliticalMandateRow)
+}
+
+/** Mapa candidateId -> posições políticas anteriores (para server/export). */
+export function listPoliticalMandates(db: DatabaseSync): Map<string, PoliticalMandate[]> {
+  const rows = (
+    db.prepare(`SELECT * FROM political_mandates ORDER BY ano, cargo`).all() as unknown as PoliticalMandateDbRow[]
+  )
+  const byCandidate = new Map<string, PoliticalMandate[]>()
+  for (const row of rows) {
+    const mandate = toPoliticalMandateRow(row)
+    const list = byCandidate.get(mandate.candidateId)
+    if (list) {
+      list.push(mandate)
+    } else {
+      byCandidate.set(mandate.candidateId, [mandate])
+    }
+  }
   return byCandidate
 }

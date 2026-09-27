@@ -37,19 +37,23 @@ src/
 │   └── FairnessScreen.tsx    Auditoria de imparcialidade
 ├── data-sources/
 │   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes,
-│   │                         mandatos, registros, votos, auditoria
-│   ├── tse/                  Adaptadores do TSE (CSV, candidatos, complementar, bens, redes, fotos)
+│   │                         mandatos, registros, votos, posições anteriores,
+│   │                         auditoria
+│   ├── tse/                  Adaptadores do TSE (CSV, candidatos, complementar, bens,
+│   │                         redes, fotos, histórico de posições 2004–2024)
 │   ├── camara/               Adaptadores da Câmara (deputados, identidade, registros,
 │   │                         Senado) para a ficha comparável
 │   └── parliament/           Montagem do histórico parlamentar + export da ficha
 └── App.tsx                   A máquina de estados das telas
 server/index.ts               API HTTP (node:http): candidatos, ficha detalhada + fotos
-scripts/                      ingestão, incumbentes, sincronização parlamentar, export
-                              da ficha, auditoria, dev runner e testes
+scripts/                      ingestão, incumbentes, sincronização parlamentar e de
+                              histórico de posições, export da ficha, auditoria, dev
+                              runner e testes
 ```
 
-> A **ficha comparável** (histórico parlamentar, votações, posições e fontes) é
-> descrita em [`docs/ficha-comparavel.md`](ficha-comparavel.md).
+> A **ficha comparável** (histórico parlamentar, votações, posições, histórico
+> de posições anteriores e fontes) é descrita em
+> [`docs/ficha-comparavel.md`](ficha-comparavel.md).
 
 ## O quiz é data-driven
 
@@ -81,7 +85,8 @@ pergunta(0) ──▶ … ──▶ resultado ──▶ imparcialidade
 - A tela de resultado oferece reinício, auditoria de imparcialidade e a ficha
   de cada candidato (também acessível pela lista de candidatos).
 - A **ficha do candidato** (`CandidateDetailScreen`) tem abas de Resumo
-  (dados do TSE), Mandato e histórico, Votações, Posições e Fontes
+  (dados do TSE), Mandato e histórico, Posições anteriores, Votações, Posições
+  e Fontes.
 
 ## O modelo de pontuação
 
