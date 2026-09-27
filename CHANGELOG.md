@@ -9,6 +9,33 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Ficha comparável por candidato** (`docs/ficha-comparavel.md`): para cada um
+  dos 428 candidatos, fatos oficiais (TSE + Câmara + Senado) e registros
+  editoriais separados por camada, com a regra de ouro de que o padrão é
+  "não encontrei evidência suficiente".
+  - **Histórico parlamentar** (`npm run sync:parliament`): mandatos (Câmara por
+    legislatura, ex-senadores via Senado), proposições de autoria por ano,
+    comissões, despesas reembolsadas e **votos nominais em votações-chave**
+    (reforma tributária, marco temporal, regulação das plataformas); tabelas
+    `parliamentary_mandates`, `parliamentary_records` e `votes`, com
+    sincronização idempotente e tolerante a falhas (70 mandatos, 41 registros,
+    117 votos para 39 candidatos com histórico).
+  - **Página de ficha no app** (`CandidateDetailScreen`, abas Resumo/Mandato/
+    Votações/Posições/Fontes), acessível pela lista de candidatos e pelo
+    resultado do quiz; `GET /api/candidates/:id` estende o detalhe com
+    histórico parlamentar e editorial.
+  - **Export aberto** (`npm run export:ficha`): CSV (`;`, BOM) e JSON com os
+    428 candidatos em `data/ficha/`.
+  - **Camada editorial** (`content/editorial/<id>.json`, templates gerados por
+    `npm run editorial:templates`): posições com tipo de evidência e fonte.
+  - Testes novos (`scripts/parliament.test.ts`) para senado/identidade/export —
+    58 testes no total.
+
+### Alterado
+
+- Lista de candidatos usa a ficha de detalhe; a tela de detalhe disponibiliza
+  abas com fontes oficiais e links para os registros (Câmara, Senado e Dados
+  Abertos).
 - **Quiz data-driven com os 428 candidatos reais** (2026, PR, Deputado Federal):
   5 perguntas cujos perfis são derivados de dados oficiais do TSE por
   resolvedores puros (`src/data/quiz-source.ts`), com proveniência por resposta.

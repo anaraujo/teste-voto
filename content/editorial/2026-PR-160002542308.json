@@ -1,0 +1,55 @@
+{
+  "campos": {
+    "principais-propostas": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "saude": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "educacao": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "seguranca": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "economia": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "meio-ambiente": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "trabalho": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "ciencia-tecnologia": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "cultura": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    },
+    "posicionamentos": {
+      "valor": "",
+      "tipo": "sem-evidencia",
+      "fonte": null
+    }
+  },
+  "updatedAt": null
+}

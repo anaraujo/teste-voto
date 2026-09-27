@@ -6,6 +6,7 @@ import { rankResults } from './lib/scoring.ts'
 import { useCandidates } from './hooks/useCandidates.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
+import { CandidateDetailScreen } from './components/CandidateDetailScreen.tsx'
 import { FairnessScreen } from './components/FairnessScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
 import { ResultScreen } from './components/ResultScreen.tsx'
@@ -14,6 +15,7 @@ import { StartScreen } from './components/StartScreen.tsx'
 type Screen =
   | { name: 'start' }
   | { name: 'candidates' }
+  | { name: 'candidate'; id: string }
   | { name: 'question'; index: number }
   | { name: 'result' }
   | { name: 'fairness' }
@@ -36,6 +38,10 @@ function App() {
   )
 
   const handleStart = () => setScreen({ name: 'question', index: 0 })
+
+  const showCandidate = (id: string) => setScreen({ name: 'candidate', id })
+  const backFromCandidate = () =>
+    setScreen(screen.name === 'candidate' ? { name: 'candidates' } : { name: 'start' })
 
   const handleAnswer = (optionId: OptionId) => {
     if (screen.name !== 'question') return
@@ -80,6 +86,14 @@ function App() {
           state={candidatesState as CandidatesLoadState}
           onRetry={retryCandidates}
           onBack={() => setScreen({ name: 'start' })}
+          onShowCandidate={showCandidate}
+        />
+      )}
+
+      {screen.name === 'candidate' && (
+        <CandidateDetailScreen
+          candidateId={screen.id}
+          onBack={backFromCandidate}
         />
       )}
 
@@ -101,6 +115,7 @@ function App() {
             questions={questions}
             onRestart={handleRestart}
             onShowFairness={() => setScreen({ name: 'fairness' })}
+            onShowCandidate={showCandidate}
           />
         ) : (
           <section>

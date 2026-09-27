@@ -1,35 +1,13 @@
 import type { ApiCandidate } from '../shared/api.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
+import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
   onRetry: () => void
   onBack: () => void
+  onShowCandidate: (candidateId: string) => void
 }
-
-/** Converte data ISO "AAAA-MM-DD" em "DD/MM/AAAA". */
-function formatDate(iso: string): string {
-  const [year, month, day] = iso.split('-')
-  return `${day}/${month}/${year}`
-}
-
-/** Idade em 04/10/2026 (data da eleição), a partir da data de nascimento. */
-function ageAtElection(birthDate: string | null): number | null {
-  if (!birthDate) return null
-  const birth = new Date(birthDate)
-  if (Number.isNaN(birth.getTime())) return null
-  const election = new Date('2026-10-04T00:00:00Z')
-  let age = election.getUTCFullYear() - birth.getUTCFullYear()
-  const birthdayThisYear = new Date(election)
-  birthdayThisYear.setUTCFullYear(birth.getUTCFullYear())
-  if (birthdayThisYear.getTime() < birth.getTime()) age -= 1
-  return age
-}
-
-const brl = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
 
 /** Agremiação: federação, partido isolado ou tipo de agremiação. */
 function formatCandidacy(candidate: ApiCandidate): string | null {
@@ -42,6 +20,7 @@ export function CandidatesScreen({
   state,
   onRetry,
   onBack,
+  onShowCandidate,
 }: CandidatesScreenProps) {
   return (
     <section>
@@ -119,6 +98,11 @@ export function CandidatesScreen({
                 const candidacy = formatCandidacy(candidate)
                 return (
                   <li key={candidate.id}>
+                    <p>
+                      <button type="button" onClick={() => onShowCandidate(candidate.id)}>
+                        Ver ficha
+                      </button>
+                    </p>
                     {candidate.photoUrl && (
                       <img
                         src={candidate.photoUrl}
@@ -213,7 +197,7 @@ export function CandidatesScreen({
                         {candidate.totalAssets !== null && (
                           <div>
                             <dt>Bens declarados</dt>
-                            <dd>{brl.format(candidate.totalAssets)}</dd>
+                            <dd>{formatBRL(candidate.totalAssets)}</dd>
                           </div>
                         )}
                         {candidate.accountsDeclared === false && (

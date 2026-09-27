@@ -11,6 +11,7 @@ interface ResultScreenProps {
   questions: readonly Question[]
   onRestart: () => void
   onShowFairness: () => void
+  onShowCandidate: (candidateId: string) => void
 }
 
 const TOP_COUNT = 10
@@ -22,6 +23,7 @@ export function ResultScreen({
   questions,
   onRestart,
   onShowFairness,
+  onShowCandidate,
 }: ResultScreenProps) {
   const [showAll, setShowAll] = useState(false)
   const first = ranked[0]
@@ -61,6 +63,11 @@ export function ResultScreen({
               </summary>
               <p>
                 <small>{candidate.description}</small>
+              </p>
+              <p>
+                <button type="button" onClick={() => onShowCandidate(candidate.id)}>
+                  Ver ficha do candidato
+                </button>
               </p>
               <ul>
                 {questionMatches(answers, questions, candidate).map(

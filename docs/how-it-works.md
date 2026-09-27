@@ -36,13 +36,20 @@ src/
 │   ├── ResultScreen.tsx      Ranking completo dos candidatos
 │   └── FairnessScreen.tsx    Auditoria de imparcialidade
 ├── data-sources/
-│   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes, auditoria
+│   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes,
+│   │                         mandatos, registros, votos, auditoria
 │   ├── tse/                  Adaptadores do TSE (CSV, candidatos, complementar, bens, redes, fotos)
-│   └── camara/               Adaptador da Câmara (deputados + identidade/incumbentes)
+│   ├── camara/               Adaptadores da Câmara (deputados, identidade, registros,
+│   │                         Senado) para a ficha comparável
+│   └── parliament/           Montagem do histórico parlamentar + export da ficha
 └── App.tsx                   A máquina de estados das telas
-server/index.ts               API HTTP (node:http): candidatos + fotos
-scripts/                      ingestão, incumbentes, dev runner, auditoria e testes
+server/index.ts               API HTTP (node:http): candidatos, ficha detalhada + fotos
+scripts/                      ingestão, incumbentes, sincronização parlamentar, export
+                              da ficha, auditoria, dev runner e testes
 ```
+
+> A **ficha comparável** (histórico parlamentar, votações, posições e fontes) é
+> descrita em [`docs/ficha-comparavel.md`](ficha-comparavel.md).
 
 ## O quiz é data-driven
 
@@ -62,16 +69,19 @@ As 5 dimensões e a distribuição real sobre os 428 candidatos estão em
 `App.tsx` é uma máquina de estados pequena.
 
 ```
-início ──▶ candidatos ──┐
-   │                    │
-   ▼                    ▼
+início ──▶ candidatos ──▶ ficha do candidato
+   │                        ▲
+   ▼                        │
 pergunta(0) ──▶ … ──▶ resultado ──▶ imparcialidade
-   ▲                             │
-   └──────────── reinício ◀──────┘
+   ▲                             │        │
+   └──────────── reinício ◀──────┘◀───────┘
 ```
 
 - As respostas acumulam em um `Record<QuestionId, OptionId>`.
-- A tela de resultado oferece reinício e auditoria de imparcialidade.
+- A tela de resultado oferece reinício, auditoria de imparcialidade e a ficha
+  de cada candidato (também acessível pela lista de candidatos).
+- A **ficha do candidato** (`CandidateDetailScreen`) tem abas de Resumo
+  (dados do TSE), Mandato e histórico, Votações, Posições e Fontes
 
 ## O modelo de pontuação
 

@@ -34,6 +34,7 @@ export interface ApiCandidate {
   birthMunicipality: string | null
   isReelection: boolean | null
   totalAssets: number | null
+  assetsDeclared: boolean | null
   socialLinks: string[]
   quilombola: boolean | null
   indigenousEthnicity: string | null
@@ -49,6 +50,51 @@ export interface ApiCandidatesResponse {
   candidates: ApiCandidate[]
 }
 
+export interface ApiMandate {
+  casa: 'camara' | 'senado'
+  legislatura: string
+  idParlamentar: number
+  nomeParlamentar: string
+  partido: string | null
+  uf: string | null
+  dataInicio: string | null
+  dataFim: string | null
+}
+
+export interface ApiComissao {
+  sigla: string
+  nome: string
+}
+
+export interface ApiParliamentaryRecord {
+  casa: 'camara' | 'senado'
+  proposicoesPorAno: Record<string, number>
+  comissoes: ApiComissao[]
+  despesasPorAno: Record<string, number>
+}
+
+export interface ApiVote {
+  votacaoId: string
+  tema: string
+  rotulo: string
+  proposicao: string
+  data: string
+  casa: 'camara' | 'senado'
+  voto: string | null
+}
+
+export interface ApiEditorialField {
+  valor: string
+  tipo: string
+  fonte: string | null
+}
+
+export interface ApiParliamentary {
+  mandates: ApiMandate[]
+  records: ApiParliamentaryRecord[]
+  votes: ApiVote[]
+}
+
 export interface ApiCandidateDetail extends ApiCandidate {
   campaignStatus: string | null
   nationality: string | null
@@ -58,4 +104,8 @@ export interface ApiCandidateDetail extends ApiCandidate {
   campaignSpendingCap: number | null
   importedAt: string
   updatedAt: string
+  /** Histórico parlamentar (Câmara/Senado); null quando não há histórico. */
+  parliamentary: ApiParliamentary | null
+  /** Posições/propostas editoriais; null quando não há ficha editorial. */
+  editorial: Record<string, ApiEditorialField> | null
 }

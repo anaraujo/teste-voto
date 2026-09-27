@@ -43,6 +43,7 @@ function apiCandidate(
     birthMunicipality: 'CURITIBA',
     isReelection: null,
     totalAssets: null,
+    assetsDeclared: null,
     socialLinks: [],
     quilombola: null,
     indigenousEthnicity: null,

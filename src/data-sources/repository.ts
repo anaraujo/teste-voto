@@ -11,6 +11,7 @@ import { dirname } from 'node:path'
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite'
 import type { CandidateRecord, Source } from '../shared/domain.ts'
 import { candidateChecksum } from './tse/normalize.ts'
+import type { ParliamentaryData } from './parliament/types.ts'
 
 export type UpsertStatus = 'inserted' | 'updated' | 'unchanged'
 
@@ -188,6 +189,43 @@ function createSchema(db: DatabaseSync): void {
       camara_party_acronym TEXT,
       camara_photo_url TEXT,
       updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS parliamentary_mandates (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      casa TEXT NOT NULL,
+      legislatura TEXT NOT NULL,
+      id_parlamentar INTEGER NOT NULL,
+      nome_parlamentar TEXT NOT NULL,
+      partido TEXT,
+      uf TEXT,
+      data_inicio TEXT,
+      data_fim TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, casa, legislatura)
+    );
+
+    CREATE TABLE IF NOT EXISTS parliamentary_records (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      casa TEXT NOT NULL,
+      proposicoes_por_ano TEXT NOT NULL DEFAULT '{}',
+      comissoes TEXT,
+      despesas_por_ano TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, casa)
+    );
+
+    CREATE TABLE IF NOT EXISTS votes (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      votacao_id TEXT NOT NULL,
+      tema TEXT NOT NULL,
+      rotulo TEXT NOT NULL,
+      proposicao TEXT NOT NULL,
+      data TEXT NOT NULL,
+      casa TEXT NOT NULL,
+      voto TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, votacao_id)
     );
   `)
 }
@@ -637,4 +675,220 @@ export function listIncumbents(db: DatabaseSync): Map<string, IncumbentRow> {
     map.set(row.candidate_id, toIncumbentRow(row))
   }
   return map
+}
+
+interface MandateDbRow {
+  candidate_id: string
+  casa: string
+  legislatura: string
+  id_parlamentar: number
+  nome_parlamentar: string
+  partido: string | null
+  uf: string | null
+  data_inicio: string | null
+  data_fim: string | null
+  updated_at: string
+}
+
+interface RecordDbRow {
+  candidate_id: string
+  casa: string
+  proposicoes_por_ano: string
+  comissoes: string | null
+  despesas_por_ano: string | null
+  updated_at: string
+}
+
+interface VoteDbRow {
+  candidate_id: string
+  votacao_id: string
+  tema: string
+  rotulo: string
+  proposicao: string
+  data: string
+  casa: string
+  voto: string | null
+  updated_at: string
+}
+
+function parseJsonObject(value: string | null): Record<string, number> {
+  if (!value) return {}
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, number>
+    }
+  } catch {
+    // ignora e devolve vazio
+  }
+  return {}
+}
+
+function toMandateRow(row: MandateDbRow): ParliamentaryData['mandates'][number] {
+  return {
+    candidateId: row.candidate_id,
+    casa: row.casa as 'camara',
+    legislatura: row.legislatura,
+    idParlamentar: row.id_parlamentar,
+    nomeParlamentar: row.nome_parlamentar,
+    partido: row.partido,
+    uf: row.uf,
+    dataInicio: row.data_inicio,
+    dataFim: row.data_fim,
+  }
+}
+
+function toRecordRow(row: RecordDbRow): ParliamentaryData['records'][number] {
+  const comissoes = row.comissoes ? ((JSON.parse(row.comissoes) as unknown[]) ?? []) : []
+  return {
+    candidateId: row.candidate_id,
+    casa: row.casa as 'camara',
+    proposicoesPorAno: parseJsonObject(row.proposicoes_por_ano),
+    comissoes: comissoes.map((item) => item as { sigla: string; nome: string }),
+    despesasPorAno: parseJsonObject(row.despesas_por_ano),
+  }
+}
+
+function toVoteRow(row: VoteDbRow): ParliamentaryData['votes'][number] {
+  return {
+    candidateId: row.candidate_id,
+    votacaoId: row.votacao_id,
+    tema: row.tema,
+    rotulo: row.rotulo,
+    proposicao: row.proposicao,
+    data: row.data,
+    casa: row.casa as 'camara',
+    voto: row.voto as ParliamentaryData['votes'][number]['voto'],
+  }
+}
+
+/**
+ * Substitui toda a camada parlamentar (mandatos, métricas e votos) de uma
+ * vez, em transação. O script de sincronização recalcula o conjunto inteiro.
+ */
+export function replaceParliamentary(db: DatabaseSync, data: ParliamentaryData): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM votes`).run()
+    db.prepare(`DELETE FROM parliamentary_records`).run()
+    db.prepare(`DELETE FROM parliamentary_mandates`).run()
+
+    const mandateStmt = db.prepare(
+      `INSERT INTO parliamentary_mandates (
+        candidate_id, casa, legislatura, id_parlamentar, nome_parlamentar,
+        partido, uf, data_inicio, data_fim, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    for (const mandate of data.mandates) {
+      mandateStmt.run(
+        mandate.candidateId,
+        mandate.casa,
+        mandate.legislatura,
+        mandate.idParlamentar,
+        mandate.nomeParlamentar,
+        mandate.partido ?? null,
+        mandate.uf ?? null,
+        mandate.dataInicio ?? null,
+        mandate.dataFim ?? null,
+        new Date().toISOString(),
+      )
+    }
+
+    const recordStmt = db.prepare(
+      `INSERT INTO parliamentary_records (
+        candidate_id, casa, proposicoes_por_ano, comissoes, despesas_por_ano, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    for (const record of data.records) {
+      recordStmt.run(
+        record.candidateId,
+        record.casa,
+        JSON.stringify(record.proposicoesPorAno),
+        record.comissoes.length > 0 ? JSON.stringify(record.comissoes) : null,
+        Object.keys(record.despesasPorAno).length > 0
+          ? JSON.stringify(record.despesasPorAno)
+          : null,
+        new Date().toISOString(),
+      )
+    }
+
+    const voteStmt = db.prepare(
+      `INSERT INTO votes (
+        candidate_id, votacao_id, tema, rotulo, proposicao, data, casa, voto, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    for (const vote of data.votes) {
+      voteStmt.run(
+        vote.candidateId,
+        vote.votacaoId,
+        vote.tema,
+        vote.rotulo,
+        vote.proposicao,
+        vote.data,
+        vote.casa,
+        vote.voto ?? null,
+        new Date().toISOString(),
+      )
+    }
+
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+/** Dados parlamentares de um candidato (vazios quando não há histórico). */
+export function getParliamentary(
+  db: DatabaseSync,
+  candidateId: string,
+): { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] } {
+  const mandates = (
+    db.prepare(
+      `SELECT * FROM parliamentary_mandates WHERE candidate_id = ? ORDER BY legislatura`,
+    ).all(candidateId) as unknown as MandateDbRow[]
+  ).map(toMandateRow)
+  const records = (
+    db.prepare(
+      `SELECT * FROM parliamentary_records WHERE candidate_id = ?`,
+    ).all(candidateId) as unknown as RecordDbRow[]
+  ).map(toRecordRow)
+  const votes = (
+    db.prepare(
+      `SELECT * FROM votes WHERE candidate_id = ? ORDER BY data`,
+    ).all(candidateId) as unknown as VoteDbRow[]
+  ).map(toVoteRow)
+  return { mandates, records, votes }
+}
+
+/** Retorna um mapa candidateId -> dados parlamentares (para server/export). */
+export function listParliamentary(
+  db: DatabaseSync,
+): Map<string, { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] }> {
+  const mandates = (
+    db.prepare(`SELECT * FROM parliamentary_mandates`).all() as unknown as MandateDbRow[]
+  ).map(toMandateRow)
+  const records = (
+    db.prepare(`SELECT * FROM parliamentary_records`).all() as unknown as RecordDbRow[]
+  ).map(toRecordRow)
+  const votes = (
+    db.prepare(`SELECT * FROM votes`).all() as unknown as VoteDbRow[]
+  ).map(toVoteRow)
+
+  const byCandidate = new Map<
+    string,
+    { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] }
+  >()
+  const get = (candidateId: string) => {
+    let entry = byCandidate.get(candidateId)
+    if (!entry) {
+      entry = { mandates: [], records: [], votes: [] }
+      byCandidate.set(candidateId, entry)
+    }
+    return entry
+  }
+  for (const mandate of mandates) get(mandate.candidateId).mandates.push(mandate)
+  for (const record of records) get(record.candidateId).records.push(record)
+  for (const vote of votes) get(vote.candidateId).votes.push(vote)
+  return byCandidate
 }
