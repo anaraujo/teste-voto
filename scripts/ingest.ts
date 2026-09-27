@@ -15,6 +15,14 @@ import type { CandidateRecord } from '../src/shared/domain.ts'
 import { candidateId } from '../src/shared/domain.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
 import { fetchCandidates, type FetchOptions } from '../src/data-sources/tse/candidates.ts'
+import { fetchComplementary } from '../src/data-sources/tse/complementar.ts'
+import { fetchCandidateAssets } from '../src/data-sources/tse/assets.ts'
+import { fetchCandidateSocialLinks } from '../src/data-sources/tse/social.ts'
+import {
+  applyAssets,
+  applyComplementary,
+  applySocialLinks,
+} from '../src/data-sources/tse/enrich.ts'
 import { inspectCsv } from '../src/data-sources/tse/schema.ts'
 import { normalizeCandidate } from '../src/data-sources/tse/normalize.ts'
 import {
@@ -209,6 +217,9 @@ async function runIngest(options: FetchOptions): Promise<void> {
     error: null,
   })
 
+  await syncComplementary(db, election, options)
+  await syncAssets(db, election, options)
+  await syncSocial(db, election, options)
   await syncPhotos(db, election, options)
 
   const count = listCandidates(db, {
@@ -218,6 +229,114 @@ async function runIngest(options: FetchOptions): Promise<void> {
   }).length
   log(`${count} candidatos ativos no banco local (${dbPath})`)
   db.close()
+}
+
+async function syncComplementary(
+  db: Awaited<ReturnType<typeof openRepository>>,
+  election: typeof CURRENT_ELECTION,
+  options: FetchOptions,
+): Promise<void> {
+  log(`sincronizando dados complementares do TSE (${election.datasets.complementar.dataset})`)
+  try {
+    const { items, source } = await fetchComplementary(election, {
+      dataDir: options.dataDir,
+      force: options.force,
+    })
+    const bySequence = new Map(items.map((item) => [item.tseSequence, item]))
+
+    const candidates = listCandidates(db, {
+      electionYear: election.year,
+      state: election.state,
+      office: election.office,
+    })
+
+    let matched = 0
+    for (const candidate of candidates) {
+      const summary = bySequence.get(candidate.tseSequence)
+      const enriched = applyComplementary(candidate, {
+        tseSequence: candidate.tseSequence,
+        birthMunicipality: summary?.birthMunicipality ?? null,
+        quilombola: summary?.quilombola ?? null,
+        indigenousEthnicity: summary?.indigenousEthnicity ?? null,
+        inBallot: summary?.inBallot ?? null,
+        substituted: summary?.substituted ?? null,
+        accountsDeclared: summary?.accountsDeclared ?? null,
+        assetsDeclared: summary?.assetsDeclared ?? null,
+        isReelection: summary?.isReelection ?? null,
+        campaignSpendingCap: summary?.campaignSpendingCap ?? null,
+      })
+      const updated = { ...enriched, source }
+      upsertCandidate(db, updated)
+      if (summary) matched++
+    }
+    log(`complementar: ${matched} candidatos enriquecidos (fonte ${source.dataset})`)
+  } catch (error) {
+    logError(error)
+  }
+}
+
+async function syncAssets(
+  db: Awaited<ReturnType<typeof openRepository>>,
+  election: typeof CURRENT_ELECTION,
+  options: FetchOptions,
+): Promise<void> {
+  log(`sincronizando bens declarados (${election.datasets.assets.dataset})`)
+  try {
+    const { items, source } = await fetchCandidateAssets(election, {
+      dataDir: options.dataDir,
+      force: options.force,
+    })
+    const bySequence = new Map(items.map((item) => [item.tseSequence, item]))
+
+    const candidates = listCandidates(db, {
+      electionYear: election.year,
+      state: election.state,
+      office: election.office,
+    })
+
+    let matched = 0
+    for (const candidate of candidates) {
+      const summary = bySequence.get(candidate.tseSequence)
+      const updated = { ...applyAssets(candidate, summary?.totalAssets ?? null), source }
+      upsertCandidate(db, updated)
+      if (summary) matched++
+    }
+    log(`bens: ${matched}/${candidates.length} candidatos com bens no arquivo`)
+  } catch (error) {
+    logError(error)
+  }
+}
+
+async function syncSocial(
+  db: Awaited<ReturnType<typeof openRepository>>,
+  election: typeof CURRENT_ELECTION,
+  options: FetchOptions,
+): Promise<void> {
+  log(`sincronizando redes sociais (${election.datasets.social.dataset})`)
+  try {
+    const { items, source } = await fetchCandidateSocialLinks(election, {
+      dataDir: options.dataDir,
+      force: options.force,
+    })
+    const bySequence = new Map(items.map((item) => [item.tseSequence, item]))
+
+    const candidates = listCandidates(db, {
+      electionYear: election.year,
+      state: election.state,
+      office: election.office,
+    })
+
+    let matched = 0
+    for (const candidate of candidates) {
+      const summary = bySequence.get(candidate.tseSequence)
+      const updated = { ...applySocialLinks(candidate, summary?.socialLinks ?? []), source }
+      upsertCandidate(db, updated)
+      if (summary) matched++
+    }
+    log(`redes: ${matched}/${candidates.length} candidatos com link no arquivo`)
+  } catch (error) {
+    logError(error)
+  }
 }
 
 async function syncPhotos(

@@ -31,6 +31,15 @@ export interface ApiCandidate {
   status: string | null
   city: string | null
   photoUrl: string | null
+  birthMunicipality: string | null
+  isReelection: boolean | null
+  totalAssets: number | null
+  socialLinks: string[]
+  quilombola: boolean | null
+  indigenousEthnicity: string | null
+  accountsDeclared: boolean | null
+  isIncumbent: boolean
+  camaraPartyAcronym: string | null
   source: Source
 }
 
@@ -44,7 +53,9 @@ export interface ApiCandidateDetail extends ApiCandidate {
   campaignStatus: string | null
   nationality: string | null
   email: string | null
-  totalAssets: number | null
+  inBallot: boolean | null
+  substituted: boolean | null
+  campaignSpendingCap: number | null
   importedAt: string
   updatedAt: string
 }

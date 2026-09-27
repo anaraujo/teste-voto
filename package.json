@@ -9,11 +9,12 @@
     "start": "node --experimental-strip-types scripts/dev.ts",
     "api": "node --experimental-sqlite --experimental-strip-types server/index.ts",
     "ingest": "node --experimental-sqlite --experimental-strip-types scripts/ingest.ts",
-    "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts",
+    "sync:incumbents": "node --experimental-sqlite --experimental-strip-types scripts/sync-incumbents.ts",
+    "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts scripts/quiz-source.test.ts scripts/scoring.test.ts scripts/complementar.test.ts scripts/identity.test.ts",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check:distribution": "node --experimental-strip-types scripts/check-distribution.ts"
+    "check:distribution": "node --experimental-sqlite --experimental-strip-types scripts/check-distribution.ts"
   },
   "dependencies": {
     "react": "^19.2.8",

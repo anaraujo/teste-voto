@@ -92,6 +92,15 @@ export function normalizeCandidate(
     maritalStatus: clean(raw.maritalStatus),
     birthState: clean(raw.birthState),
     federation: clean(raw.federation),
+    birthMunicipality: null,
+    quilombola: null,
+    indigenousEthnicity: null,
+    inBallot: null,
+    substituted: null,
+    accountsDeclared: null,
+    assetsDeclared: null,
+    isReelection: null,
+    campaignSpendingCap: null,
   }
 }
 
@@ -122,5 +131,16 @@ export function candidateChecksum(
     maritalStatus: candidate.maritalStatus,
     birthState: candidate.birthState,
     federation: candidate.federation,
+    totalAssets: candidate.totalAssets,
+    socialLinks: candidate.socialLinks,
+    birthMunicipality: candidate.birthMunicipality,
+    quilombola: candidate.quilombola,
+    indigenousEthnicity: candidate.indigenousEthnicity,
+    inBallot: candidate.inBallot,
+    substituted: candidate.substituted,
+    accountsDeclared: candidate.accountsDeclared,
+    assetsDeclared: candidate.assetsDeclared,
+    isReelection: candidate.isReelection,
+    campaignSpendingCap: candidate.campaignSpendingCap,
   })
 }

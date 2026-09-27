@@ -30,7 +30,7 @@ export interface ElectionConfig {
     candidates: DatasetDescriptor
     assets: DatasetDescriptor
     social: DatasetDescriptor
-    history: DatasetDescriptor
+    complementar: DatasetDescriptor
     photos: DatasetDescriptor
   }
 }
@@ -59,10 +59,10 @@ export const CURRENT_ELECTION: ElectionConfig = {
       dataset: 'redes_sociais',
       sourceFileMatch: 'rede_social_candidato_2026_PR',
     },
-    history: {
-      url: CANDIDATES_2026_URL,
-      dataset: 'historico_candidaturas',
-      sourceFileMatch: 'consulta_cand_2026_complementar_PR',
+    complementar: {
+      url: 'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip',
+      dataset: 'candidatos_complementar',
+      sourceFileMatch: 'consulta_cand_complementar_2026_PR',
     },
     photos: {
       url: 'https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2026/fotos/foto_cand2026_PR_div.zip',

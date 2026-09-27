@@ -27,9 +27,6 @@ export function QuestionStep({
           type="button"
           onClick={() => onAnswer(option.id)}
         >
-          {option.photo && (
-            <img src={option.photo} alt="" width="200" height="150" />
-          )}
           <span>{option.label}</span>
         </button>
       ))}

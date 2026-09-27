@@ -9,7 +9,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { ElectionConfig } from '../../shared/elections.ts'
+import type { DatasetDescriptor, ElectionConfig } from '../../shared/elections.ts'
 import { parseCsv, type ParsedCsv } from './csv.ts'
 import { downloadToFile, extractZip, findEntry, listZipEntries } from './download.ts'
 import {
@@ -54,12 +54,11 @@ function zipNameFromUrl(url: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
 }
 
-export async function loadParsedCsv(
-  election: ElectionConfig,
+export async function loadDescriptorCsv(
+  descriptor: DatasetDescriptor,
   options: FetchOptions,
 ): Promise<{ csv: ParsedCsv; sourceFile: string; downloaded: boolean; validator: string | null }> {
   const dataDir = options.dataDir ?? defaultDataDir()
-  const descriptor = election.datasets.candidates
   const zipName = zipNameFromUrl(descriptor.url)
   const zipPath = join(dataDir, 'download', zipName)
 
@@ -82,6 +81,14 @@ export async function loadParsedCsv(
     downloaded: download.downloaded,
     validator: download.validator,
   }
+}
+
+/** Carrega o dataset de candidatos, núcleo da ingestão. */
+export async function loadParsedCsv(
+  election: ElectionConfig,
+  options: FetchOptions,
+): Promise<{ csv: ParsedCsv; sourceFile: string; downloaded: boolean; validator: string | null }> {
+  return loadDescriptorCsv(election.datasets.candidates, options)
 }
 
 /**

@@ -9,6 +9,38 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Quiz data-driven com os 428 candidatos reais** (2026, PR, Deputado Federal):
+  5 perguntas cujos perfis são derivados de dados oficiais do TSE por
+  resolvedores puros (`src/data/quiz-source.ts`), com proveniência por resposta.
+  Perguntas: setor (10 opções, por ocupação), mandato anterior (3), faixa
+  etária (4, na data da eleição), agremiação (federação/isolado) e vínculo
+  territorial (nascido no PR ou não).
+- **Desempate por raridade de perfil** no ranking (pontos → raridade → nome),
+  reduzindo a vantagem estrutural de perfis muito comuns.
+- **Auditoria de distribuição sobre os 428 candidatos**
+  (`npm run check:distribution`): cobertura por opção (alvo 5–50%) e vitórias
+  por combinação nas 480 combinações possíveis (máx. observado ≈ 4,6%).
+- **Enriquecimento TSE (Fase B):** ingestão dos datasets complementar, bens e
+  redes por `SQ_CANDIDATO`, com novos campos no modelo/banco (município de
+  nascimento, quilombola, etnia indígena, candidato na urna, substituído,
+  contas/declaração de bens, reeleição `ST_REELEICAO`, teto de gastos, bens
+  declarados e links de redes) e migração automática de schema.
+  - `elections.ts` corrigido: o dataset antes chamado "histórico" agora é o
+    **complementar** real (`consulta_cand_complementar_2026`); colunas de
+    resultado do pleito são ignoradas nesta rodada (decisão documentada).
+- **Incumbentes (Fase C):** adaptador da API de Dados Abertos da Câmara
+  (`siglaUf=PR` + detalhe com data de nascimento), casamento por
+  nome normalizado + data de nascimento (`scripts/sync-incumbents.ts`,
+  `npm run sync:incumbents`), tabela `incumbents` e marcação de
+  "Deputado(a) federal em exercício" na lista (25/428 casados; 5 deputados não
+  concorrem à reeleição nesta eleição).
+- Card de candidato enriquecido: natural de <município (UF)>, idade na eleição,
+  quilombola/etnia indígena, bens declarados (R$) e redes sociais com links.
+- Testes novos: parser do complementar, identidade (casamento Câmara), campos
+  novos do repositório — 51 testes no total.
+- Documentação: `docs/quiz-design.md` (desenho e decisões do quiz, coberturas)
+  e atualizações de `how-it-works`, `authoring-content`, `README` e changelog.
+
 - Na lista de candidatos, resumo por candidato com partido, agremiação
   (federação/partido isolado), ocupação e detalhes expansíveis (`<details>`
   "Mais informações") com escolaridade, estado civil, nascimento (data e UF),
@@ -32,8 +64,6 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   - Modo `--inspect` documenta o schema real do arquivo baixado em
     `docs/tse-schema.md`; `--force` rebaixa os arquivos.
   - Fotos oficiais como dataset opcional (`src/data-sources/tse/images.ts`).
-  - Stubs tipados para bens, redes sociais e histórico (`assets`, `social`,
-    `history`), a serem preenchidos nas próximas rodadas.
 - Camada de configuração de eleições (`src/shared/elections.ts`,
   `ElectionConfig`) com a eleição atual 2026 / PR / Deputado Federal e estrutura
   pronta para futuras eleições e outras UF/cargos.
@@ -49,6 +79,12 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `node:http`, `node:test`.
 - Documentação do schema do TSE (`docs/tse-schema.md`) e exemplo de variáveis
   de ambiente (`.env.example`).
+
+### Alterado
+
+- Lista de candidatos usa o hook `useCandidates` (estados de carregamento/erro/
+  vazio) e remove a foto da etapa de pergunta do quiz.
+- Banco e API expõem os campos de enriquecimento e a incumbência.
 
 ## [0.1.0] - 2026-09-23
 

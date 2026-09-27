@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
-import { candidates, questions } from './data/quiz.ts'
+import { questions } from './data/quiz.ts'
 import type { OptionId, QuestionId } from './data/quiz.ts'
+import { toQuizCandidates } from './data/quiz-source.ts'
 import { rankResults } from './lib/scoring.ts'
+import { useCandidates } from './hooks/useCandidates.ts'
+import type { CandidatesLoadState } from './hooks/useCandidates.ts'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { FairnessScreen } from './components/FairnessScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
@@ -18,10 +21,18 @@ type Screen =
 function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'start' })
   const [answers, setAnswers] = useState<Record<QuestionId, OptionId>>({})
+  const { state: candidatesState, retry: retryCandidates } = useCandidates()
+
+  const apiCandidates = useMemo(
+    () =>
+      candidatesState.status === 'ready' ? candidatesState.data.candidates : [],
+    [candidatesState],
+  )
+  const candidates = useMemo(() => toQuizCandidates(apiCandidates), [apiCandidates])
 
   const ranked = useMemo(
     () => rankResults(answers, questions, candidates),
-    [answers],
+    [answers, candidates],
   )
 
   const handleStart = () => setScreen({ name: 'question', index: 0 })
@@ -52,13 +63,24 @@ function App() {
         <StartScreen
           questionCount={questions.length}
           candidateCount={candidates.length}
+          loading={candidatesState.status === 'loading'}
+          error={
+            candidatesState.status === 'error'
+              ? candidatesState.message
+              : null
+          }
+          onRetry={retryCandidates}
           onStart={handleStart}
           onShowCandidates={() => setScreen({ name: 'candidates' })}
         />
       )}
 
       {screen.name === 'candidates' && (
-        <CandidatesScreen onBack={() => setScreen({ name: 'start' })} />
+        <CandidatesScreen
+          state={candidatesState as CandidatesLoadState}
+          onRetry={retryCandidates}
+          onBack={() => setScreen({ name: 'start' })}
+        />
       )}
 
       {screen.name === 'question' && (
@@ -84,10 +106,7 @@ function App() {
           <section>
             <h2>Não foi possível calcular o resultado</h2>
             <p>Recarregue a página e tente novamente.</p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-            >
+            <button type="button" onClick={() => window.location.reload()}>
               Tentar novamente
             </button>
           </section>

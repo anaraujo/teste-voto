@@ -14,7 +14,7 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, normalize } from 'node:path'
-import { openRepository, listCandidates } from '../src/data-sources/repository.ts'
+import { openRepository, listCandidates, listIncumbents, type IncumbentRow } from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
 import type { ApiCandidate, ApiCandidatesResponse, ApiCandidateDetail } from '../src/shared/api.ts'
@@ -29,7 +29,10 @@ const electionFilter = {
   office: CURRENT_ELECTION.office,
 }
 
-function toApiCandidate(candidate: CandidateRecord): ApiCandidate {
+function toApiCandidate(
+  candidate: CandidateRecord,
+  incumbent: IncumbentRow | undefined,
+): ApiCandidate {
   return {
     id: candidate.id,
     tseSequence: candidate.tseSequence,
@@ -51,17 +54,31 @@ function toApiCandidate(candidate: CandidateRecord): ApiCandidate {
     status: candidate.status,
     city: candidate.city,
     photoUrl: candidate.photoUrl,
+    birthMunicipality: candidate.birthMunicipality,
+    isReelection: candidate.isReelection,
+    totalAssets: candidate.totalAssets,
+    socialLinks: candidate.socialLinks,
+    quilombola: candidate.quilombola,
+    indigenousEthnicity: candidate.indigenousEthnicity,
+    accountsDeclared: candidate.accountsDeclared,
+    isIncumbent: incumbent !== undefined,
+    camaraPartyAcronym: incumbent?.camaraPartyAcronym ?? null,
     source: candidate.source,
   }
 }
 
-function toApiDetail(candidate: CandidateRecord): ApiCandidateDetail {
+function toApiDetail(
+  candidate: CandidateRecord,
+  incumbent: IncumbentRow | undefined,
+): ApiCandidateDetail {
   return {
-    ...toApiCandidate(candidate),
+    ...toApiCandidate(candidate, incumbent),
     campaignStatus: candidate.campaignStatus,
     nationality: candidate.nationality,
     email: candidate.email,
-    totalAssets: candidate.totalAssets,
+    inBallot: candidate.inBallot,
+    substituted: candidate.substituted,
+    campaignSpendingCap: candidate.campaignSpendingCap,
     importedAt: candidate.importedAt,
     updatedAt: candidate.updatedAt,
   }
@@ -131,7 +148,10 @@ async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
   if (urlPath === '/api/candidates') {
     const db = await openRepository(join(DATA_DIR, 'tse.db'))
     try {
-      const candidates = listCandidates(db, electionFilter).map(toApiCandidate)
+      const incumbents = listIncumbents(db)
+      const candidates = listCandidates(db, electionFilter).map((c) =>
+        toApiCandidate(c, incumbents.get(c.id)),
+      )
       const payload: ApiCandidatesResponse = {
         election: {
           year: CURRENT_ELECTION.year,
@@ -158,7 +178,8 @@ async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
         sendError(res, 404, 'candidato não encontrado')
         return
       }
-      sendJson(res, 200, toApiDetail(row))
+      const incumbent = listIncumbents(db).get(id)
+      sendJson(res, 200, toApiDetail(row, incumbent))
     } finally {
       db.close()
     }

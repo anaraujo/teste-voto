@@ -18,6 +18,16 @@ export interface UpsertResult {
   status: UpsertStatus
 }
 
+function bool(value: boolean | null): SQLInputValue {
+  if (value === null) return null
+  return value ? 1 : 0
+}
+
+function toBool(value: number | null): boolean | null {
+  if (value === null) return null
+  return value !== 0
+}
+
 export interface SyncLogEntry {
   election: string
   dataset: string
@@ -63,6 +73,16 @@ interface CandidateRow {
   marital_status: string | null
   birth_state: string | null
   federation: string | null
+  birth_municipality: string | null
+  quilombola: number | null
+  indigenous_ethnicity: string | null
+  in_ballot: number | null
+  substituted: number | null
+  accounts_declared: number | null
+  assets_declared: number | null
+  is_reelection: number | null
+  campaign_spending_cap: number | null
+  social_links: string | null
   source_provider: string
   source_url: string
   source_dataset: string
@@ -112,6 +132,16 @@ function createSchema(db: DatabaseSync): void {
       marital_status TEXT,
       birth_state TEXT,
       federation TEXT,
+      birth_municipality TEXT,
+      quilombola INTEGER,
+      indigenous_ethnicity TEXT,
+      in_ballot INTEGER,
+      substituted INTEGER,
+      accounts_declared INTEGER,
+      assets_declared INTEGER,
+      is_reelection INTEGER,
+      campaign_spending_cap REAL,
+      social_links TEXT,
       source_provider TEXT NOT NULL,
       source_url TEXT NOT NULL,
       source_dataset TEXT NOT NULL,
@@ -150,6 +180,15 @@ function createSchema(db: DatabaseSync): void {
       error TEXT,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS incumbents (
+      candidate_id TEXT PRIMARY KEY REFERENCES candidates(id),
+      camara_id INTEGER NOT NULL,
+      camara_name TEXT NOT NULL,
+      camara_party_acronym TEXT,
+      camara_photo_url TEXT,
+      updated_at TEXT NOT NULL
+    );
   `)
 }
 
@@ -158,6 +197,16 @@ const SCHEMA_MIGRATIONS: Array<{ column: string; ddl: string }> = [
   { column: 'marital_status', ddl: 'TEXT' },
   { column: 'birth_state', ddl: 'TEXT' },
   { column: 'federation', ddl: 'TEXT' },
+  { column: 'birth_municipality', ddl: 'TEXT' },
+  { column: 'quilombola', ddl: 'INTEGER' },
+  { column: 'indigenous_ethnicity', ddl: 'TEXT' },
+  { column: 'in_ballot', ddl: 'INTEGER' },
+  { column: 'substituted', ddl: 'INTEGER' },
+  { column: 'accounts_declared', ddl: 'INTEGER' },
+  { column: 'assets_declared', ddl: 'INTEGER' },
+  { column: 'is_reelection', ddl: 'INTEGER' },
+  { column: 'campaign_spending_cap', ddl: 'REAL' },
+  { column: 'social_links', ddl: 'TEXT' },
 ]
 
 /** Adiciona colunas faltantes a um banco já existente (sem recriar dados). */
@@ -217,6 +266,16 @@ function toColumns(candidate: CandidateRecord) {
     marital_status: candidate.maritalStatus,
     birth_state: candidate.birthState,
     federation: candidate.federation,
+    birth_municipality: candidate.birthMunicipality,
+    quilombola: bool(candidate.quilombola),
+    indigenous_ethnicity: candidate.indigenousEthnicity,
+    in_ballot: bool(candidate.inBallot),
+    substituted: bool(candidate.substituted),
+    accounts_declared: bool(candidate.accountsDeclared),
+    assets_declared: bool(candidate.assetsDeclared),
+    is_reelection: bool(candidate.isReelection),
+    campaign_spending_cap: candidate.campaignSpendingCap,
+    social_links: candidate.socialLinks.length > 0 ? JSON.stringify(candidate.socialLinks) : null,
     source_provider: candidate.source.provider,
     source_url: candidate.source.url,
     source_dataset: candidate.source.dataset,
@@ -263,12 +322,21 @@ function toCandidate(row: CandidateRow): CandidateRecord {
     city: row.city,
     email: row.email,
     website: row.website,
-    socialLinks: [],
+    socialLinks: row.social_links ? (JSON.parse(row.social_links) as string[]) : [],
     photoUrl: row.photo_url,
     totalAssets: row.total_assets,
     maritalStatus: row.marital_status,
     birthState: row.birth_state,
     federation: row.federation,
+    birthMunicipality: row.birth_municipality,
+    quilombola: toBool(row.quilombola),
+    indigenousEthnicity: row.indigenous_ethnicity,
+    inBallot: toBool(row.in_ballot),
+    substituted: toBool(row.substituted),
+    accountsDeclared: toBool(row.accounts_declared),
+    assetsDeclared: toBool(row.assets_declared),
+    isReelection: toBool(row.is_reelection),
+    campaignSpendingCap: row.campaign_spending_cap,
     source,
     importedAt: row.imported_at,
     updatedAt: row.updated_at,
@@ -304,6 +372,9 @@ export function upsertCandidate(
         campaign_status, candidacy_type, occupation, education, birth_date,
         gender, race, nationality, city, email, website, photo_url,
         total_assets, marital_status, birth_state, federation,
+        birth_municipality, quilombola, indigenous_ethnicity, in_ballot,
+        substituted, accounts_declared, assets_declared, is_reelection,
+        campaign_spending_cap, social_links,
         source_provider, source_url, source_dataset,
         source_file, source_retrieved_at, source_updated_at, imported_at,
         updated_at, checksum, is_active
@@ -313,6 +384,9 @@ export function upsertCandidate(
         $campaign_status, $candidacy_type, $occupation, $education, $birth_date,
         $gender, $race, $nationality, $city, $email, $website, $photo_url,
         $total_assets, $marital_status, $birth_state, $federation,
+        $birth_municipality, $quilombola, $indigenous_ethnicity, $in_ballot,
+        $substituted, $accounts_declared, $assets_declared, $is_reelection,
+        $campaign_spending_cap, $social_links,
         $source_provider, $source_url, $source_dataset,
         $source_file, $source_retrieved_at, $source_updated_at, $imported_at,
         $updated_at, $checksum, 1
@@ -338,6 +412,15 @@ export function upsertCandidate(
       photo_url = $photo_url, total_assets = $total_assets,
       marital_status = $marital_status, birth_state = $birth_state,
       federation = $federation,
+      birth_municipality = $birth_municipality,
+      quilombola = $quilombola,
+      indigenous_ethnicity = $indigenous_ethnicity,
+      in_ballot = $in_ballot, substituted = $substituted,
+      accounts_declared = $accounts_declared,
+      assets_declared = $assets_declared,
+      is_reelection = $is_reelection,
+      campaign_spending_cap = $campaign_spending_cap,
+      social_links = $social_links,
       source_provider = $source_provider, source_url = $source_url,
       source_dataset = $source_dataset, source_file = $source_file,
       source_retrieved_at = $source_retrieved_at,
@@ -369,6 +452,16 @@ export function upsertCandidate(
     marital_status: columns.marital_status,
     birth_state: columns.birth_state,
     federation: columns.federation,
+    birth_municipality: columns.birth_municipality,
+    quilombola: columns.quilombola,
+    indigenous_ethnicity: columns.indigenous_ethnicity,
+    in_ballot: columns.in_ballot,
+    substituted: columns.substituted,
+    accounts_declared: columns.accounts_declared,
+    assets_declared: columns.assets_declared,
+    is_reelection: columns.is_reelection,
+    campaign_spending_cap: columns.campaign_spending_cap,
+    social_links: columns.social_links,
     source_provider: columns.source_provider,
     source_url: columns.source_url,
     source_dataset: columns.source_dataset,
@@ -474,4 +567,74 @@ export function setPhotoUrls(db: DatabaseSync, updates: Array<{ id: string; phot
   for (const update of updates) {
     statement.run(update.photoUrl, update.id)
   }
+}
+
+export interface IncumbentEntry {
+  candidateId: string
+  camaraId: number
+  camaraName: string
+  camaraPartyAcronym: string
+  camaraPhotoUrl: string | null
+}
+
+export interface IncumbentRow extends IncumbentEntry {
+  updatedAt: string
+}
+
+interface IncumbentDbRow {
+  candidate_id: string
+  camara_id: number
+  camara_name: string
+  camara_party_acronym: string | null
+  camara_photo_url: string | null
+  updated_at: string
+}
+
+function toIncumbentRow(row: IncumbentDbRow): IncumbentRow {
+  return {
+    candidateId: row.candidate_id,
+    camaraId: row.camara_id,
+    camaraName: row.camara_name,
+    camaraPartyAcronym: row.camara_party_acronym ?? '',
+    camaraPhotoUrl: row.camara_photo_url,
+    updatedAt: row.updated_at,
+  }
+}
+
+/** Substitui o mapa de incumbentes da eleição pelos casamentos atuais. */
+export function replaceIncumbents(db: DatabaseSync, entries: IncumbentEntry[]): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM incumbents`).run()
+    const statement = db.prepare(
+      `INSERT INTO incumbents (
+        candidate_id, camara_id, camara_name, camara_party_acronym,
+        camara_photo_url, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    for (const entry of entries) {
+      statement.run(
+        entry.candidateId,
+        entry.camaraId,
+        entry.camaraName,
+        entry.camaraPartyAcronym || null,
+        entry.camaraPhotoUrl,
+        new Date().toISOString(),
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+/** Retorna um mapa candidateId -> incumbente. */
+export function listIncumbents(db: DatabaseSync): Map<string, IncumbentRow> {
+  const rows = db.prepare(`SELECT * FROM incumbents`).all() as unknown as IncumbentDbRow[]
+  const map = new Map<string, IncumbentRow>()
+  for (const row of rows) {
+    map.set(row.candidate_id, toIncumbentRow(row))
+  }
+  return map
 }

@@ -20,52 +20,46 @@ O projeto valoriza a leveza acima de tudo:
 
 ```
 src/
-├── data/quiz.ts             Conteúdo declarativo: perguntas + candidatos
-├── shared/                  Configuração de eleições e contratos de domínio/API
-├── data-sources/            Repositório SQLite + módulo TSE (CSV, fotos, normalize)
-├── lib/scoring.ts           Pontuação pura: ranking de candidatos
-├── lib/distribution.ts      Auditoria pura de imparcialidade sobre as combinações
-├── components/              Um componente por tela
-│   ├── StartScreen.tsx      Boas-vindas
-│   ├── CandidatesScreen.tsx Lista de candidatos oficiais (via API)
-│   ├── QuestionStep.tsx     Uma pergunta e suas opções
-│   ├── ResultScreen.tsx     Ranking completo dos candidatos
-│   └── FairnessScreen.tsx   Auditoria de imparcialidade
-└── App.tsx                  A máquina de estados das telas
-server/index.ts              API HTTP (node:http): candidatos + fotos
-scripts/                     ingestão, dev runner, auditoria CLI e testes
+├── data/
+│   ├── quiz.ts               Tipos + re-exportação das perguntas (contrato)
+│   └── quiz-source.ts        Fonte oficial do quiz: perguntas + resolvedores
+├── shared/
+│   ├── elections.ts          Configuração de eleições (2026/PR/DEPUTADO FEDERAL)
+│   ├── domain.ts             Modelo de domínio (CandidateRecord, Source)
+│   └── api.ts                Contratos da API compartilhados com o frontend
+├── hooks/useCandidates.ts    Estado de carregamento da lista (API)
+├── lib/scoring.ts            Pontuação pura + desempate (ranking)
+├── components/               Um componente por tela
+│   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
+│   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (via API)
+│   ├── QuestionStep.tsx      Uma pergunta e suas opções
+│   ├── ResultScreen.tsx      Ranking completo dos candidatos
+│   └── FairnessScreen.tsx    Auditoria de imparcialidade
+├── data-sources/
+│   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes, auditoria
+│   ├── tse/                  Adaptadores do TSE (CSV, candidatos, complementar, bens, redes, fotos)
+│   └── camara/               Adaptador da Câmara (deputados + identidade/incumbentes)
+└── App.tsx                   A máquina de estados das telas
+server/index.ts               API HTTP (node:http): candidatos + fotos
+scripts/                      ingestão, incumbentes, dev runner, auditoria e testes
 ```
 
-## Modelo de dados
+## O quiz é data-driven
 
-O conteúdo do *quiz* é declarativo em `src/data/quiz.ts`.
+O conteúdo do quiz em `src/data/quiz-source.ts` é **derivado dos dados
+oficiais**, não um array de candidatos escrito à mão:
 
-```
-Pergunta
-├── id       ex.: "q1"
-├── title    ex.: "Pergunta 1"
-└── options  Option[]
+- Cada **pergunta** declara texto, opções e um *resolvedor* puro: dado o
+  candidato do TSE, qual opção ele "escolheria".
+- Cada **candidato** participa com o perfil montado por esses resolvedores
+  (`buildProfile` → opção por pergunta) e a proveniência de cada resposta.
 
-Opção
-├── id       ex.: "a" | "b" | "c"
-├── label    texto curto da resposta
-└── photo?   foto de apoio (opcional)
-
-Candidato
-├── id           ex.: "c1"
-├── name         ex.: "Candidato 1"
-├── description  exibida na tela de resultado
-├── photo?       foto do resultado (opcional)
-└── profile      Record<QuestionId, OptionId>  ← as respostas que este candidato daria
-```
-
-O `profile` é o coração do modelo: é um gabarito completo de respostas, um id
-de opção por pergunta. O aplicativo nunca precisa saber *por que* um candidato
-combina com uma resposta — apenas que combina.
+As 5 dimensões e a distribuição real sobre os 428 candidatos estão em
+[`docs/quiz-design.md`](quiz-design.md).
 
 ## O fluxo
 
-`App.tsx` é uma máquina de estados pequena, com cinco telas.
+`App.tsx` é uma máquina de estados pequena.
 
 ```
 início ──▶ candidatos ──┐
@@ -76,179 +70,173 @@ pergunta(0) ──▶ … ──▶ resultado ──▶ imparcialidade
    └──────────── reinício ◀──────┘
 ```
 
-- A tela inicial pode levar direto à lista de **candidatos** (foto, nome e
-  descrição) ou ao quiz.
 - As respostas acumulam em um `Record<QuestionId, OptionId>`.
-- Escolher uma opção registra a resposta e avança para a próxima pergunta — ou
-  para a tela de resultado, após a última.
-- A tela de resultado oferece duas saídas: reiniciar ou auditar a
-  imparcialidade.
+- A tela de resultado oferece reinício e auditoria de imparcialidade.
 
 ## O modelo de pontuação
 
-Cada candidato tem um perfil. Após a última pergunta, todos os candidatos são
-pontuados contando quantas respostas da pessoa coincidem com o perfil do
-candidato.
+Cada candidato é pontuado pelo número de coincidências entre as respostas da
+pessoa e o perfil dele. `rankResults` ordena por:
 
-```
-pontuação(candidato) = número de perguntas em que
-                       respostas[pergunta.id] === candidato.perfil[pergunta.id]
-```
+1. **pontos** (desc);
+2. **raridade do perfil** (asc — perfis mais raros primeiro), via `profileKey`;
+3. **nome de urna** (`localeCompare` pt-BR).
 
-`rankResults` pondera todos os candidatos e ordena do maior para o menor número
-de compatibilidades. Os empates são resolvidos de forma determinística: entre
-candidatos com a mesma pontuação, vale a ordem de declaração no array
-(`sort` estável). Assim, um mesmo conjunto de respostas sempre produz o mesmo
-ranking, sem ambiguidade.
-
-A tela de resultado exibe o ranking completo, com o primeiro colocado marcado
-como **"Melhor compatibilidade"** (elemento `<mark>` nativo nessa posição).
-Cada candidato pode ser expandido com o elemento nativo `<details>` para
-revelar o detalhamento pergunta a pergunta: o que a pessoa respondeu, o que o
-perfil do candidato previa e se houve correspondência (`questionMatches` em
-`src/lib/scoring.ts`).
+O desempate por raridade reduz a vantagem estrutural de perfis muito comuns e é
+declarado na tela de resultado. A tela de resultado mostra o ranking completo,
+com o primeiro colocado marcado como **"Melhor compatibilidade"**; cada
+candidato expande em `<details>` o detalhamento pergunta a pergunta
+(`questionMatches`).
 
 ### Falha graciosa
 
-O `computeResult` retorna `RankedEntry | null`. O único cenário em que é `null`
-é quando a lista de candidatos está vazia. Nesse caso a tela de resultado mostra
-uma mensagem de erro amigável e um botão **"Tentar novamente"** que recarrega a
-página — sem exception para a pessoa ver.
+`computeResult` retorna `null` quando a lista de candidatos está vazia; a tela
+mostra mensagem amigável e botão de recarregar.
 
-### Por que um teste imparcial, e não um teste manipulado
+### Auditoria de imparcialidade
 
-Com 5 perguntas × 3 opções existem 3⁵ = 243 combinações possíveis de respostas.
-`src/lib/distribution.ts` enumera cada uma delas e roda a mesma pontuação,
-contabilizando quantas vezes cada candidato vence. Um quiz perfeito dividiria
-as 243 combinações igualmente: 243 ÷ 15 ≈ 16 vitórias por candidato
-(≈ 6,7% cada).
-
-Essa auditoria é exposta em dois lugares:
-
-1. **A tela "Verificar imparcialidade"** no app
-   (`FairnessScreen.tsx`), acessível a partir de qualquer resultado — para que
-   os eleitores possam verificar, dentro do próprio teste, que ele foi justo.
-2. **`npm run check:distribution`**, um wrapper de CLI que imprime os mesmos
-   números no terminal, para iteração rápida enquanto se escreve o conteúdo.
-
-Como ambos consomem a mesma função pura
-`computeDistribution(questions, candidates)`, o app e a CLI nunca podem
-discordar.
+Com as 5 perguntas (10×3×4×2×2) existem **480 combinações**. A mesma função
+pura de pontuação alimenta a tela **"Verificar imparcialidade"** e o CLI
+`npm run check:distribution`, que contam os vencedores de cada combinação. O
+contrato: nenhum candidato vence de forma desproporcional (máximo observado
+≈ 4,6%). Veja [`docs/quiz-design.md`](quiz-design.md) para as métricas.
 
 ## A camada de dados: ingestão do TSE e API
 
-Além do quiz, o projeto mantém uma base local de candidatos oficiais. A regra
-central é: **o TSE é a fonte única de verdade**, e nada de resposta é
-inventado — tudo o que aparece veio de um arquivo oficial e carrega sua
-proveniência.
+Regra central: **o TSE é a fonte única de verdade**; tudo o que aparece veio de
+um arquivo oficial e carrega sua proveniência.
 
 ### Configuração de eleição
 
-`src/shared/elections.ts` define `ElectionConfig` e a eleição atual
-(2026 / PR / Deputado Federal) com as URLs dos datasets oficiais. Nenhuma URL
-vive na lógica — as próximas eleições (2028, 2030, outras UF/cargos) entram
-apenas como uma nova configuração.
+`src/shared/elections.ts` define a eleição atual (2026/PR/Deputado Federal) e
+descreve cinco datasets oficiais — `candidates`, `assets`, `social`,
+`complementar` e `photos` — com URLs e padrões de arquivo. Próximas eleições
+entram como nova configuração.
+
+> Correção documentada: o dataset que vinha da URL "histórico" no rascunho foi
+> substituído pelo arquivo **complementar** de verdade
+> (`consulta_cand_complementar_2026.zip`, dataset `candidatos_complementar`,
+> arquivo por UF `consulta_cand_complementar_2026_PR`). O arquivo real traz os
+> dados de identificação por `SQ_CANDIDATO`.
 
 ### O pipeline de ingestão (`scripts/ingest.ts`)
 
 ```
 ZIP do TSE → download → extração (unzip) → parse CSV → validação
-   → normalização → SQLite (incremental) → API → página de candidatos
+   → normalização → SQLite (incremental) → enriquecimento → API
 ```
 
-1. **Download e extração** (`download.ts`): usa o `fetch` global e o binário
-   `unzip` do sistema (sem dependência npm).
-2. **Parse** (`csv.ts`): leitor mínimo que detecta encoding (latin1 por
-   padrão; UTF-8 se houver BOM), detecta o separador (`;`, `,` ou tab) e trata
-   campos entre aspas, aspas duplicadas e quebras de linha.
-3. **Validação de schema** (`schema.ts`): o dicionário de colunas é comparado
-   com o arquivo real e colunas obrigatórias precisam existir. O modo
-   `npm run ingest -- --inspect` documenta o schema observado em
-   `docs/tse-schema.md` — importante porque o TSE pode ajustar colunas a cada
-   eleição.
-4. **Filtro e validação de registro**: ficam apenas as linhas da eleição
-   configurada (`SG_UF`, `DS_CARGO` e referência de ano); registros inválidos
-   são agregados em `errors` em vez de derrubar a ingestão inteira.
-5. **Normalização** (`normalize.ts`): datas `DD/MM/AAAA → AAAA-MM-DD`, valores
-   monetários, limpeza de texto, nulos. **Sentinelas do TSE** (`#NE`,
-   `#NULO`, `NÃO DIVULGÁVEL`) são convertidas em `null` — ex.: "Situação:
-   #NE" não aparece na interface, porque os dados ainda não trazem
-   resultado.
-6. **Persistência incremental** (`repository.ts`, `node:sqlite`): um checksum
-   do conteúdo normalizado decide se o candidato é novo (`inserted`), mudou
-   (`updated`) ou é idêntico (`unchanged`). Candidatos presentes no banco mas
-   ausentes no último arquivo são marcados `is_active = 0` (nunca apagados).
-   A linha original fica em `candidates_raw` e cada rodada registra um
-   lançamento em `sync_log` (URL, arquivo, contagens, status).
+1. **Download e extração** (`download.ts`): `fetch` global + binário `unzip`.
+2. **Parse** (`csv.ts`): leitor mínimo — encoding (latin1; UTF-8 com BOM),
+   separador (`;`, `,`, tab), aspas, aspas duplicadas e quebras de linha.
+3. **Validação de schema** (`schema.ts`): colunas obrigatórias presentes;
+   `npm run ingest -- --inspect` documenta o schema em `docs/tse-schema.md`.
+4. **Filtro**: apenas a eleição configurada; erros agregados sem derrubar.
+5. **Normalização** (`normalize.ts`): datas `DD/MM/AAAA → AAAA-MM-DD`,
+   valores monetários, sentinelas do TSE (`#NE`, `#NULO`, `NÃO DIVULGÁVEL`) → `null`.
+6. **Persistência incremental** (`repository.ts`): checksum do conteúdo decide
+   `inserted`/`updated`/`unchanged`; remoções viram `is_active=0`; linha bruta
+   em `candidates_raw`; cada rodada registra `sync_log`.
+7. **Enriquecimento** (mesma rodada): dados complementares, bens e redes são
+   unidos por `SQ_CANDIDATO` e gravados no mesmo registro.
 
-A proveniência viaja com o registro: `source { provider, url, dataset,
-sourceFile, retrievedAt }` — a interface mostra "Fonte: dados abertos do TSE"
-sem afirmar nada além do que o arquivo contém.
+A proveniência viaja no registro: `source { provider, url, dataset, sourceFile,
+retrievedAt }`.
+
+### Enriquecimento (Fase B)
+
+- **Complementar** (`tse/complementar.ts`): município de nascimento, idade na
+  posse, quilombola, etnia indígena, teto de gastos, contas/declarações,
+  candidato na urna, substituição. O arquivo usa **ponto decimal** para
+  `VR_DESPESA_MAX_CAMPANHA` ("3176572.53") — parser próprio `parseDecimalDot`;
+  não usar `parseMoney` aqui.
+- **Bens** (`tse/assets.ts`): soma `VR_BEM_CANDIDATO` por candidato (**vírgula
+  decimal** — `parseMoney`).
+- **Redes** (`tse/social.ts`): `DS_URL` agrupado por candidato.
+- Formato monetário do TSE vale só dentro do arquivo certo; normalização
+  converte para número, e a interface formata com `Intl.NumberFormat('pt-BR')`.
+
+Contagens reais observadas na ingestão: complementar 428/428, bens 320/428,
+redes 408/428.
+
+> **Decisão:** o arquivo complementar traz também as colunas de **resultado do
+> pleito** (situação no pleito/total, diploma, julgamento). Nesta rodada elas
+> são **ignoradas** — o produto quer ajudar na intenção de voto antes da
+> eleição, não posteriormente. Se um dia quisermos mostrar resultado, basta
+> mapear essas colunas.
+
+### Incumbentes (Fase C)
+
+A Câmara não tem campo de "reeleição" no TSE (o `ST_REELEICAO` veio `#NE` para
+100% das linhas PR), então a identificação de quem concorre à reeleição usa a
+**API de Dados Abertos da Câmara**:
+
+- `tse/camara/deputados.ts` busca os deputados federais do PR em exercício
+  (`siglaUf=PR`) e, para cada um, a data de nascimento (detalhe). Resposta em
+  cache em `data/camara/deputados_pr_2026.json` (use `--force` para renovar).
+- `tse/camara/identity.ts` casa por **nome normalizado** (sem acentos/
+  pontuação) do nome de urna ou completo; quando o nome é curto ou há
+  candidatos homônimos, a **data de nascimento** confirma (quando ambos
+  informam).
+- `scripts/sync-incumbents.ts` (`npm run sync:incumbents`) grava os casamentos
+  na tabela `incumbents` (`candidate_id` → `camara_id`, partido, nome, foto).
+
+Resultado real: 30 deputados PR em exercício, **25** casados com candidatos
+(5 não concorrem à reeleição como deputados federais PR nesta eleição e não
+estão nos 428 — ex.: Gleisi Hoffmann, Filipe Barros). A API expõe
+`isIncumbent` + `camaraPartyAcronym`, e a lista de candidatos marca
+"Deputado(a) federal em exercício".
+
+> Uma correção de premissa: mais cedo o modelo achava ~24 incumbentes; o dado
+> real é 25 (mesma ordem de grandeza, confirmado pela base).
 
 ### Fotos (`images.ts`)
 
-As fotos oficiais são baixadas e extraídas para `data/photos`. O vínculo é
-feito pelo número do candidato no nome do arquivo; quando não há foto, o
-candidato aparece sem imagem. Fotos são um dataset opcional: falha no download
-não aborta a ingestão.
+Fotos oficiais baixadas para `data/photos`, vinculadas pelo arquivo; dataset
+opcional (falha não aborta).
 
 ### A API (`server/index.ts`)
 
-Um servidor `node:http` na porta 2027 serve:
+`node:http` na porta 2027:
 
-- `GET /api/health` — saúde e eleição configurada;
-- `GET /api/candidates` — lista da eleição (projeção enxuta para a página);
-- `GET /api/candidates/:id` — detalhe completo;
-- `GET /photos/*` — arquivos de `data/photos` com guarda de path traversal.
+- `GET /api/health`
+- `GET /api/candidates` — lista da eleição, com projeção + incumbência
+- `GET /api/candidates/:id` — detalhe completo
+- `GET /photos/*` — arquivos locais (guarda de path traversal)
 
-O Vite encaminha `/api` e `/photos` para essa API tanto no dev quanto no
-preview, então o frontend enxerga tudo na mesma origem (porta 2026).
+O Vite encaminha `/api` e `/photos` para a API em dev e preview (mesma origem).
 
 ### A página de candidatos
 
-`CandidatesScreen.tsx` busca `GET /api/candidates` e cobre quatro estados:
-carregando, erro (com sugestão de rodar `npm run ingest`), vazio e lista.
-Cada candidato mostra o **resumo**: foto, nome de urna, número, partido,
-agremiação (federação com composição ou "partido isolado") e ocupação. O
-elemento nativo `<details>` "Mais informações" expande escolaridade, estado
-civil, nascimento (data e UF), sexo e cor/raça — sempre omitindo campos que
-o TSE marcou como sentinela (vira `null` na normalização). A linha
-"Município" só aparece quando a Unidade Eleitoral difere da UF da eleição
-(para deputado federal, `NM_UE` é o estado inteiro, então não é exibida).
-
-Nesta rodada, **a única mudança visível** é essa página; o quiz continua com o
-conteúdo provisório em `src/data/quiz.ts`, que será substituído numa etapa
-futura a partir dos dados oficiais.
-
-### O que ainda não está implementado
-
-Os módulos `assets.ts`, `social.ts` e `history.ts` são stubs tipados e
-retornam `implemented: false`: a interface está pronta, o corpo virá nas
-próximas rodadas (bens, redes sociais e histórico de candidaturas). O detalhe
-por candidato (`/candidatos/:id`) e os adaptadores DivulgaCand/Câmara também
-são etapas futuras, conforme a especificação.
+`CandidatesScreen.tsx` consome `GET /api/candidates` via hook e cobre quatro
+estados: carregando, erro (sugere `npm run ingest`), vazio e lista. O resumo
+mostra foto, nome de urna, número, partido, agremiação e ocupação; `<details>`
+expande escolaridade, estado civil, nascimento (data + município), idade na
+eleição, quilombola/etnia, bens declarados e redes sociais. Marcas de
+reeleição/incumbência aparecem como `<mark>`.
 
 ## As decisões de projeto definitivas
 
-| Decisão                | Por quê                                                              |
-| ---------------------- | -------------------------------------------------------------------- |
-| Compatibilidade de perfil | Simples de entender e explicar ("você concordou em 4 de 5 perguntas"). |
-| Desempate determinístico | Todo conjunto de respostas precisa produzir um resultado inequívoco. |
-| Resultado como ranking | Transparência: a pessoa vê o grau de alinhamento de todos os candidatos. |
-| Módulos de lógica pura | A pontuação e a auditoria são livres de framework, testáveis e reutilizáveis pela CLI. |
-| Conteúdo declarativo   | Perguntas/candidatos são dados, não código — o mantenedor edita um único arquivo. |
-| Porta 2026             | O padrão do projeto; definida uma vez em `vite.config.ts`.           |
-| TSE como fonte única de verdade | Nenhuma resposta é inventada; tudo carrega URL, dataset, arquivo e data de obtenção. |
-| Backend só com o padrão do Node | `node:sqlite`, `node:http` e `node:test`; zero dependências novas para a ingestão. |
-| Ingestão incremental   | Checksum por conteúdo; novos/alterados/removidos detectados sem sobrescrever às cegas. |
-| Stubs tipados primeiro | `assets`/`social`/`history` definem contrato agora, corpo nas próximas rodadas. |
-| Sem estilização        | Uma passada futura estilizará os mesmos componentes nativos.         |
+| Decisão | Por quê |
+| ------- | ------- |
+| Quiz 100% data-driven | Nada de opinião: perfis derivados de arquivos oficiais com proveniência. |
+| Escopo 428 candidatos (PR, Deputado Federal) | Combinado: foco em uma eleição/cargo no primeiro momento. |
+| Ignorar resultado do pleito nesta rodada | O produto serve para formar intenção de voto antes da eleição. |
+| Dataset `complementar` corrigido | Substitui o "histórico" do rascunho pelo arquivo real do TSE. |
+| Compatibilidade de perfil como pontuação | Simples de explicar ("você concordou em 4 de 5 perguntas"). |
+| Desempate: pontos → raridade → nome | Determinístico e reduz a vantagem de perfis muito comuns. |
+| Regex por prefixo no setor | `\b` do JS é ASCII e ignora acentos; prefixo evita faltar "MÉDICO". |
+| Formato: complementar `parseDecimalDot`, bens `parseMoney` | Os arquivos TSE usam decimais diferentes; cada um no lugar certo. |
+| `ST_REELEICAO` não usado (100% `#NE`) | Sem campo confiável; incumbente vem da API da Câmara. |
+| Incumbente por nome + data de nascimento | Nome de urna ≠ nome civil; data desambigua homônimos. |
+| Porta 2027 (API) | Definida uma vez; app na 2026 via Vite. |
+| TSE como fonte única de verdade | Tudo carrega URL, dataset, arquivo e data de obtenção. |
+| Backend só com o padrão do Node | `node:sqlite`, `node:http`, `node:test`; zero dependências. |
+| Ingestão incremental + `sync_log` | Novos/alterados/removidos sem sobrescrever às cegas; auditorável. |
+| Tabela `incumbents` separada | Dado derivado (Câmara) não contamina o registro TSE/checksum. |
 
 ## Convenções
 
-- Componentes recebem props e renderizam; fora `App.tsx`, nenhuma tela guarda
-  estado local.
-- Use extensões explícitas `.ts` / `.tsx` nos imports relativos, para que os
-  mesmos módulos rodem no Vite e no type-stripping do Node (CLI).
-- Conteúdo da interface e documentação em português (PT-BR); código e
-  comentários em inglês.
+- Componentes recebem props e renderizam; fora `App.tsx`, nada de estado local.
+- Imports relativos com `.ts`/`.tsx` explícitos (Vite e type-stripping do Node).
+- Interface e documentação em PT-BR; código e comentários em inglês.

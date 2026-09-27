@@ -42,6 +42,24 @@ export interface CandidateRecord {
   maritalStatus: string | null
   birthState: string | null
   federation: string | null
+  /** Município de nascimento (dataset complementar do TSE). */
+  birthMunicipality: string | null
+  /** ST_QUILOMBOLA do TSE. */
+  quilombola: boolean | null
+  /** DS_ETNIA_INDIGENA do TSE (null quando não indígena/sem informação). */
+  indigenousEthnicity: string | null
+  /** ST_CANDIDATO_INSERIDO_URNA (registro, não é resultado do pleito). */
+  inBallot: boolean | null
+  /** ST_SUBSTITUIDO do TSE. */
+  substituted: boolean | null
+  /** ST_PREST_CONTAS do TSE (S/N). */
+  accountsDeclared: boolean | null
+  /** ST_DECLARAR_BENS do TSE (S/N). */
+  assetsDeclared: boolean | null
+  /** ST_REELEICAO do TSE (S/N). */
+  isReelection: boolean | null
+  /** VR_DESPESA_MAX_CAMPANHA do TSE (teto legal, em R$). */
+  campaignSpendingCap: number | null
   source: Source
   importedAt: string
   updatedAt: string

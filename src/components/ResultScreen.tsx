@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { OptionId, Question, QuestionId } from '../data/quiz.ts'
+import { questionProvenance } from '../data/quiz-source.ts'
 import { questionMatches } from '../lib/scoring.ts'
 import type { RankedEntry } from '../lib/scoring.ts'
 
@@ -11,6 +13,8 @@ interface ResultScreenProps {
   onShowFairness: () => void
 }
 
+const TOP_COUNT = 10
+
 export function ResultScreen({
   ranked,
   totalQuestions,
@@ -19,7 +23,9 @@ export function ResultScreen({
   onRestart,
   onShowFairness,
 }: ResultScreenProps) {
+  const [showAll, setShowAll] = useState(false)
   const first = ranked[0]
+  const visible = showAll ? ranked : ranked.slice(0, TOP_COUNT)
 
   return (
     <section>
@@ -29,8 +35,15 @@ export function ResultScreen({
         candidato mais alinhado.
       </p>
 
+      <p>
+        <small>
+          Empates são desfeitos por perfil mais raro (quem menos repete o
+          conjunto de respostas) e, em seguida, por ordem alfabética.
+        </small>
+      </p>
+
       <ol>
-        {ranked.map(({ candidate, matches }, index) => (
+        {visible.map(({ candidate, matches }, index) => (
           <li key={candidate.id}>
             <details>
               <summary>
@@ -40,12 +53,15 @@ export function ResultScreen({
                     alt={candidate.name}
                     width="120"
                     height="90"
+                    loading="lazy"
                   />
                 )}
                 <strong>{candidate.name}</strong> — {matches} de {totalQuestions}
                 {index === 0 && <mark>Melhor compatibilidade</mark>}
               </summary>
-
+              <p>
+                <small>{candidate.description}</small>
+              </p>
               <ul>
                 {questionMatches(answers, questions, candidate).map(
                   ({ question, user, candidate: expected, matched }) => (
@@ -62,6 +78,9 @@ export function ResultScreen({
                           <strong>Não concorda</strong>
                         )}
                       </p>
+                      <p>
+                        <small>{questionProvenance(question.id)}</small>
+                      </p>
                     </li>
                   ),
                 )}
@@ -70,6 +89,17 @@ export function ResultScreen({
           </li>
         ))}
       </ol>
+
+      {!showAll && ranked.length > TOP_COUNT && (
+        <button type="button" onClick={() => setShowAll(true)}>
+          Ver a lista completa ({ranked.length} candidatos)
+        </button>
+      )}
+      {showAll && (
+        <button type="button" onClick={() => setShowAll(false)}>
+          Mostrar apenas os {TOP_COUNT} mais alinhados
+        </button>
+      )}
 
       <button type="button" onClick={onShowFairness}>
         Verificar imparcialidade

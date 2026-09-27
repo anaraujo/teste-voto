@@ -52,6 +52,15 @@ function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecor
     maritalStatus: null,
     birthState: null,
     federation: null,
+    birthMunicipality: null,
+    quilombola: null,
+    indigenousEthnicity: null,
+    inBallot: null,
+    substituted: null,
+    accountsDeclared: null,
+    assetsDeclared: null,
+    isReelection: null,
+    campaignSpendingCap: null,
     source: {
       provider: 'TSE',
       url: 'https://exemplo.com/cand.zip',
@@ -89,6 +98,12 @@ test('upsertCandidate persiste os campos novos', () => {
       maritalStatus: 'CASADO(A)',
       birthState: 'PR',
       federation: 'FE BRASIL (13-PT)',
+      birthMunicipality: 'CURITIBA',
+      isReelection: true,
+      accountsDeclared: true,
+      campaignSpendingCap: 3176572.53,
+      totalAssets: 45000,
+      socialLinks: ['HTTPS://WWW.FACEBOOK.COM/ANA'],
     }),
   )
 
@@ -96,6 +111,12 @@ test('upsertCandidate persiste os campos novos', () => {
   assert.equal(stored?.maritalStatus, 'CASADO(A)')
   assert.equal(stored?.birthState, 'PR')
   assert.equal(stored?.federation, 'FE BRASIL (13-PT)')
+  assert.equal(stored?.birthMunicipality, 'CURITIBA')
+  assert.equal(stored?.isReelection, true)
+  assert.equal(stored?.accountsDeclared, true)
+  assert.equal(stored?.campaignSpendingCap, 3176572.53)
+  assert.equal(stored?.totalAssets, 45000)
+  assert.deepEqual(stored?.socialLinks, ['HTTPS://WWW.FACEBOOK.COM/ANA'])
 
   const columns = db.prepare('PRAGMA table_info(candidates)').all() as unknown as Array<{
     name: string
@@ -104,6 +125,11 @@ test('upsertCandidate persiste os campos novos', () => {
   assert.ok(names.has('marital_status'))
   assert.ok(names.has('birth_state'))
   assert.ok(names.has('federation'))
+  assert.ok(names.has('birth_municipality'))
+  assert.ok(names.has('is_reelection'))
+  assert.ok(names.has('accounts_declared'))
+  assert.ok(names.has('campaign_spending_cap'))
+  assert.ok(names.has('social_links'))
 })
 
 test('deactivateMissing marca removidos e lista apenas ativos', () => {

@@ -1,108 +1,123 @@
 # Criando conteúdo para o quiz
 
-Tudo que a pessoa vê vive em um único arquivo: `src/data/quiz.ts`. Este guia
-explica como substituir os textos provisórios por perguntas e candidatos reais,
-mantendo o teste justo.
+No modelo atual o conteúdo é **data-driven**: as perguntas vivem em
+`src/data/quiz-source.ts` (tipos em `src/data/quiz.ts`) e os **perfis dos
+candidatos são derivados dos dados oficiais do TSE**, nunca escritos à mão.
+Este guia explica o que um mantenedor toca e como manter o teste justo.
 
-## As três coisas que você escreve
+## O que você edita
 
-1. **Perguntas** — um título e uma lista de opções. Mantenha-as curtas: um
-   aceno ao formato clássico de quiz. Cada opção tem um rótulo curto e,
-   opcionalmente, uma foto de apoio.
+### 1. Perguntas e opções
+
+Cada pergunta declara `id`, `title`, `hint` (proveniência mostrada no
+resultado) e `options`. Os ids seguem o padrão `<dimensão>:<opção>` e devem
+permanecer estáveis após o lançamento.
 
 ```ts
 {
-  id: 'q1',                    // mantenha os ids estáveis após o lançamento
-  title: 'Qual é a sua prioridade?',
+  id: 'sector',
+  title: 'Que experiência profissional você quer em quem vai te representar?',
+  hint: 'Derivado da ocupação declarada ao TSE.',
   options: [
-    { id: 'a', label: 'Segurança', photo: photo('pergunta-1-seguranca') },
-    { id: 'b', label: 'Áreas comuns', photo: photo('pergunta-1-areas') },
-    { id: 'c', label: 'Custo', photo: photo('pergunta-1-custo') },
+    { id: 'setor:saude', label: 'Saúde' },
+    { id: 'setor:educacao', label: 'Educação' },
+    // …
   ],
+  resolve: (source) => `setor:${resolveSector(source.occupation)}`,
 }
 ```
 
-2. **Candidatos** — nome, descrição, foto opcional e o perfil.
+### 2. Resolvedores (a parte mais sensível)
 
-3. **Perfis** — para cada candidato, a opção que ele escolheria em cada
-   pergunta. É o conteúdo mais importante, porque determina tanto a qualidade
-   do resultado quanto a imparcialidade do teste.
+O campo `resolve(source)` converte o candidato do TSE em uma opção. As regras
+moram em funções puras nomeadas (`resolveSector`, `resolveExperience`,
+`resolveAgeBand`, `resolveCandidacy`, `resolveLocal`) para serem testadas.
 
-```ts
-{
-  id: 'c1',
-  name: 'Maria da Silva',
-  description: 'Focada em segurança e transparência.',
-  photo: photo('candidato-maria'),
-  profile: { q1: 'a', q2: 'c', q3: 'b', q4: 'a', q5: 'c' },
-}
-```
+Ao mexer num resolvedor:
+
+- **Cubra os acentos.** O regex `\b` do JavaScript é ASCII e falha sozinho em
+  palavras acentuadas ("MÉDICO"). Prefira casar por **prefixo dentro de
+  palavra** (ex.: `\bMÉDICO`) e confirme com os testes.
+- **Evite falsos positivos.** "APOSENTADO (EXCETO SERVIDOR PÚBLICO)" não deve
+  cair em gestão pública — o regex de política exige
+  `SERVIDOR PÚBLICO (CIVIL|ESTADUAL|FEDERAL|MUNICIPAL)`.
+- **Há sempre um bucket reserva** (`outros`/`sem-mandato`); candidato não
+  resolvível lança `QuizResolutionError` e seria detectado na ingestão do quiz.
+
+### 3. Candidatos: nenhum código
+
+Nada é editado por candidato. `toQuizCandidate` monta o perfil a partir do
+registro oficial e a descrição vem de `partido · ocupação`. Se você quiser
+exibir outra informação no ranking/card, ajuste `describeCandidate` (e a
+proveniência), não o banco.
 
 ## Como o ranking é formado
 
-Cada candidato é pontuado pelo número de respostas que coincide com o seu
-perfil. O resultado lista todos os candidatos, do maior para o menor número de
-correspondências, e o primeiro colocado ganha o destaque "Melhor compatibilidade".
+Pontos = nº de coincidências entre suas respostas e o perfil (0–5). Ordenação:
 
-Em caso de empate na pontuação, a ordem de declaração no array `candidates` é
-mantida (ordenação estável). Isso é determinístico, mas lembre-se: perfis
-idênticos nunca serão distinguíveis pelo teste — o empate favoreceria o
-primeiro declarado em silêncio.
+1. pontos (maior primeiro);
+2. **raridade do perfil** (perfis mais raros primeiro);
+3. nome de urna (`localeCompare` pt-BR).
+
+Perfis idênticos **nunca** serão distinguíveis pelo quiz; o desempate por
+raridade favorece o perfil único. Ao adicionar uma pergunta, o número de
+perfis distintos tende a crescer — ótimo para diferenciar.
 
 ## Mantendo o teste justo
 
-O contrato de imparcialidade: em todas as combinações possíveis de respostas,
-nenhum candidato deve vencer de forma desproporcional. A auditoria conta
-combinações, não pessoas reais — ela verifica que o próprio teste é
-estruturalmente equilibrado.
+O contrato: em todas as combinações possíveis de respostas
+(10×3×4×2×2 = **480** atualmente), nenhum candidato deve vencer de forma
+desproporcional. A auditoria conta combinações (não pessoas) — ela verifica se
+o teste é estruturalmente equilibrado.
 
-Regras práticas ao construir perfis:
+Regras práticas ao ajustar perguntas:
 
-- **Dê a cada candidato um perfil distinto.** Dois perfis idênticos não podem
-  ser distinguidos; o desempate favoreceria silenciosamente o primeiro.
-- **Espalhe os perfis.** Pense em cada perfil como um ponto numa grade em que
-  cada coordenada é uma de suas letras de opção. Quanto mais uniformemente os
-  15 perfis cobrirem a grade, mais perto as vitórias ficam de
-  243 ÷ 15 ≈ 16 cada.
-- **Cuidado com favoritos em colisão.** Se todo candidato prefere a mesma opção
-  na mesma pergunta, aquela pergunta tendencia o teste. Varie quem prefere o quê.
-- **Itere com a auditoria.** Após qualquer edição, execute:
+- **Cobertura de 5–50% por opção.** Se uma opção cai abaixo de ~3%, ela quase
+  nunca é atingida e divide candidatos por acaso; se passa de 50%, ela domina
+  e tende o teste. `check:distribution` avisa nas duas direções.
+- **Espalhe os perfis.** Perfis derivados dos dados de verdade não podem ser
+  "espalhados" à mão — mas você pode escolher *quais dimensões* entrarão e
+  como seus buckets cortam os dados (ex.: faixas etárias ou agremiação) para
+  equilibrar a grade.
+- **Não tema o "sem-mandato".** Nesta eleição 90,4% dos candidatos nunca tiveram
+  mandato; a pergunta segue honesta (apenas menos informativa) e não tende o
+  resultado. Documente o desvio em `docs/quiz-design.md`.
+- **Rode a auditoria sempre:**
 
 ```sh
 npm run check:distribution
 ```
 
-  Busque fazer cada candidato chegar perto da proporção ideal. O mesmo
-  resultado pode ser conferido visualmente no app: termine qualquer quiz e
-  escolha **"Verificar imparcialidade"**.
+O mesmo resultado pode ser conferido no app em **"Verificar imparcialidade"**
+(terminando qualquer quiz).
 
-### Um exemplo
+## Testes
 
-Você mudou uma pergunta e agora `c1` vence 28 combinações. Isso significa que a
-edição deixou o perfil de `c1` mais fácil de alcançar que os demais. Tente
-afastar o perfil de `c1` do canto mais lotado da grade, ou aproximar um
-candidato sub-representado dele, e rode a auditoria de novo.
+Rode depois de qualquer mudança em perguntas/resolvedores:
+
+```sh
+npm test          # inclui quiz-source.test.ts e scoring.test.ts
+npm run lint
+```
 
 ## Listas de verificação
 
 **Adicionando uma pergunta:**
 
-- [ ] Leia como uma única ideia curta
-- [ ] De 2 a 4 opções, todas mutuamente exclusivas
-- [ ] Cada opção tem um rótulo e uma foto
-- [ ] Seu id é novo e estável
-- [ ] O perfil de todo candidato agora inclui essa pergunta
-- [ ] `npm run check:distribution` continua equilibrado
+- [ ] Título curto, uma única ideia, mutuamente exclusivo com as demais
+- [ ] De 2 a 10 opções, com ids `<dimensão>:<opção>` estáveis
+- [ ] `resolve` puro + `hint` de proveniência honesta
+- [ ] Todo candidato dos 428 resolve (nenhum `QuizResolutionError`)
+- [ ] `check:distribution` equilibrado e sem avisos de cobertura < 3% (exceto documentado)
+- [ ] Id adicionado aos testes de `quiz-source` e ao `docs/quiz-design.md`
 
-**Adicionando um candidato:**
+**Ajustando um resolvedor:**
 
-- [ ] Perfil distinto de todos os outros candidatos
-- [ ] Nome, descrição e foto
-- [ ] O perfil responde a todas as perguntas
-- [ ] Distribuição continua equilibrada após nova auditoria
+- [ ] Regex por prefixo (cuidado com acentos/falsos positivos)
+- [ ] Testes unitários para os novos exemplos de `DS_OCUPACAO`
+- [ ] `check:distribution` continua sem vitórias desproporcionais
 
-**Escolhendo fotos:**
+**Escolhendo opções fora do padrão:**
 
-- O app usa placeholders `picsum.photos/seed/<seed>`. Troque-os por imagens
-  reais hospedadas em `public/` ou em um CDN depois; mantenha o campo `photo?`
-  opcional para que o layout degrade com graça.
+- O app usa HTML nativo; opções ganham `img` e `label` opcionais — mantenha o
+  layout degradando com graça quando a foto não existir.
