@@ -29,5 +29,5 @@ dist-ssr
 !.env.example
 
 # Dados ingeridos do TSE (zips, banco local e fotos)
-data/
-!data/.gitkeep
+# Ancorado na raiz para não ignorar src/data/
+/data/
