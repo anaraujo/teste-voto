@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
-import { searchCandidates } from '../lib/search.ts'
+import { buildSearchIndex, searchCandidates } from '../lib/search.ts'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
@@ -26,12 +26,17 @@ export function CandidatesScreen({
 }: CandidatesScreenProps) {
   const [query, setQuery] = useState('')
 
-  const filtered = useMemo(
+  const index = useMemo(
     () =>
       state.status === 'ready'
-        ? searchCandidates(state.data.candidates, query)
+        ? buildSearchIndex(state.data.candidates)
         : [],
-    [state, query],
+    [state],
+  )
+
+  const filtered = useMemo(
+    () => searchCandidates(index, query),
+    [index, query],
   )
 
   return (

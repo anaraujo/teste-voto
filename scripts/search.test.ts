@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { searchCandidates } from '../src/lib/search.ts'
+import { buildSearchIndex, searchCandidates } from '../src/lib/search.ts'
 import type { ApiCandidate } from '../src/shared/api.ts'
 import type { Source } from '../src/shared/domain.ts'
 
@@ -86,9 +86,10 @@ const JOAO = candidate({
 })
 
 const ALL = [ANA, BIA, CARLOS, JOAO]
+const INDEX = buildSearchIndex(ALL)
 
 test('busca vazia devolve lista completa em ordem alfabética', () => {
-  const result = searchCandidates(ALL, '')
+  const result = searchCandidates(INDEX, '')
   assert.deepEqual(
     result.map((candidate) => candidate.ballotName),
     ['ANA PARTICIPANTE', 'BIA SILVA', 'CARLOS', 'JOÃO DA PADARIA'],
@@ -96,72 +97,72 @@ test('busca vazia devolve lista completa em ordem alfabética', () => {
 })
 
 test('nome exato casa em primeiro', () => {
-  const result = searchCandidates(ALL, 'ANA PARTICIPANTE')
+  const result = searchCandidates(INDEX, 'ANA PARTICIPANTE')
   assert.equal(result[0].id, ANA.id)
 })
 
 test('prefixo do nome de urna', () => {
-  const result = searchCandidates(ALL, 'ANA')
+  const result = searchCandidates(INDEX, 'ANA')
   assert.ok(result.length >= 1)
   assert.equal(result[0].id, ANA.id)
 })
 
 test('número de urna exato', () => {
-  const result = searchCandidates(ALL, '1301')
+  const result = searchCandidates(INDEX, '1301')
   assert.ok(result.length >= 1)
   assert.equal(result[0].id, ANA.id)
 })
 
 test('prefixo do número de urna', () => {
-  const result = searchCandidates(ALL, '13')
+  const result = searchCandidates(INDEX, '13')
   assert.ok(result.length === 1)
   assert.equal(result[0].id, ANA.id)
 })
 
 test('número de urna com alta relevância', () => {
-  const result = searchCandidates(ALL, '901')
+  const result = searchCandidates(INDEX, '901')
   assert.ok(result.length >= 1)
   assert.equal(result[0].id, JOAO.id)
 })
 
 test('nome de urna com erro de digitação (fuzzy)', () => {
-  const result = searchCandidates(ALL, 'ANA PARTICPANTE')
+  const result = searchCandidates(INDEX, 'ANA PARTICPANTE')
   assert.ok(result.length >= 1)
   assert.equal(result[0].id, ANA.id)
 })
 
 test('nome completo com erro de digitação', () => {
-  const result = searchCandidates(ALL, 'BEATRIS SILVA')
+  const result = searchCandidates(INDEX, 'BEATRIS SILVA')
   assert.ok(result.length >= 1)
   assert.equal(result[0].id, BIA.id)
 })
 
 test('busca por sigla do partido (exata)', () => {
-  const result = searchCandidates(ALL, 'PT')
+  const result = searchCandidates(INDEX, 'PT')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['ANA PARTICIPANTE', 'JOÃO DA PADARIA'])
 })
 
 test('busca por sigla do partido em minúsculas', () => {
-  const result = searchCandidates(ALL, 'pt')
+  const result = searchCandidates(INDEX, 'pt')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['ANA PARTICIPANTE', 'JOÃO DA PADARIA'])
 })
 
 test('busca por nome completo do partido (exato)', () => {
-  const result = searchCandidates(ALL, 'Partido dos Trabalhadores')
+  const result = searchCandidates(INDEX, 'Partido dos Trabalhadores')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['ANA PARTICIPANTE', 'JOÃO DA PADARIA'])
 })
 
 test('sigla do partido com acentos normalizados', () => {
-  const result = searchCandidates(ALL, 'PSDB')
+  const result = searchCandidates(INDEX, 'PSDB')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['BIA SILVA'])
 })
 
 test('nome do partido sem acentos', () => {
-  const result = searchCandidates(ALL, 'partido')
+  const result = searchCandidates(INDEX, 'partido')
   // PSDB + PT contêm "partido", então ambos aparecem
   const names = result.map((candidate) => candidate.ballotName)
   assert.ok(names.includes('BIA SILVA'))
@@ -169,14 +170,14 @@ test('nome do partido sem acentos', () => {
 })
 
 test('nome do partido bem específico filtra um único partido', () => {
-  const result = searchCandidates(ALL, 'Partido da Social Democracia')
+  const result = searchCandidates(INDEX, 'Partido da Social Democracia')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['BIA SILVA'])
 })
 
 test('nome do partido revisado filtra apenas quando uma agremiação casa', () => {
   // "trabalhadores" casa PT e não outro partido do conjunto
-  const result = searchCandidates(ALL, 'trabalhadores')
+  const result = searchCandidates(INDEX, 'trabalhadores')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['ANA PARTICIPANTE', 'JOÃO DA PADARIA'])
 })
@@ -193,7 +194,10 @@ test('nome de partido ambíguo entre várias agremiações', () => {
     occupation: null,
     city: null,
   })
-  const result = searchCandidates([...ALL, psdb], 'Partido da Social Democracia')
+  const result = searchCandidates(
+    buildSearchIndex([...ALL, psdb]),
+    'Partido da Social Democracia',
+  )
   // Ambíguo entre PSDB e PSD — não faz filtro de partido, busca como texto
   const names = result.map((candidate) => candidate.ballotName)
   assert.ok(names.length >= 2)
@@ -202,28 +206,28 @@ test('nome de partido ambíguo entre várias agremiações', () => {
 })
 
 test('busca sem resultados retorna array vazio', () => {
-  const result = searchCandidates(ALL, 'xyznonexistent123')
+  const result = searchCandidates(INDEX, 'xyznonexistent123')
   assert.deepEqual(result, [])
 })
 
 test('busca por cidade', () => {
-  const result = searchCandidates(ALL, 'Londrina')
+  const result = searchCandidates(INDEX, 'Londrina')
   const names = result.map((candidate) => candidate.ballotName)
   assert.deepEqual(names, ['BIA SILVA'])
 })
 
 test('busca por ocupação', () => {
-  const result = searchCandidates(ALL, 'advogado')
+  const result = searchCandidates(INDEX, 'advogado')
   assert.equal(result[0].id, CARLOS.id)
 })
 
 test('busca por nome completo (não nome de urna)', () => {
-  const result = searchCandidates(ALL, 'BEATRIZ')
+  const result = searchCandidates(INDEX, 'BEATRIZ')
   assert.equal(result[0].id, BIA.id)
 })
 
 test('múltiplos matches ordenados por relevância', () => {
-  const result = searchCandidates(ALL, 'ANA')
+  const result = searchCandidates(INDEX, 'ANA')
   // ANA PARTICIPANTE deve vir antes de JOÃO DA PADARIA (substring match)
   const names = result.map((candidate) => candidate.ballotName)
   assert.ok(names.indexOf('ANA PARTICIPANTE') < names.indexOf('JOÃO DA PADARIA') || !names.includes('JOÃO DA PADARIA'))
@@ -232,7 +236,7 @@ test('múltiplos matches ordenados por relevância', () => {
 test('nome de urna tem mais peso que outros campos', () => {
   // CARLOS de MARINGA (advogado) vs BIA de LONDRINA
   // Ambos não são "ANA", mas "ANA" aparece como substring de "MARINGA"
-  const result = searchCandidates(ALL, 'ANA')
+  const result = searchCandidates(INDEX, 'ANA')
   // CARLOS (city contém "ANA") pode aparecer, mas ANA PARTICIPANTE deve vir primeiro
   if (result.length > 0) {
     assert.equal(result[0].id, ANA.id)

@@ -4,6 +4,10 @@
  * Prioriza o nome (de urna e completo) e o número de urna; partidos podem ser
  * buscados pela sigla ("PT") ou pelo nome completo ("Partido dos Trabalhadores")
  * e, nesse caso, retornam todos os candidatos da agremiação.
+ *
+ * Os campos são normalizados uma única vez em `buildSearchIndex` e reaproveitados
+ * a cada tecla digitada; o fuzzy (Levenshtein) só roda quando o tamanho do campo
+ * está próximo do tamanho da busca, evitando custo quadrático sobre nomes longos.
  */
 
 import type { ApiCandidate } from '../shared/api.ts'
@@ -28,8 +32,8 @@ function levenshtein(a: string, b: string): number {
   if (a.length === 0) return b.length
   if (b.length === 0) return a.length
 
-  const previous = new Array<number>(b.length + 1)
-  const current = new Array<number>(b.length + 1)
+  let previous = new Array<number>(b.length + 1)
+  let current = new Array<number>(b.length + 1)
   for (let j = 0; j <= b.length; j++) previous[j] = j
 
   for (let i = 1; i <= a.length; i++) {
@@ -42,14 +46,20 @@ function levenshtein(a: string, b: string): number {
         previous[j - 1] + cost,
       )
     }
-    for (let j = 0; j <= b.length; j++) previous[j] = current[j]
+    const swap = previous
+    previous = current
+    current = swap
   }
 
-  return current[b.length]
+  return previous[b.length]
 }
 
-/** Similaridade (0..1) entre a busca e um valor normalizado. */
+/**
+ * Similaridade (0..1) entre a busca e um valor normalizado, evitando o custo
+ * quadrático quando os tamanhos já indicam que não é um erro de digitação.
+ */
 function similarity(query: string, value: string): number {
+  if (Math.abs(value.length - query.length) > MAX_FUZZ_DELTA) return 0
   const distance = levenshtein(query, value)
   const longest = Math.max(query.length, value.length)
   return 1 - distance / longest
@@ -67,10 +77,23 @@ function fieldScore(query: string, value: string): number {
   return similarity(query, value) * 0.6
 }
 
-interface Party {
-  key: string
-  acronymNorm: string
-  nameNorm: string
+const MAX_FUZZ_DELTA = 3
+
+/** Campos do candidato já normalizados, prontos para comparação. */
+export interface CandidateSearchEntry {
+  candidate: ApiCandidate
+  ballotName: string
+  fullName: string
+  ballotNumber: string
+  partyAcronym: string
+  party: string
+  federation: string
+  coalition: string
+  occupation: string
+  city: string
+  birthMunicipality: string
+  /** Chave da agremiação (sigla normalizada; cai no nome quando não há sigla). */
+  partyKey: string
 }
 
 function partyKeyOf(candidate: ApiCandidate): string {
@@ -79,16 +102,41 @@ function partyKeyOf(candidate: ApiCandidate): string {
   return ''
 }
 
-function collectParties(candidates: readonly ApiCandidate[]): Party[] {
+/** Normaliza uma vez cada candidato; o resultado é reutilizado a cada tecla. */
+export function buildSearchIndex(
+  candidates: readonly ApiCandidate[],
+): CandidateSearchEntry[] {
+  return candidates.map((candidate) => ({
+    candidate,
+    ballotName: normalize(candidate.ballotName),
+    fullName: normalize(candidate.fullName),
+    ballotNumber: candidate.ballotNumber,
+    partyAcronym: candidate.partyAcronym ? normalize(candidate.partyAcronym) : '',
+    party: candidate.party ? normalize(candidate.party) : '',
+    federation: candidate.federation ? normalize(candidate.federation) : '',
+    coalition: candidate.coalition ? normalize(candidate.coalition) : '',
+    occupation: candidate.occupation ? normalize(candidate.occupation) : '',
+    city: candidate.city ? normalize(candidate.city) : '',
+    birthMunicipality: candidate.birthMunicipality ? normalize(candidate.birthMunicipality) : '',
+    partyKey: partyKeyOf(candidate),
+  }))
+}
+
+interface Party {
+  key: string
+  acronymNorm: string
+  nameNorm: string
+}
+
+function collectParties(entries: readonly CandidateSearchEntry[]): Party[] {
   const byKey = new Map<string, Party>()
-  for (const candidate of candidates) {
-    const key = partyKeyOf(candidate)
-    if (!key) continue
-    if (byKey.has(key)) continue
-    byKey.set(key, {
-      key,
-      acronymNorm: candidate.partyAcronym ? normalize(candidate.partyAcronym) : '',
-      nameNorm: candidate.party ? normalize(candidate.party) : '',
+  for (const entry of entries) {
+    if (!entry.partyKey) continue
+    if (byKey.has(entry.partyKey)) continue
+    byKey.set(entry.partyKey, {
+      key: entry.partyKey,
+      acronymNorm: entry.partyAcronym,
+      nameNorm: entry.party,
     })
   }
   return [...byKey.values()]
@@ -98,8 +146,8 @@ function collectParties(candidates: readonly ApiCandidate[]): Party[] {
  * Detecta se a busca é por partido: sigla exata, nome exato ou prefixo/subtexto
  * do nome que identifique uma única agremiação. Retorna a chave do partido.
  */
-function matchParty(candidates: readonly ApiCandidate[], query: string): string | null {
-  const parties = collectParties(candidates)
+function matchParty(entries: readonly CandidateSearchEntry[], query: string): string | null {
+  const parties = collectParties(entries)
 
   for (const party of parties) {
     if (party.acronymNorm && party.acronymNorm === query) return party.key
@@ -116,24 +164,24 @@ function matchParty(candidates: readonly ApiCandidate[], query: string): string 
   return byName.length === 1 ? byName[0].key : null
 }
 
-function scoreCandidate(candidate: ApiCandidate, query: string): number {
+function scoreCandidate(entry: CandidateSearchEntry, query: string): number {
   let best = 0
-  const consider = (value: string | null, weight: number) => {
+  const consider = (value: string, weight: number) => {
     if (!value) return
-    const score = fieldScore(query, normalize(value)) * weight
+    const score = fieldScore(query, value) * weight
     if (score > best) best = score
   }
 
-  consider(candidate.ballotName, 1)
-  consider(candidate.fullName, 0.9)
-  consider(candidate.ballotNumber, 0.95)
-  consider(candidate.partyAcronym, 0.5)
-  consider(candidate.party, 0.5)
-  consider(candidate.federation, 0.35)
-  consider(candidate.coalition, 0.3)
-  consider(candidate.occupation, 0.4)
-  consider(candidate.city, 0.4)
-  consider(candidate.birthMunicipality, 0.35)
+  consider(entry.ballotName, 1)
+  consider(entry.fullName, 0.9)
+  consider(entry.ballotNumber, 0.95)
+  consider(entry.partyAcronym, 0.5)
+  consider(entry.party, 0.5)
+  consider(entry.federation, 0.35)
+  consider(entry.coalition, 0.3)
+  consider(entry.occupation, 0.4)
+  consider(entry.city, 0.4)
+  consider(entry.birthMunicipality, 0.35)
 
   return best
 }
@@ -150,22 +198,24 @@ const MIN_SCORE = 0.25
  * candidatos da agremiação; o restante é ordenado por relevância decrescente.
  */
 export function searchCandidates(
-  candidates: readonly ApiCandidate[],
+  index: readonly CandidateSearchEntry[],
   query: string,
 ): ApiCandidate[] {
   const normalizedQuery = normalize(query)
-  const sorted = [...candidates].sort(byBallotName)
+  const sorted = [...index].sort((a, b) => byBallotName(a.candidate, b.candidate))
 
-  if (normalizedQuery === '') return sorted
+  if (normalizedQuery === '') return sorted.map((entry) => entry.candidate)
 
-  const party = matchParty(candidates, normalizedQuery)
+  const party = matchParty(index, normalizedQuery)
   if (party) {
-    return sorted.filter((candidate) => partyKeyOf(candidate) === party)
+    return sorted
+      .filter((entry) => entry.partyKey === party)
+      .map((entry) => entry.candidate)
   }
 
   return sorted
-    .map((candidate) => ({ candidate, score: scoreCandidate(candidate, normalizedQuery) }))
-    .filter((entry) => entry.score >= MIN_SCORE)
+    .map((entry) => ({ candidate: entry.candidate, score: scoreCandidate(entry, normalizedQuery) }))
+    .filter((scored) => scored.score >= MIN_SCORE)
     .sort((a, b) => b.score - a.score || byBallotName(a.candidate, b.candidate))
-    .map((entry) => entry.candidate)
+    .map((scored) => scored.candidate)
 }
