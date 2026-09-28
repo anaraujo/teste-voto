@@ -1,6 +1,8 @@
+import { useMemo, useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
+import { searchCandidates } from '../lib/search.ts'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
@@ -22,6 +24,16 @@ export function CandidatesScreen({
   onBack,
   onShowCandidate,
 }: CandidatesScreenProps) {
+  const [query, setQuery] = useState('')
+
+  const filtered = useMemo(
+    () =>
+      state.status === 'ready'
+        ? searchCandidates(state.data.candidates, query)
+        : [],
+    [state, query],
+  )
+
   return (
     <section>
       <h2>Candidatos</h2>
@@ -75,8 +87,39 @@ export function CandidatesScreen({
               </small>
             </p>
 
+            <p>
+              <label htmlFor="candidate-search">Buscar candidato</label>
+              <input
+                id="candidate-search"
+                type="search"
+                placeholder="Nome, número, partido, ocupação, cidade..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              {query !== '' && (
+                <button type="button" onClick={() => setQuery('')}>
+                  Limpar
+                </button>
+              )}
+            </p>
+
+            {query !== '' && (
+              <p>
+                <small>
+                  {filtered.length === 1
+                    ? '1 candidato encontrado'
+                    : `${filtered.length} candidatos encontrados`}
+                </small>
+              </p>
+            )}
+
+            {filtered.length === 0 ? (
+              <div>
+                <p>Nenhum candidato encontrado para sua busca.</p>
+              </div>
+            ) : (
             <ul>
-              {state.data.candidates.map((candidate) => {
+              {filtered.map((candidate) => {
                 const birthSource =
                   candidate.birthMunicipality && candidate.birthState
                     ? `${candidate.birthMunicipality} (${candidate.birthState})`
@@ -244,6 +287,7 @@ export function CandidatesScreen({
                 )
               })}
             </ul>
+            )}
           </div>
         ))}
 
