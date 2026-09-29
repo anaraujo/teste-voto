@@ -10,6 +10,18 @@ export type SpecularVariant = 'primary' | 'secondary'
  * getComputedStyle. Os hexes em FALLBACK existem apenas como segurança caso a
  * variável CSS não esteja disponível. Documentação: docs/design-tokens.md
  */
+/**
+ * Cores para o estilo inline, em `var(--color-*)`.
+ *
+ * O HTML pré-renderizado (build estático) e a hidratação precisam produzir
+ * exatamente a mesma string, então o estilo inline nunca resolve valores: usa
+ * a referência à variável CSS, que o navegador resolve na pintura.
+ */
+export interface SpecularCssVars {
+  tint: string
+  text: string
+}
+
 export interface SpecularTheme {
   /** Cor do vidro de fundo (tint). */
   tint: string
@@ -31,6 +43,22 @@ export interface SpecularTheme {
 const TOKENS: Record<SpecularVariant, { tint: string; text: string }> = {
   primary: { tint: '--color-primary-soft', text: '--color-primary' },
   secondary: { tint: '--color-secondary-soft', text: '--color-secondary' },
+}
+
+const CSS_VARS: Record<SpecularVariant, SpecularCssVars> = {
+  primary: {
+    tint: `var(${TOKENS.primary.tint})`,
+    text: `var(${TOKENS.primary.text})`,
+  },
+  secondary: {
+    tint: `var(${TOKENS.secondary.tint})`,
+    text: `var(${TOKENS.secondary.text})`,
+  },
+}
+
+/** Cores da variante como referências a variáveis CSS (estilo inline). */
+export function cssVarTheme(variant: SpecularVariant): SpecularCssVars {
+  return CSS_VARS[variant] ?? CSS_VARS.primary
 }
 
 /** Fallback de segurança (hexes) caso a variável CSS não exista no runtime. */

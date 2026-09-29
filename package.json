@@ -14,7 +14,7 @@
     "sync:history": "node --experimental-sqlite --experimental-strip-types scripts/sync-history.ts",
     "editorial:templates": "node --experimental-sqlite --experimental-strip-types scripts/editorial-templates.ts",
     "export:ficha": "node --experimental-sqlite --experimental-strip-types scripts/export-ficha.ts",
-    "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts scripts/quiz-source.test.ts scripts/scoring.test.ts scripts/complementar.test.ts scripts/identity.test.ts scripts/parliament.test.ts scripts/history.test.ts scripts/router.test.ts",
+    "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts scripts/quiz-source.test.ts scripts/scoring.test.ts scripts/complementar.test.ts scripts/identity.test.ts scripts/parliament.test.ts scripts/history.test.ts scripts/router.test.ts scripts/prerender.test.ts",
     "build": "tsc -b && vite build && npm run build:ssr && npm run build:pages",
     "lint": "oxlint",
     "format": "prettier --write .",

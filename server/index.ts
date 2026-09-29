@@ -7,6 +7,10 @@
  *   GET /api/candidates/:id             (detalhe)
  *   GET /photos/*                       (fotos locais)
  *
+ * O payload é montado em `src/data-sources/apiPayload.ts`, o mesmo módulo que
+ * alimenta o build estático — assim a ficha pré-renderizada e a resposta da
+ * API são idênticas.
+ *
  * Execução: node --experimental-sqlite --experimental-strip-types server/index.ts
  */
 
@@ -18,183 +22,16 @@ import {
   type ServerResponse,
 } from 'node:http'
 import { extname, join, normalize } from 'node:path'
+import { openRepository } from '../src/data-sources/repository.ts'
 import {
-  openRepository,
-  listCandidates,
-  listIncumbents,
-  getParliamentary,
-  getPoliticalMandates,
-  type IncumbentRow,
-} from '../src/data-sources/repository.ts'
-import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
+  buildCandidateDetailPayload,
+  buildCandidatesPayload,
+} from '../src/data-sources/apiPayload.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
-import type {
-  ApiCandidate,
-  ApiCandidatesResponse,
-  ApiCandidateDetail,
-  ApiEditorialField,
-  ApiMandate,
-  ApiParliamentary,
-  ApiParliamentaryRecord,
-  ApiPoliticalMandate,
-  ApiVote,
-} from '../src/shared/api.ts'
-import type { CandidateRecord } from '../src/shared/domain.ts'
 
 const PORT = Number(process.env.PORT ?? 2027)
 const DATA_DIR = defaultDataDir()
-
-const electionFilter = {
-  electionYear: CURRENT_ELECTION.year,
-  state: CURRENT_ELECTION.state,
-  office: CURRENT_ELECTION.office,
-}
-
-function toApiCandidate(
-  candidate: CandidateRecord,
-  incumbent: IncumbentRow | undefined,
-): ApiCandidate {
-  return {
-    id: candidate.id,
-    tseSequence: candidate.tseSequence,
-    ballotName: candidate.ballotName,
-    fullName: candidate.fullName,
-    ballotNumber: candidate.ballotNumber,
-    party: candidate.party,
-    partyAcronym: candidate.partyAcronym,
-    coalition: candidate.coalition,
-    candidacyType: candidate.candidacyType,
-    federation: candidate.federation,
-    occupation: candidate.occupation,
-    education: candidate.education,
-    maritalStatus: candidate.maritalStatus,
-    birthDate: candidate.birthDate,
-    birthState: candidate.birthState,
-    gender: candidate.gender,
-    race: candidate.race,
-    status: candidate.status,
-    city: candidate.city,
-    photoUrl: candidate.photoUrl,
-    birthMunicipality: candidate.birthMunicipality,
-    isReelection: candidate.isReelection,
-    totalAssets: candidate.totalAssets,
-    assetsDeclared: candidate.assetsDeclared,
-    socialLinks: candidate.socialLinks,
-    quilombola: candidate.quilombola,
-    indigenousEthnicity: candidate.indigenousEthnicity,
-    accountsDeclared: candidate.accountsDeclared,
-    isIncumbent: incumbent !== undefined,
-    camaraPartyAcronym: incumbent?.camaraPartyAcronym ?? null,
-    source: candidate.source,
-  }
-}
-
-async function toApiDetail(
-  candidate: CandidateRecord,
-  incumbent: IncumbentRow | undefined,
-): Promise<ApiCandidateDetail> {
-  const db = await openRepository(join(DATA_DIR, 'tse.db'))
-  try {
-    const { mandates, records, votes } = getParliamentary(db, candidate.id)
-    const politicalMandates = getPoliticalMandates(db, candidate.id)
-    const editorial = await readEditorialFicha(candidate.id)
-
-    const parliamentary: ApiParliamentary | null =
-      mandates.length === 0 && records.length === 0 && votes.length === 0
-        ? null
-        : {
-            mandates: mandates.map(toApiMandate),
-            records: records.map(toApiRecord),
-            votes: votes.map(toApiVote),
-          }
-
-    return {
-      ...toApiCandidate(candidate, incumbent),
-      campaignStatus: candidate.campaignStatus,
-      nationality: candidate.nationality,
-      email: candidate.email,
-      inBallot: candidate.inBallot,
-      substituted: candidate.substituted,
-      campaignSpendingCap: candidate.campaignSpendingCap,
-      importedAt: candidate.importedAt,
-      updatedAt: candidate.updatedAt,
-      parliamentary,
-      editorial: editorial ? toApiEditorial(editorial) : null,
-      politicalMandates: politicalMandates.map(toApiPoliticalMandate),
-    }
-  } finally {
-    db.close()
-  }
-}
-
-function toApiMandate(
-  mandate: Awaited<ReturnType<typeof getParliamentary>>['mandates'][number],
-): ApiMandate {
-  return {
-    casa: mandate.casa,
-    legislatura: mandate.legislatura,
-    idParlamentar: mandate.idParlamentar,
-    nomeParlamentar: mandate.nomeParlamentar,
-    partido: mandate.partido,
-    uf: mandate.uf,
-    dataInicio: mandate.dataInicio,
-    dataFim: mandate.dataFim,
-  }
-}
-
-function toApiPoliticalMandate(
-  mandate: Awaited<ReturnType<typeof getPoliticalMandates>>[number],
-): ApiPoliticalMandate {
-  return {
-    ano: mandate.ano,
-    cargo: mandate.cargo,
-    uf: mandate.uf,
-    municipio: mandate.municipio,
-    partidoSigla: mandate.partidoSigla,
-    status: mandate.status,
-    turno: mandate.turno,
-  }
-}
-
-function toApiRecord(
-  record: Awaited<ReturnType<typeof getParliamentary>>['records'][number],
-): ApiParliamentaryRecord {
-  return {
-    casa: record.casa,
-    proposicoesPorAno: record.proposicoesPorAno,
-    comissoes: record.comissoes.map((comissao) => ({
-      sigla: comissao.sigla,
-      nome: comissao.nome,
-    })),
-    despesasPorAno: record.despesasPorAno,
-  }
-}
-
-function toApiVote(
-  vote: Awaited<ReturnType<typeof getParliamentary>>['votes'][number],
-): ApiVote {
-  return {
-    votacaoId: vote.votacaoId,
-    tema: vote.tema,
-    rotulo: vote.rotulo,
-    proposicao: vote.proposicao,
-    data: vote.data,
-    casa: vote.casa,
-    voto: vote.voto,
-  }
-}
-
-function toApiEditorial(
-  editorial: Awaited<ReturnType<typeof readEditorialFicha>>,
-): Record<string, ApiEditorialField> {
-  const result: Record<string, ApiEditorialField> = {}
-  for (const [tema, campo] of Object.entries(editorial?.campos ?? {})) {
-    if (!campo) continue
-    result[tema] = { valor: campo.valor, tipo: campo.tipo, fonte: campo.fonte }
-  }
-  return result
-}
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   const body = JSON.stringify(payload)
@@ -265,20 +102,7 @@ async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
   if (urlPath === '/api/candidates') {
     const db = await openRepository(join(DATA_DIR, 'tse.db'))
     try {
-      const incumbents = listIncumbents(db)
-      const candidates = listCandidates(db, electionFilter).map((c) =>
-        toApiCandidate(c, incumbents.get(c.id)),
-      )
-      const payload: ApiCandidatesResponse = {
-        election: {
-          year: CURRENT_ELECTION.year,
-          state: CURRENT_ELECTION.state,
-          office: CURRENT_ELECTION.office,
-        },
-        total: candidates.length,
-        candidates,
-      }
-      sendJson(res, 200, payload)
+      sendJson(res, 200, buildCandidatesPayload(db))
     } finally {
       db.close()
     }
@@ -287,16 +111,15 @@ async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
 
   const detailMatch = /^\/api\/candidates\/([^/]+)$/.exec(urlPath)
   if (detailMatch) {
+    const id = decodeURIComponent(detailMatch[1])
     const db = await openRepository(join(DATA_DIR, 'tse.db'))
     try {
-      const id = decodeURIComponent(detailMatch[1])
-      const row = listCandidates(db, electionFilter).find((c) => c.id === id)
-      if (!row) {
+      const detail = await buildCandidateDetailPayload(db, id)
+      if (!detail) {
         sendError(res, 404, 'candidato não encontrado')
         return
       }
-      const incumbent = listIncumbents(db).get(id)
-      sendJson(res, 200, await toApiDetail(row, incumbent))
+      sendJson(res, 200, detail)
     } finally {
       db.close()
     }

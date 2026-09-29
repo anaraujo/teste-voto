@@ -9,6 +9,17 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Páginas estáticas no build**: `npm run build` agora gera um HTML por rota
+  (`dist/candidatos/index.html`, `dist/candidato/<id>/index.html`,
+  `dist/quiz/1…5/index.html` — 436 páginas, 5,3 MB) com título, description,
+  canonical, Open Graph e o texto real da tela, mais `sitemap.xml` e
+  `robots.txt` (domínio pelo `SITE_URL`). O navegador hidrata a partir desse
+  HTML, então a primeira pintura não espera a API; a lista vai embutida em
+  `<script type="application/json">` (74 KB gzipped). `/resultado`, que
+  depende de quem respondeu o quiz, é a única rota que usa o shell vazio
+  (`dist/app.html`). A API e o build leem o mesmo `src/data-sources/apiPayload.ts`
+  para o HTML pré-renderizado não poder divergir da resposta de `/api`, e o
+  `vite preview` passou a servir as páginas como um host estático faria.
 - **Rotas de verdade** no lugar da máquina de estados em memória: cada tela tem
   URL (`/`, `/candidatos`, `/candidato/:id`, `/quiz/:n`, `/resultado`,
   `/imparcialidade`), a ficha de um candidato pode ser compartilhada e o botão

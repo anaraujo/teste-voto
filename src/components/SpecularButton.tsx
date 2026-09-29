@@ -7,7 +7,11 @@ import {
   type ReactNode,
 } from 'react'
 import { Color, Mesh, Program, Renderer, Triangle } from 'ogl'
-import { getSpecularTheme, type SpecularVariant } from './specularTheme.ts'
+import {
+  cssVarTheme,
+  getSpecularTheme,
+  type SpecularVariant,
+} from './specularTheme.ts'
 
 type ButtonSize = 'sm' | 'md' | 'lg'
 
@@ -142,13 +146,14 @@ export function SpecularButton({
   type = 'button',
 }: SpecularButtonProps) {
   const theme = getSpecularTheme(variant)
-  const tintFinal = tint ?? theme.tint
+  const css = cssVarTheme(variant)
   const tintOpacityFinal = tintOpacity ?? theme.tintOpacity
   const blurFinal = blur ?? theme.blur
-  const textColorFinal = textColor ?? theme.textColor
   const lineColorFinal = lineColor ?? theme.lineColor
   const baseColorFinal = baseColor ?? theme.baseColor
   const radiusFinal = radius ?? theme.radius
+  const tintStyleFinal = tint ?? css.tint
+  const textStyleFinal = textColor ?? css.text
 
   const btnRef = useRef<HTMLButtonElement>(null)
   const fxRef = useRef<HTMLSpanElement>(null)
@@ -332,9 +337,9 @@ export function SpecularButton({
     outline: 'none',
     transform: pressed && !disabled ? 'scale(0.97)' : undefined,
     transition: 'transform 150ms',
-    color: textColorFinal,
+    color: textStyleFinal,
     borderRadius: `${radiusFinal}px`,
-    background: `color-mix(in srgb, ${tintFinal} ${Math.min(tintOpacityFinal, 1) * 100}%, transparent)`,
+    background: `color-mix(in srgb, ${tintStyleFinal} ${Math.min(tintOpacityFinal, 1) * 100}%, transparent)`,
     backdropFilter: `blur(${blurFinal}px)`,
     boxShadow:
       'inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.25)',
