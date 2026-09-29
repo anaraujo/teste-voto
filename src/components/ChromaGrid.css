@@ -1,0 +1,286 @@
+/*
+ * Chroma Grid — experimental, em avaliação visual.
+ *
+ * CSS do componente de https://www.reactbits.dev/c/components/chroma-grid
+ * (open source, DavidHDev/react-bits — public/r/ChromaGrid-TS-CSS.json),
+ * com três acréscimos para os dados do TSE: o placeholder de quem não tem
+ * foto, a caixa de foto com proporção fixa e a tira de link da ficha. O
+ * efeito foi invertido em relação ao original — ver o bloco do
+ * `.chroma-boost`.
+ *
+ * Só o grid usa isto: o resto do app segue o index.css.
+ */
+
+.chroma-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 6), 200px);
+  grid-auto-rows: auto;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+
+  --x: 50%;
+  --y: 50%;
+  --r: 220px;
+}
+
+@media (max-width: 1124px) {
+  .chroma-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 200px));
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chroma-grid {
+    grid-template-columns: 200px;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+}
+
+.chroma-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: auto;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--card-on, #333) 30%, transparent);
+  transition:
+    border-color 0.3s ease,
+    filter 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  background: var(--card-gradient);
+}
+
+/*
+ * A borda usa a cor do texto, não a cor do card: o fundo do card já é a cor
+ * cheia, então uma borda na mesma cor seria invisível. Quem escreve é o
+ * `--card-on`, que o item declara.
+ *
+ * O card já começa na cor cheia, então a intensificação de cor não tem folga
+ * para onde ir (medido: em repouso o fundo é #EBAB52 e o filtro o leva a
+ * #FFC936, com o vermelho dos três canais batendo em 255). Para o hover
+ * responder de forma inequívoca, quem carrega o sinal é o relevo: o card
+ * sai do lugar e ganha sombra. A cor continua melhorando por cima disso.
+ */
+.chroma-card:hover {
+  border-color: var(--card-on, #333);
+  filter: saturate(1.25) brightness(1.12) contrast(1.05);
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 45%);
+}
+
+/*
+ * Caixa da foto: largura e altura iguais em todos os cards.
+ *
+ * A foto do TSE vem em 161x225, então a caixa usa a mesma proporção e a
+ * largura sai da coluna fixa do grid. Ela não pode ser `flex: 1` (o que era
+ * antes): aí a altura da foto era o que sobrasse depois do rodapé, e um nome
+ * de candidato em duas linhas empurrava a foto para baixo. Com a proporção
+ * travada, o rodapé é que absorve a diferença de texto entre os cards.
+ */
+.chroma-img-wrapper {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  aspect-ratio: 161 / 225;
+  padding: 10px;
+  box-sizing: border-box;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.chroma-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* Sem foto no TSE: bloco cinza com o número de urna, na mesma caixa. */
+.chroma-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border-radius: 10px;
+  background: var(--color-gray);
+  color: rgb(0 0 0 / 55%);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/*
+ * Rodapé em três faixas: nome completo com a sigla no fim da linha, número
+ * de urna embaixo e a tira da ficha colada no fundo do card.
+ *
+ * A coluna da direita do grid anterior foi embora junto com a cidade: as duas
+ * colunas eram `minmax(0, …)` porque `1fr auto` deixava a da direita no
+ * tamanho do conteúdo e o rodapé transbordava. Agora o rodapé é uma coluna
+ * só, e `flex: 1` + `margin-top: auto` na tira empurram o "Ver ficha" para a
+ * base — sem isso os cards de nome curto tinham o botão mais alto que os de
+ * nome longo, porque a altura da foto é fixa e a diferença é toda do texto.
+ */
+.chroma-info {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 0.75rem 1rem;
+  color: var(--card-on, #fff);
+  font-family: system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/*
+ * A sigla vai no fim da primeira linha do nome e o nome completo ocupa o
+ * resto. Isso é float, não flex: numa linha flex o nome ganha uma caixa da
+ * largura que sobra ao lado da sigla e continua quebrando nessa caixa mais
+ * estreita, então um nome de 46 caracteres deixava metade do card vazia nas
+ * linhas 2 em diante. Flutuando, o texto contorna a sigla na primeira linha
+ * e depois usa a largura toda. `flow-root` fecha o bloco para o float não
+ * escapar para o número.
+ */
+.chroma-info .name {
+  display: flow-root;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.chroma-info .party {
+  float: right;
+  margin: 0 0 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+/*
+ * Os textos secundários usam a tinta cheia, e a hierarquia vem do tamanho.
+ *
+ * A hierarquia já foi feita com opacidade (78% da tinta) e isso quebrava o
+ * contraste conforme a cor do partido: medindo as 23 siglas que estão nos
+ * dados, 12 ficavam abaixo de 4,5:1 e o pior era CIDADANIA em 3,47:1. Subir
+ * para 90% não resolve (9 abaixo de 4,5:1, CIDADANIA em 4,09:1) porque a
+ * tinta é escolhida por cor, não por partido — não há um alfa que sirva
+ * para as 30. A 100% as 23 passam, a pior em 4,66:1.
+ *
+ * A sigla e o número são 0,8rem contra 1rem do nome, o que segue separando
+ * os níveis sem custar legibilidade.
+ */
+.chroma-info .party,
+.chroma-info .handle {
+  color: var(--card-on, #fff);
+}
+
+.chroma-info .handle {
+  font-size: 0.8rem;
+}
+
+/*
+ * A tira da ficha acompanha a cor do texto do card. Ela usava a variante
+ * tertiary do SpecularButton, que é amarela — invisível sobre o card
+ * amarelo (um terço da lista).
+ */
+.chroma-info .chroma-ficha {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--card-on, #fff);
+  background: color-mix(in srgb, var(--card-on, #fff) 12%, transparent);
+  transition: transform 150ms;
+}
+
+.chroma-info .chroma-ficha:active {
+  transform: scale(0.97);
+}
+
+/*
+ * Realce que segue o mouse.
+ *
+ * Uma única camada sobre a grade inteira: em repouso ela está em
+ * opacity: 0, ou seja, as fotos e os cards aparecem na cor cheia. Com o
+ * ponteiro em cima, o JS sobe a opacidade e a máscara radial concentra o
+ * filtro numa área em volta do cursor — então passar o mouse satura e
+ * clareia o que está embaixo, em vez de tirar a cor de algum lugar.
+ *
+ * A camada antiga que fazia o oposto (a grade inteira cinza, revelada perto
+ * do cursor) foi removida: manter as duas exigia dois filtros contrários
+ * empilhados no mesmo pixel.
+ */
+.chroma-boost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  /*
+   * A intensificação precisa de brightness, não só de saturate. `saturate()`
+   * preserva a luminância, então numa cor já saturada ele só escurece —
+   * medimos o rodapé do card em repouso vs. com o mouse: saturação +0,25 e
+   * brilho -7,5%, ou seja, "mais fundo" em vez de "mais vivo", e o olho
+   * não lia mudança nenhuma. O brightness é o que acende.
+   */
+  backdrop-filter: saturate(1.45) brightness(1.32) contrast(1.08);
+  -webkit-backdrop-filter: saturate(1.45) brightness(1.32) contrast(1.08);
+
+  /*
+   * Filtro sozinho não bastava. Medindo o fundo do card em repouso vs. com o
+   * mouse, a mudança era só de croma: #ECAF5A -> #FFB349, saturação 0,79 ->
+   * 1,00 e brilho +0,6% — o vermelho já satura em 255, então brightness não
+   * tinha para onde ir. Um filtro de cor não cria luz; este halo é o que
+   * acende o card debaixo do cursor.
+   */
+  background: radial-gradient(
+    circle calc(var(--r) * 0.5) at var(--x) var(--y),
+    rgb(255 255 255 / 0.3),
+    rgb(255 255 255 / 0.12) 55%,
+    transparent 75%
+  );
+
+  /*
+   * Núcleo aceso perto do cursor, caindo rápido. Com o raio antigo (800px) e
+   * a queda em oito degraus, o realce se espalhava pela grade inteira e
+   * nenhum card ficava visivelmente mais vivo que o vizinho.
+   */
+  mask-image: radial-gradient(
+    circle var(--r) at var(--x) var(--y),
+    white 0%,
+    white 12%,
+    rgb(255 255 255 / 0.35) 45%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle var(--r) at var(--x) var(--y),
+    white 0%,
+    white 12%,
+    rgb(255 255 255 / 0.35) 45%,
+    transparent 100%
+  );
+
+  opacity: 0;
+  transition-property: opacity;
+  transition-timing-function: ease;
+}

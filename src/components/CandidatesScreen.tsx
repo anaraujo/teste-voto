@@ -1,13 +1,18 @@
+import { useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
-import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
+import { partyColor, readableOn } from '../shared/party-colors.ts'
+import { ChromaGrid, type ChromaItem } from './ChromaGrid.tsx'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
   onRetry: () => void
   onShowCandidate: (candidateId: string) => void
 }
+
+/** Quantos cards entram por vez, para a página não ficar com 428 de uma vez. */
+const PAGE = 50
 
 /** Clique com modificador (abrir em nova aba) não é interceptado. */
 function isModifiedClick(event: {
@@ -26,11 +31,40 @@ function isModifiedClick(event: {
   )
 }
 
-/** Agremiação: federação, partido isolado ou tipo de agremiação. */
-function formatCandidacy(candidate: ApiCandidate): string | null {
-  if (candidate.federation) return `Federação: ${candidate.federation}`
-  if (candidate.candidacyType === 'PARTIDO ISOLADO') return 'Partido isolado'
-  return candidate.candidacyType
+function toChromaItem(candidate: ApiCandidate): ChromaItem {
+  const partido = partyColor(candidate.partyAcronym)
+  const base = partido.primary
+
+  return {
+    image: candidate.photoUrl,
+    placeholder: candidate.ballotNumber,
+    // Nome completo, não o nome de urna: os dois são quase sempre diferentes
+    // ("MARCO BRASIL" na urna, "MARCO AURELIO RIBEIRO" no registro). Nos 428
+    // candidatos nenhum `full_name` vem vazio, e 24 são iguais ao nome de urna
+    // — nesse caso mostrar os dois seria repetir a mesma linha.
+    title: candidate.fullName || candidate.ballotName,
+    party: candidate.partyAcronym ?? 'Sem partido',
+    handle: candidate.ballotNumber ? `Nº ${candidate.ballotNumber}` : undefined,
+    // A tinta vem da cor, não do partido: `readableOn` escolhe entre branco e
+    // #111 pelo contraste, e nas 30 cores a escolha passa em AA.
+    textColor: readableOn(base),
+    // Sem preto: um tom mais claro da própria cor no topo (a moldura em volta
+    // da foto) e a cor cheia embaixo, onde fica o texto. A versão anterior
+    // terminava em `rgb(0 0 0 / 0.6)`, que lavava o card.
+    gradient: `linear-gradient(160deg, color-mix(in srgb, ${base} 22%, white), ${base})`,
+    children: (
+      <a
+        className="chroma-ficha"
+        href={candidatePath(candidate.id)}
+        onClick={(event) => {
+          if (isModifiedClick(event)) return
+          event.preventDefault()
+        }}
+      >
+        Ver ficha
+      </a>
+    ),
+  }
 }
 
 export function CandidatesScreen({
@@ -38,236 +72,78 @@ export function CandidatesScreen({
   onRetry,
   onShowCandidate,
 }: CandidatesScreenProps) {
+  const [limit, setLimit] = useState(PAGE)
+
+  if (state.status === 'loading') return <p>Carregando candidatos...</p>
+
+  if (state.status === 'error') {
+    return (
+      <div>
+        <p>Não foi possível carregar a lista de candidatos.</p>
+        <p>
+          <small>
+            Verifique se os dados do TSE foram carregados com{' '}
+            <code>npm run ingest</code> e se a API está rodando.
+          </small>
+        </p>
+        <p>
+          <small>({state.message})</small>
+        </p>
+        <button type="button" onClick={onRetry}>
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
+
+  if (state.data.candidates.length === 0) {
+    return (
+      <div>
+        <p>Nenhum candidato encontrado para esta eleição.</p>
+        <p>
+          <small>
+            Rode <code>npm run ingest</code> para carregar os dados oficiais do
+            TSE.
+          </small>
+        </p>
+      </div>
+    )
+  }
+
+  const candidates = state.data.candidates
+  const visible = candidates.slice(0, limit)
+
   return (
     <section>
       <h2>Candidatos</h2>
+      <p>
+        <small>
+          {state.data.total} candidatos a {state.data.election.office} em{' '}
+          {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
+          <a
+            href="https://dadosabertos.tse.jus.br/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            dados abertos do TSE
+          </a>
+          .
+        </small>
+      </p>
 
-      {state.status === 'loading' && <p>Carregando candidatos...</p>}
+      <ChromaGrid
+        items={visible.map(toChromaItem)}
+        onSelect={(_item, index) => onShowCandidate(visible[index].id)}
+      />
 
-      {state.status === 'error' && (
-        <div>
-          <p>Não foi possível carregar a lista de candidatos.</p>
-          <p>
-            <small>
-              Verifique se os dados do TSE foram carregados com{' '}
-              <code>npm run ingest</code> e se a API está rodando.
-            </small>
-          </p>
-          <p>
-            <small>({state.message})</small>
-          </p>
-          <button type="button" onClick={onRetry}>
-            Tentar novamente
+      {limit < candidates.length && (
+        <p>
+          <button type="button" onClick={() => setLimit(limit + PAGE)}>
+            Mostrar mais {Math.min(PAGE, candidates.length - limit)} de{' '}
+            {candidates.length - visible.length} restantes
           </button>
-        </div>
+        </p>
       )}
-
-      {state.status === 'ready' &&
-        (state.data.candidates.length === 0 ? (
-          <div>
-            <p>Nenhum candidato encontrado para esta eleição.</p>
-            <p>
-              <small>
-                Rode <code>npm run ingest</code> para carregar os dados oficiais
-                do TSE.
-              </small>
-            </p>
-          </div>
-        ) : (
-          <div>
-            <p>
-              <small>
-                {state.data.total} candidatos a {state.data.election.office} em{' '}
-                {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
-                <a
-                  href="https://dadosabertos.tse.jus.br/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  dados abertos do TSE
-                </a>
-                .
-              </small>
-            </p>
-
-            <ul>
-              {state.data.candidates.map((candidate) => {
-                const birthSource =
-                  candidate.birthMunicipality && candidate.birthState
-                    ? `${candidate.birthMunicipality} (${candidate.birthState})`
-                    : candidate.birthState
-                      ? candidate.birthState
-                      : null
-                const birth = candidate.birthDate
-                  ? `${formatDate(candidate.birthDate)}${birthSource ? ` · natural de ${birthSource}` : ''}`
-                  : birthSource
-                    ? `Natural de ${birthSource}`
-                    : null
-                const age = ageAtElection(candidate.birthDate)
-                const city =
-                  candidate.city &&
-                  candidate.city.toUpperCase() !== state.data.election.state
-                    ? candidate.city
-                    : null
-                const candidacy = formatCandidacy(candidate)
-                return (
-                  <li key={candidate.id}>
-                    <p>
-                      <a
-                        className="sb-link"
-                        href={candidatePath(candidate.id)}
-                        onClick={(event) => {
-                          if (isModifiedClick(event)) return
-                          event.preventDefault()
-                          onShowCandidate(candidate.id)
-                        }}
-                      >
-                        Ver ficha
-                      </a>
-                    </p>
-                    {candidate.photoUrl && (
-                      <img
-                        src={candidate.photoUrl}
-                        alt={candidate.ballotName}
-                        width="120"
-                        height="150"
-                        loading="lazy"
-                      />
-                    )}
-                    <p>
-                      <strong>{candidate.ballotName}</strong>
-                      {candidate.ballotNumber && (
-                        <span> ({candidate.ballotNumber})</span>
-                      )}
-                    </p>
-                    {candidate.partyAcronym && (
-                      <p>
-                        <small>
-                          {candidate.partyAcronym}
-                          {candidate.party ? ` - ${candidate.party}` : ''}
-                        </small>
-                      </p>
-                    )}
-                    {candidacy && (
-                      <p>
-                        <small>{candidacy}</small>
-                      </p>
-                    )}
-                    {(candidate.isReelection || candidate.isIncumbent) && (
-                      <p>
-                        <mark>
-                          {candidate.isIncumbent
-                            ? 'Deputado(a) federal em exercício'
-                            : 'Em campanha de reeleição'}
-                          {candidate.isIncumbent &&
-                            candidate.camaraPartyAcronym &&
-                            ` (${candidate.camaraPartyAcronym})`}
-                        </mark>
-                      </p>
-                    )}
-                    {candidate.occupation && (
-                      <p>
-                        <small>Ocupação: {candidate.occupation}</small>
-                      </p>
-                    )}
-                    {city && (
-                      <p>
-                        <small>Município: {city}</small>
-                      </p>
-                    )}
-                    <details>
-                      <summary>
-                        <small>Mais informações</small>
-                      </summary>
-                      <dl>
-                        {candidate.education && (
-                          <div>
-                            <dt>Escolaridade</dt>
-                            <dd>{candidate.education}</dd>
-                          </div>
-                        )}
-                        {candidate.maritalStatus && (
-                          <div>
-                            <dt>Estado civil</dt>
-                            <dd>{candidate.maritalStatus}</dd>
-                          </div>
-                        )}
-                        {birth && (
-                          <div>
-                            <dt>Nascimento</dt>
-                            <dd>{birth}</dd>
-                          </div>
-                        )}
-                        {age !== null && (
-                          <div>
-                            <dt>Idade na eleição</dt>
-                            <dd>{age} anos</dd>
-                          </div>
-                        )}
-                        {candidate.quilombola && (
-                          <div>
-                            <dt>Quilombola</dt>
-                            <dd>Sim</dd>
-                          </div>
-                        )}
-                        {candidate.indigenousEthnicity && (
-                          <div>
-                            <dt>Etnia indígena</dt>
-                            <dd>{candidate.indigenousEthnicity}</dd>
-                          </div>
-                        )}
-                        {candidate.totalAssets !== null && (
-                          <div>
-                            <dt>Bens declarados</dt>
-                            <dd>{formatBRL(candidate.totalAssets)}</dd>
-                          </div>
-                        )}
-                        {candidate.accountsDeclared === false && (
-                          <div>
-                            <dt>Bens</dt>
-                            <dd>Não há declaração de bens no TSE</dd>
-                          </div>
-                        )}
-                        {candidate.socialLinks.length > 0 && (
-                          <div>
-                            <dt>Redes sociais</dt>
-                            <dd>
-                              <ul>
-                                {candidate.socialLinks.map((link) => (
-                                  <li key={link}>
-                                    <a
-                                      href={link}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {link}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            </dd>
-                          </div>
-                        )}
-                        {candidate.gender && (
-                          <div>
-                            <dt>Sexo</dt>
-                            <dd>{candidate.gender}</dd>
-                          </div>
-                        )}
-                        {candidate.race && (
-                          <div>
-                            <dt>Cor/raça</dt>
-                            <dd>{candidate.race}</dd>
-                          </div>
-                        )}
-                      </dl>
-                    </details>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
     </section>
   )
 }
