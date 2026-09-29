@@ -13,9 +13,11 @@ trabalhar com o código e como mantê-lo assim.
   primeiro. O mantenedor quer opinar.
 - **Contribuições pequenas e focadas.** Um pull request que faz bem uma coisa é
   mais fácil de revisar, mesclar e aprender com ele.
-- **Estilos padrão, sempre.** O projeto usa deliberadamente elementos HTML
-  nativos com o estilo padrão. A passada de estilização está planejada; não
-  adicione CSS específico durante o trabalho de funcionalidades.
+- **Siga o design system.** As cores do app vêm dos tokens em
+  `src/index.css` (Tailwind v4 `@theme`), não de hexes soltos no código. Cores
+  novas vão primeiro para a página de tokens — veja
+  [docs/design-tokens.md](docs/design-tokens.md). O `SpecularButton` tem duas
+  variantes (primary verde, secondary laranja) que compartilham o mesmo estilo.
 - **Zero dependências desnecessárias.** Antes de adicionar uma biblioteca,
   pergunte: dá para fazer com o que já temos? Normalmente dá.
 
@@ -33,25 +35,29 @@ npm run dev      # http://localhost:2026 (app) + API na 2027
 
 ```sh
 npm run lint
+npm run format:check
 npm run test      # parser CSV, normalização e repositório (node:test)
 npm run build
 npm run check:distribution
 ```
 
-2. Confirme que sua mudança mantém a distribuição justa. Se você tocou em
+2. Rode `npm run format` antes de enviar para manter o padrão de aspas simples
+   e sem ponto-e-vírgula (configurado no `.prettierrc.json`).
+
+3. Confirme que sua mudança mantém a distribuição justa. Se você tocou em
    conteúdo ou em pontuação, a auditoria deve continuar mostrando cada
    candidato com vitórias aproximadamente iguais.
-3. Se você mexeu no pipeline de dados, confirme que `npm run ingest` conclui e
+4. Se você mexeu no pipeline de dados, confirme que `npm run ingest` conclui e
    que `npm test` continua passando. O schema do TSE muda entre eleições —
    valide com `npm run ingest -- --inspect` quando o arquivo oficial mudar.
-4. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
+5. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
    de identificadores permanecem em inglês.
 
 ## Enviando um pull request
 
 - Faça um fork do repositório e crie uma branch nomeada pela mudança, por
   exemplo `adiciona-pergunta-sindico` ou `corrige-desempate`.
-- Escreva um título claro e descreva o *porquê*, não só o *o quê*.
+- Escreva um título claro e descreva o _porquê_, não só o _o quê_.
 - Referencie qualquer issue relacionada.
 - Use o [modelo de pull request](.github/pull_request_template.md).
 
@@ -66,7 +72,7 @@ fix(results): ajusta altura da foto no ranking
 ```
 
 **Formato longo** — cabeçalho + corpo. Para mudanças que merecem registro:
-explique o *o quê* e o *porquê*, com ou sem itens. Uma boa mensagem longa é
+explique o _o quê_ e o _porquê_, com ou sem itens. Uma boa mensagem longa é
 parte da documentação do projeto.
 
 ```

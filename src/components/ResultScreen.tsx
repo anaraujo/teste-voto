@@ -3,6 +3,7 @@ import type { OptionId, Question, QuestionId } from '../data/quiz.ts'
 import { questionProvenance } from '../data/quiz-source.ts'
 import { questionMatches } from '../lib/scoring.ts'
 import type { RankedEntry } from '../lib/scoring.ts'
+import { SpecularButton } from './SpecularButton.tsx'
 
 interface ResultScreenProps {
   ranked: readonly RankedEntry[]
@@ -58,16 +59,22 @@ export function ResultScreen({
                     loading="lazy"
                   />
                 )}
-                <strong>{candidate.name}</strong> — {matches} de {totalQuestions}
+                <strong>{candidate.name}</strong> — {matches} de{' '}
+                {totalQuestions}
                 {index === 0 && <mark>Melhor compatibilidade</mark>}
               </summary>
               <p>
                 <small>{candidate.description}</small>
               </p>
               <p>
-                <button type="button" onClick={() => onShowCandidate(candidate.id)}>
+                <SpecularButton
+                  variant="primary"
+                  size="sm"
+                  radius={12}
+                  onClick={() => onShowCandidate(candidate.id)}
+                >
                   Ver ficha do candidato
-                </button>
+                </SpecularButton>
               </p>
               <ul>
                 {questionMatches(answers, questions, candidate).map(
@@ -108,12 +115,12 @@ export function ResultScreen({
         </button>
       )}
 
-      <button type="button" onClick={onShowFairness}>
+      <SpecularButton variant="primary" size="md" onClick={onShowFairness}>
         Verificar imparcialidade
-      </button>
-      <button type="button" onClick={onRestart}>
+      </SpecularButton>
+      <SpecularButton variant="primary" size="md" onClick={onRestart}>
         Recomeçar
-      </button>
+      </SpecularButton>
     </section>
   )
 }

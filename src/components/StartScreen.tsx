@@ -1,3 +1,5 @@
+import { SpecularButton } from './SpecularButton.tsx'
+
 interface StartScreenProps {
   questionCount: number
   candidateCount: number
@@ -48,12 +50,22 @@ export function StartScreen({
         </div>
       )}
 
-      <button type="button" onClick={onStart} disabled={!canStart}>
+      <SpecularButton
+        variant="primary"
+        size="md"
+        onClick={onStart}
+        disabled={!canStart}
+      >
         Começar
-      </button>
-      <button type="button" onClick={onShowCandidates}>
+      </SpecularButton>
+      <SpecularButton
+        variant="secondary"
+        size="md"
+        radius={12}
+        onClick={onShowCandidates}
+      >
         Ver candidatos
-      </button>
+      </SpecularButton>
     </section>
   )
 }

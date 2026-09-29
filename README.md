@@ -16,7 +16,7 @@ Um aplicativo web no espírito de um quiz clássico: poucas perguntas curtas,
 respostas curtas e um resultado no final. Ele responde a uma pergunta para o
 prédio inteiro: **"Em quem eu voto?"**
 
-Cada candidato é descrito por um *perfil* — as respostas que ele daria a cada
+Cada candidato é descrito por um _perfil_ — as respostas que ele daria a cada
 pergunta. Você responde o quiz e recebe um **ranking de todos os candidatos**,
 da melhor compatibilidade para a pior.
 
@@ -68,20 +68,22 @@ npm run ingest -- --inspect   # gera/atualiza docs/tse-schema.md
 
 ### Scripts
 
-| Comando                        | O que faz                                                     |
-| ------------------------------ | ------------------------------------------------------------- |
-| `npm run dev`                  | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027  |
-| `npm start`                    | Inicia somente o app (Vite) na porta 2026                     |
-| `npm run api`                  | Inicia somente a API HTTP na porta 2027                       |
-| `npm run ingest`               | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes) |
-| `npm run ingest -- --inspect`  | Documenta o schema observado em `docs/tse-schema.md`          |
-| `npm run ingest -- --force`    | Rebaixa os arquivos do TSE mesmo se já existirem              |
-| `npm run sync:incumbents`      | Casa os deputados PR em exercício com os candidatos (API Câmara) |
-| `npm run build`                | Checa os tipos e gera o build de produção em `dist/`          |
-| `npm run preview`              | Visualiza o build de produção na porta 2026                   |
-| `npm run lint`                 | Executa o lint com Oxlint                                     |
-| `npm run test`                 | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz e pontuação |
-| `npm run check:distribution`   | Audita a imparcialidade em todas as 480 combinações           |
+| Comando                       | O que faz                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                           |
+| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                              |
+| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                |
+| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                    |
+| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                   |
+| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                       |
+| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                       |
+| `npm run build`               | Checa os tipos e gera o build de produção em `dist/`                                                   |
+| `npm run preview`             | Visualiza o build de produção na porta 2026                                                            |
+| `npm run lint`                | Executa o lint com Oxlint                                                                              |
+| `npm run format`              | Aplica o Prettier em todo o repositório (aspas simples, sem `;`)                                       |
+| `npm run format:check`        | Verifica a formatação sem alterar arquivos                                                             |
+| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz e pontuação |
+| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                    |
 
 ## Dados oficiais do TSE
 
@@ -146,12 +148,15 @@ src/
 │       ├── deputados.ts   Deputados em exercício (API de Dados Abertos)
 │       └── identity.ts    Casamento por nome + data de nascimento
 ├── lib/scoring.ts          Pontuação por compatibilidade de perfil + desempate
+├── index.css               Design tokens (Tailwind v4 @theme) — veja docs/design-tokens.md
 ├── components/
 │   ├── StartScreen.tsx     Tela de boas-vindas
 │   ├── CandidatesScreen.tsx Lista de candidatos oficiais (via API)
 │   ├── QuestionStep.tsx     Uma pergunta, suas opções e o progresso
 │   ├── ResultScreen.tsx     Ranking de todos os candidatos, 1º destacado
-│   └── FairnessScreen.tsx   Auditoria de distribuição imparcial
+│   ├── FairnessScreen.tsx   Auditoria de distribuição imparcial
+│   ├── SpecularButton.tsx   Botão de CTA com variantes primary/secondary (WebGL)
+│   └── specularTheme.ts     Mapeamento variante→token; lê as cores do CSS
 └── App.tsx                 Máquina de estados das telas
 server/index.ts             API HTTP (node:http): candidatos + fotos
 scripts/
@@ -172,13 +177,22 @@ dados oficiais do TSE — nada é escrito à mão por candidato. Um guia passo a
 passo está em [docs/authoring-content.md](docs/authoring-content.md) e o desenho
 do quiz em [docs/quiz-design.md](docs/quiz-design.md).
 
+## Design system
+
+As cores do app são declaradas em uma única página de tokens
+(`src/index.css`, bloco `@theme` do Tailwind v4): cada cor vira uma variável
+CSS global e utilitárias (`bg-primary`, `text-primary-soft` etc.). O
+`SpecularButton` usa essas cores em duas variantes que compartilham o mesmo
+estilo — **primary** (verde) e **secondary** (laranja). Formatação padronizada
+com Prettier (aspas simples, sem `;`). Leia [docs/design-tokens.md](docs/design-tokens.md).
+
 ## Contribuindo
 
 Contribuições são bem-vindas. Leia primeiro o
 [CONTRIBUTING.md](CONTRIBUTING.md) e o
 [Código de Conduta](CODE_OF_CONDUCT.md). Este projeto valoriza a leveza:
-componentes nativos, estilos padrão e nenhuma dependência nova sem uma
-conversa antes.
+estilo guiado pelo design system (tokens + Tailwind), dependências novas
+apenas com uma conversa antes.
 
 ## Licença
 

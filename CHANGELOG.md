@@ -9,6 +9,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Design system** (`docs/design-tokens.md`): Tailwind CSS v4 integrado ao
+  Vite com uma página de tokens de cor (`src/index.css`, bloco `@theme`) que
+  vira variáveis CSS globais e utilitárias (`bg-primary` etc.);
+  `SpecularButton` com variantes **primary** (verde) e **secondary** (laranja)
+  que compartilham o mesmo estilo (shader WebGL via `ogl`), aplicado nos CTAs
+  de Início e Resultado; `npm run format`/`format:check` com Prettier
+  configurado no padrão do projeto (aspas simples, sem ponto-e-vírgula).
 - **Ficha comparável por candidato** (`docs/ficha-comparavel.md`): para cada um
   dos 428 candidatos, fatos oficiais (TSE + Câmara + Senado) e registros
   editoriais separados por camada, com a regra de ouro de que o padrão é

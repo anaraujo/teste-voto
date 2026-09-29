@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — fonte das cores do projeto (Tailwind v4).
+ *
+ * Cada token vira uma variável CSS em `:root` (ex.: var(--color-primary)) e
+ * gera utilitários Tailwind (ex.: bg-primary, text-primary-soft).
+ * O botão SpecularButton resolve estas cores em runtime (getComputedStyle);
+ * um fallback de hexes fica em src/components/specularTheme.ts.
+ *
+ * Documentação: docs/design-tokens.md
+ */
+@theme {
+  /* Verde — variante primary do botão */
+  --color-primary: #009739;
+  --color-primary-soft: #069400;
+
+  /* Laranja — variante secondary do botão */
+  --color-secondary: #f59e0b;
+  /* --color-secondary: #FEDD00; */
+  --color-secondary-soft: #fb3f13;
+
+  /* Cinza - urna eletrônica */
+  --color-gray: #bcb7bc;
+  --color-eggshell: #f0ead6;
+}

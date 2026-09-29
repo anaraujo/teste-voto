@@ -30,7 +30,10 @@ function App() {
       candidatesState.status === 'ready' ? candidatesState.data.candidates : [],
     [candidatesState],
   )
-  const candidates = useMemo(() => toQuizCandidates(apiCandidates), [apiCandidates])
+  const candidates = useMemo(
+    () => toQuizCandidates(apiCandidates),
+    [apiCandidates],
+  )
 
   const ranked = useMemo(
     () => rankResults(answers, questions, candidates),
@@ -41,7 +44,9 @@ function App() {
 
   const showCandidate = (id: string) => setScreen({ name: 'candidate', id })
   const backFromCandidate = () =>
-    setScreen(screen.name === 'candidate' ? { name: 'candidates' } : { name: 'start' })
+    setScreen(
+      screen.name === 'candidate' ? { name: 'candidates' } : { name: 'start' },
+    )
 
   const handleAnswer = (optionId: OptionId) => {
     if (screen.name !== 'question') return
@@ -64,16 +69,14 @@ function App() {
   }
 
   return (
-    <main>
+    <main className="min-h-screen bg-eggshell">
       {screen.name === 'start' && (
         <StartScreen
           questionCount={questions.length}
           candidateCount={candidates.length}
           loading={candidatesState.status === 'loading'}
           error={
-            candidatesState.status === 'error'
-              ? candidatesState.message
-              : null
+            candidatesState.status === 'error' ? candidatesState.message : null
           }
           onRetry={retryCandidates}
           onStart={handleStart}
