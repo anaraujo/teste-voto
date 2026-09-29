@@ -184,8 +184,8 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
           <dt>Redes sociais</dt>
           <dd>
             <ul>
-              {dado.socialLinks.map((link) => (
-                <li key={link}>
+              {dado.socialLinks.map((link, index) => (
+                <li key={`${link}-${index}`}>
                   <a href={link} target="_blank" rel="noreferrer">
                     {link}
                   </a>
