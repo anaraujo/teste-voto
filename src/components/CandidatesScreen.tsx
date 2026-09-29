@@ -33,25 +33,28 @@ function isModifiedClick(event: {
 
 function toChromaItem(candidate: ApiCandidate): ChromaItem {
   const partido = partyColor(candidate.partyAcronym)
-  const base = partido.primary
+  // O fundo do card é a segunda cor do partido, não a primária. Quem não tem
+  // secundária cadastrada — o SEM_PARTIDO, por exemplo — cai na primária, que
+  // é o mesmo cinza e passa em AA com tinta branca.
+  const base = partido.secondary[0] ?? partido.primary
 
   return {
     image: candidate.photoUrl,
     placeholder: candidate.ballotNumber,
-    // Nome completo, não o nome de urna: os dois são quase sempre diferentes
-    // ("MARCO BRASIL" na urna, "MARCO AURELIO RIBEIRO" no registro). Nos 428
-    // candidatos nenhum `full_name` vem vazio, e 24 são iguais ao nome de urna
-    // — nesse caso mostrar os dois seria repetir a mesma linha.
-    title: candidate.fullName || candidate.ballotName,
+    // Nome de urna, não o completo. O nome completo tem até 46 caracteres e
+    // empurrava 8 dos 428 cards para 4 linhas; o de urna tem no máximo 30, e
+    // 425 dos 428 cabem em duas.
+    title: candidate.ballotName,
+    number: candidate.ballotNumber,
     party: candidate.partyAcronym ?? 'Sem partido',
-    handle: candidate.ballotNumber ? `Nº ${candidate.ballotNumber}` : undefined,
     // A tinta vem da cor, não do partido: `readableOn` escolhe entre branco e
-    // #111 pelo contraste, e nas 30 cores a escolha passa em AA.
+    // #111 pelo contraste. Sobre as 30 secundárias a escolha passa em AA, com
+    // CIDADANIA como pior caso (4,58:1).
     textColor: readableOn(base),
-    // Sem preto: um tom mais claro da própria cor no topo (a moldura em volta
-    // da foto) e a cor cheia embaixo, onde fica o texto. A versão anterior
-    // terminava em `rgb(0 0 0 / 0.6)`, que lavava o card.
-    gradient: `linear-gradient(160deg, color-mix(in srgb, ${base} 22%, white), ${base})`,
+    // Cor chapada. O texto fica sempre sobre ela, então um gradiente
+    // deslocaria a luminância do fundo e o contraste medido acima deixaria de
+    // valer na parte mais clara.
+    base,
     children: (
       <a
         className="chroma-ficha"
