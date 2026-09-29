@@ -47,7 +47,9 @@ function prerenderedPages(): Plugin {
 
   return {
     name: 'prerendered-pages',
-    configureServer: serve,
+    // Só no preview: em `npm start` o servidor de desenvolvimento precisa
+    // servir o index.html fresco, senão um `dist/` antigo encobre a rota e
+    // mudanças no código não aparecem.
     configurePreviewServer: serve,
   }
 }
