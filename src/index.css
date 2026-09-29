@@ -27,3 +27,39 @@
   --color-gray: #bcb7bc;
   --color-eggshell: #f0ead6;
 }
+
+/*
+ * `.sb-link` — link com o visual do SpecularButton, sem WebGL.
+ *
+ * A lista de candidatos tem 428 itens, e cada SpecularButton abriria um
+ * contexto WebGL (o navegador aceita poucos). Então o "Ver ficha" é um `<a>`
+ * de verdade — o que o Google consegue seguir — com a mesma aparência da
+ * variante tertiary. Fica de fora o que só o shader faz: o brilho que segue o
+ * mouse e o `backdrop-filter`, caro de pintar 428 vezes numa lista longa.
+ */
+@layer components {
+  .sb-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 114px;
+    padding: 10px 22px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--color-tertiary);
+    background: color-mix(in srgb, var(--color-tertiary-soft) 25%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 4%),
+      0 8px 24px rgb(0 0 0 / 25%);
+    transition: transform 150ms;
+  }
+
+  .sb-link:active {
+    transform: scale(0.97);
+  }
+}

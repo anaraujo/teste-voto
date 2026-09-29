@@ -114,6 +114,7 @@ export function CandidatesScreen({
                   <li key={candidate.id}>
                     <p>
                       <a
+                        className="sb-link"
                         href={candidatePath(candidate.id)}
                         onClick={(event) => {
                           if (isModifiedClick(event)) return
