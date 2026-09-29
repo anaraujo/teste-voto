@@ -25,6 +25,7 @@ export function CandidatesScreen({
   onShowCandidate,
 }: CandidatesScreenProps) {
   const [query, setQuery] = useState('')
+  const [appliedQuery, setAppliedQuery] = useState('')
 
   const index = useMemo(
     () =>
@@ -35,8 +36,8 @@ export function CandidatesScreen({
   )
 
   const filtered = useMemo(
-    () => searchCandidates(index, query),
-    [index, query],
+    () => searchCandidates(index, appliedQuery),
+    [index, appliedQuery],
   )
 
   return (
@@ -92,7 +93,12 @@ export function CandidatesScreen({
               </small>
             </p>
 
-            <p>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                setAppliedQuery(query)
+              }}
+            >
               <label htmlFor="candidate-search">Buscar candidato</label>
               <input
                 id="candidate-search"
@@ -101,14 +107,21 @@ export function CandidatesScreen({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
-              {query !== '' && (
-                <button type="button" onClick={() => setQuery('')}>
+              <button type="submit">Buscar</button>
+              {appliedQuery !== '' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('')
+                    setAppliedQuery('')
+                  }}
+                >
                   Limpar
                 </button>
               )}
-            </p>
+            </form>
 
-            {query !== '' && (
+            {appliedQuery !== '' && (
               <p>
                 <small>
                   {filtered.length === 1
