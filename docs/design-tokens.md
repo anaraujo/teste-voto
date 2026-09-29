@@ -41,14 +41,24 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
 ### Tokens atuais
 
-| Token                    | Hex       | Papel                    | Uso principal                  |
-| ------------------------ | --------- | ------------------------ | ------------------------------ |
-| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary   |
-| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary    |
-| `--color-secondary`      | `#f59e0b` | Laranja/âmbar escuro     | texto/linha do botão secondary |
-| `--color-secondary-soft` | `#fb3f13` | Laranja claro            | tint/borda do botão secondary  |
-| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface          |
-| `--color-eggshell`       | `#f0ead6` | Fundo creme da página    | fundo do app (`bg-eggshell`)   |
+| Token                    | Hex       | Papel                    | Uso principal                       |
+| ------------------------ | --------- | ------------------------ | ----------------------------------- |
+| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary        |
+| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary         |
+| `--color-secondary`      | `#fb3f13` | Laranja                  | texto/linha do botão secondary      |
+| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary       |
+| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary       |
+| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary        |
+| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary   |
+| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary |
+| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary  |
+| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface               |
+| `--color-eggshell`       | `#f0ead6` | Fundo creme da página    | fundo do app (`bg-eggshell`)        |
+
+Os tokens `-on` existem porque nenhuma das três cores da marca passa em
+WCAG AA com texto branco (3,83:1, 3,61:1 e 2,15:1 contra `#ffffff`); com
+`#111` as três passam (4,93:1, 5,24:1 e 8,79:1). Quem pinta uma superfície
+com a cor cheia pega o `-on` correspondente.
 
 ## Usando as cores no código
 

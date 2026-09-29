@@ -23,6 +23,20 @@
   --color-tertiary: #f59e0b;
   --color-tertiary-soft: #fedd00;
 
+  /*
+   * Texto legível sobre cada cor cheia.
+   *
+   * Nenhuma das três cores da marca passa em AA com texto branco: 3,83:1
+   * (primary), 3,61:1 (secondary) e 2,15:1 (tertiary) contra #ffffff. Com
+   * #111 as três passam (4,93:1, 5,24:1 e 8,79:1), então é esse o par
+   * declarado aqui. Quem pinta uma superfície com a cor cheia — o card do
+   * Chroma Grid, por exemplo — pega o `-on` correspondente em vez de hardcodar
+   * branco, que sumiria no amarelo.
+   */
+  --color-primary-on: #111111;
+  --color-secondary-on: #111111;
+  --color-tertiary-on: #111111;
+
   /* Cinza - urna eletrônica */
   --color-gray: #bcb7bc;
   --color-eggshell: #f0ead6;
