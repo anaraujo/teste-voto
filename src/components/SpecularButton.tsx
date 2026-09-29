@@ -57,10 +57,13 @@ interface ShaderProps {
 
 const PAD = 20
 
+/** Largura mínima, para os rótulos curtos não deixarem o botão desproporcional. */
+const MIN_WIDTH = 172
+
 const SIZES: Record<ButtonSize, { fontSize: string; padding: string }> = {
-  sm: { fontSize: '0.85rem', padding: '10px 22px' },
-  md: { fontSize: '1rem', padding: '14px 30px' },
-  lg: { fontSize: '1.15rem', padding: '18px 40px' },
+  sm: { fontSize: '0.85rem', padding: '10px 20px' },
+  md: { fontSize: '1rem', padding: '14px 20px' },
+  lg: { fontSize: '1.15rem', padding: '18px 20px' },
 }
 
 const VERT = `#version 300 es
@@ -235,7 +238,7 @@ export function SpecularButton({
           uPx: { value: dpr },
           uLineColor: { value: [1, 1, 1] },
           uBaseColor: { value: [0.32, 0.32, 0.32] },
-          uIntensity: { value: 1 },
+          uIntensity: { value: 0.5 },
           uShineSize: { value: 0.17 },
           uShineFade: { value: 0.7 },
           uThickness: { value: 1 },
@@ -327,6 +330,7 @@ export function SpecularButton({
     position: 'relative',
     margin: 0,
     display: 'inline-flex',
+    minWidth: MIN_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
     cursor: disabled ? 'default' : 'pointer',
