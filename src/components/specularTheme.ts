@@ -1,4 +1,4 @@
-export type SpecularVariant = 'primary' | 'secondary'
+export type SpecularVariant = 'primary' | 'secondary' | 'tertiary'
 
 /**
  * Cores do SpecularButton, por variante. As variantes compartilham o mesmo
@@ -19,7 +19,9 @@ export type SpecularVariant = 'primary' | 'secondary'
  */
 export interface SpecularCssVars {
   tint: string
+  edge: string
   text: string
+  highlight: string
 }
 
 export interface SpecularTheme {
@@ -40,19 +42,48 @@ export interface SpecularTheme {
 }
 
 /** Mapeamento variante → tokens de cor declarados em src/index.css. */
-const TOKENS: Record<SpecularVariant, { tint: string; text: string }> = {
-  primary: { tint: '--color-primary-soft', text: '--color-primary' },
-  secondary: { tint: '--color-secondary-soft', text: '--color-secondary' },
+const TOKENS: Record<
+  SpecularVariant,
+  { tint: string; edge: string; text: string; highlight: string }
+> = {
+  primary: {
+    tint: '--color-primary-soft',
+    edge: 'color-primary-soft',
+    text: '--color-primary',
+    highlight: '--color-primary',
+  },
+  secondary: {
+    tint: '--color-secondary-soft',
+    edge: 'color-secondary-soft',
+    text: '--color-secondary',
+    highlight: '--color-secondary',
+  },
+  tertiary: {
+    tint: '--color-tertiary-soft',
+    edge: 'color-tertiary-soft',
+    text: '--color-tertiary',
+    highlight: '--color-tertiary',
+  },
 }
 
 const CSS_VARS: Record<SpecularVariant, SpecularCssVars> = {
   primary: {
     tint: `var(${TOKENS.primary.tint})`,
+    edge: `var(${TOKENS.primary.edge})`,
     text: `var(${TOKENS.primary.text})`,
+    highlight: `var(${TOKENS.primary.highlight})`,
   },
   secondary: {
     tint: `var(${TOKENS.secondary.tint})`,
+    edge: `var(${TOKENS.primary.edge})`,
     text: `var(${TOKENS.secondary.text})`,
+    highlight: `var(${TOKENS.primary.highlight})`,
+  },
+  tertiary: {
+    tint: `var(${TOKENS.tertiary.tint})`,
+    edge: `var(${TOKENS.primary.edge})`,
+    text: `var(${TOKENS.tertiary.text})`,
+    highlight: `var(${TOKENS.primary.highlight})`,
   },
 }
 
@@ -73,12 +104,21 @@ const FALLBACK: Record<SpecularVariant, SpecularTheme> = {
     radius: 16,
   },
   secondary: {
-    tint: '#fb3f13',
+    tint: '#F97316',
     tintOpacity: 0.25,
     blur: 11,
-    textColor: '#f59e0b',
-    lineColor: '#f59e0b',
-    baseColor: '#fb3f13',
+    textColor: '#fb3f13',
+    lineColor: '#fb3f13',
+    baseColor: '#F97316',
+    radius: 16,
+  },
+  tertiary: {
+    tint: '#f59e0b',
+    tintOpacity: 0.25,
+    blur: 11,
+    textColor: '#FEDD00',
+    lineColor: '#FEDD00',
+    baseColor: '#f59e0b',
     radius: 16,
   },
 }
