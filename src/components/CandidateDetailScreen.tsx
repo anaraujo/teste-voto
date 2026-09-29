@@ -19,7 +19,8 @@ type Tab =
 
 interface CandidateDetailScreenProps {
   candidateId: string
-  onBack: () => void
+  /** Ficha embutida no HTML pré-renderizado; dispensa a requisição à API. */
+  initialData?: ApiCandidateDetail
 }
 
 function formatPeriod(
@@ -37,13 +38,7 @@ function votoLabel(voto: string | null): string {
   return voto
 }
 
-function FichaStructure({
-  dado,
-  onBack,
-}: {
-  dado: ApiCandidateDetail
-  onBack: () => void
-}) {
+function FichaStructure({ dado }: { dado: ApiCandidateDetail }) {
   const [tab, setTab] = useState<Tab>('resumo')
   const candidate = dado
 
@@ -121,10 +116,6 @@ function FichaStructure({
           evidência aparece como “não encontrei evidência suficiente”.
         </small>
       </p>
-
-      <button type="button" onClick={onBack}>
-        Voltar
-      </button>
     </section>
   )
 }
@@ -612,9 +603,9 @@ function FontesTab({ dado }: { dado: ApiCandidateDetail }) {
 
 export function CandidateDetailScreen({
   candidateId,
-  onBack,
+  initialData,
 }: CandidateDetailScreenProps) {
-  const { state, retry } = useCandidateDetail(candidateId)
+  const { state, retry } = useCandidateDetail(candidateId, initialData)
 
   if (state.status === 'error') {
     return (
@@ -625,9 +616,6 @@ export function CandidateDetailScreen({
         </p>
         <button type="button" onClick={retry}>
           Tentar novamente
-        </button>
-        <button type="button" onClick={onBack}>
-          Voltar
         </button>
       </section>
     )
@@ -641,5 +629,5 @@ export function CandidateDetailScreen({
     )
   }
 
-  return <FichaStructure dado={state.data} onBack={onBack} />
+  return <FichaStructure dado={state.data} />
 }

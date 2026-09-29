@@ -130,6 +130,8 @@ src/
 │   ├── domain.ts           Modelo de domínio (CandidateRecord, Source)
 │   └── api.ts              Contratos da API compartilhados com o frontend
 ├── hooks/useCandidates.ts  Estado de carregamento da lista de candidatos
+├── hooks/useQuizAnswers.ts Respostas do quiz (sessionStorage)
+├── shared/router.ts        Rotas puras: caminho de URL ↔ tela
 ├── data-sources/
 │   ├── repository.ts       Banco SQLite (node:sqlite): candidatos, incumbentes, auditoria
 │   ├── tse/
@@ -155,9 +157,12 @@ src/
 │   ├── QuestionStep.tsx     Uma pergunta, suas opções e o progresso
 │   ├── ResultScreen.tsx     Ranking de todos os candidatos, 1º destacado
 │   ├── FairnessScreen.tsx   Auditoria de distribuição imparcial
+│   ├── AppHeader.tsx        Cabeçalho com o botão de voltar
+│   ├── NotFoundScreen.tsx   Rota desconhecida
 │   ├── SpecularButton.tsx   Botão de CTA com variantes primary/secondary (WebGL)
 │   └── specularTheme.ts     Mapeamento variante→token; lê as cores do CSS
-└── App.tsx                 Máquina de estados das telas
+├── AppRouter.tsx           Cliente do roteamento (History API)
+└── App.tsx                 Renderiza a tela da rota
 server/index.ts             API HTTP (node:http): candidatos + fotos
 scripts/
 ├── ingest.ts               CLI de ingestão (--inspect, --force)
@@ -176,6 +181,16 @@ resolvedores puros e proveniência. Os perfis dos candidatos são derivados dos
 dados oficiais do TSE — nada é escrito à mão por candidato. Um guia passo a
 passo está em [docs/authoring-content.md](docs/authoring-content.md) e o desenho
 do quiz em [docs/quiz-design.md](docs/quiz-design.md).
+
+## Rotas
+
+Cada tela tem uma URL — `/`, `/candidatos`, `/candidato/:id`, `/quiz/:n`,
+`/resultado` e `/imparcialidade` — então a ficha de um candidato pode ser
+compartilhada e o botão voltar do navegador funciona. O par caminho ↔ tela mora
+em [`src/shared/router.ts`](src/shared/router.ts), um módulo puro sem
+dependência de roteamento; o botão de voltar do cabeçalho tem destino
+determinístico. As páginas são geradas estaticamente no build: ver
+[docs/how-it-works.md](docs/how-it-works.md).
 
 ## Design system
 

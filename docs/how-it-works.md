@@ -29,14 +29,19 @@ src/
 │   ├── elections.ts          Configuração de eleições (2026/PR/DEPUTADO FEDERAL)
 │   ├── domain.ts             Modelo de domínio (CandidateRecord, Source)
 │   └── api.ts                Contratos da API compartilhados com o frontend
-├── hooks/useCandidates.ts    Estado de carregamento da lista (API)
+├── AppRouter.tsx             Cliente do roteamento (History API no navegador)
+├── hooks/useCandidates.ts    Estado de carregamento da lista (API ou seed)
+├── hooks/useCandidateDetail.ts  Estado de carregamento da ficha (API ou seed)
+├── hooks/useQuizAnswers.ts   Respostas do quiz (sessionStorage)
 ├── lib/scoring.ts            Pontuação pura + desempate (ranking)
 ├── components/               Um componente por tela
 │   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
 │   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (via API)
 │   ├── QuestionStep.tsx      Uma pergunta e suas opções
 │   ├── ResultScreen.tsx      Ranking completo dos candidatos
-│   └── FairnessScreen.tsx    Auditoria de imparcialidade
+│   ├── FairnessScreen.tsx    Auditoria de parcialidade
+│   ├── AppHeader.tsx         Cabeçalho com o botão de voltar
+│   └── NotFoundScreen.tsx    Rota desconhecida
 ├── data-sources/
 │   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes,
 │   │                         mandatos, registros, votos, posições anteriores,

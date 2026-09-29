@@ -1,12 +1,29 @@
 import type { ApiCandidate } from '../shared/api.ts'
+import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
   onRetry: () => void
-  onBack: () => void
   onShowCandidate: (candidateId: string) => void
+}
+
+/** Clique com modificador (abrir em nova aba) não é interceptado. */
+function isModifiedClick(event: {
+  metaKey: boolean
+  ctrlKey: boolean
+  shiftKey: boolean
+  altKey: boolean
+  button: number
+}): boolean {
+  return (
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.button !== 0
+  )
 }
 
 /** Agremiação: federação, partido isolado ou tipo de agremiação. */
@@ -19,7 +36,6 @@ function formatCandidacy(candidate: ApiCandidate): string | null {
 export function CandidatesScreen({
   state,
   onRetry,
-  onBack,
   onShowCandidate,
 }: CandidatesScreenProps) {
   return (
@@ -97,12 +113,16 @@ export function CandidatesScreen({
                 return (
                   <li key={candidate.id}>
                     <p>
-                      <button
-                        type="button"
-                        onClick={() => onShowCandidate(candidate.id)}
+                      <a
+                        href={candidatePath(candidate.id)}
+                        onClick={(event) => {
+                          if (isModifiedClick(event)) return
+                          event.preventDefault()
+                          onShowCandidate(candidate.id)
+                        }}
                       >
                         Ver ficha
-                      </button>
+                      </a>
                     </p>
                     {candidate.photoUrl && (
                       <img
@@ -247,10 +267,6 @@ export function CandidatesScreen({
             </ul>
           </div>
         ))}
-
-      <button type="button" onClick={onBack}>
-        Voltar
-      </button>
     </section>
   )
 }

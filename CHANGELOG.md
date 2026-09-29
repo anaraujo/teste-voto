@@ -9,6 +9,14 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Rotas de verdade** no lugar da máquina de estados em memória: cada tela tem
+  URL (`/`, `/candidatos`, `/candidato/:id`, `/quiz/:n`, `/resultado`,
+  `/imparcialidade`), a ficha de um candidato pode ser compartilhada e o botão
+  voltar do navegador funciona. `src/shared/router.ts` concentra o par
+  caminho ↔ tela em código puro (sem `react-router`), com destino
+  determinístico para o botão de voltar do cabeçalho; as respostas do quiz
+  passam a viver em `sessionStorage`, para `/resultado` sobreviver a um F5; e o
+  "Ver ficha" da lista virou `<a href>`, abrindo em nova aba quando pedido.
 - **Design system** (`docs/design-tokens.md`): Tailwind CSS v4 integrado ao
   Vite com uma página de tokens de cor (`src/index.css`, bloco `@theme`) que
   vira variáveis CSS globais e utilitárias (`bg-primary` etc.);
