@@ -82,7 +82,7 @@ function App({ route, onNavigate, data }: AppProps) {
   }
 
   return (
-    <main className="min-h-screen bg-eggshell">
+    <main className="min-h-screen bg-eggshell flex items-center justify-center">
       <AppHeader route={route} onNavigate={onNavigate} />
 
       {route.name === 'start' && (

@@ -22,7 +22,7 @@ export function StartScreen({
   const canStart = !loading && candidateCount > 0
 
   return (
-    <section>
+    <section className="flex flex-col items-center justify-center gap-4">
       <h1>Teste de Voto</h1>
       <p>
         Descubra qual dos {candidateCount} candidatos a deputado federal combina
@@ -50,22 +50,24 @@ export function StartScreen({
         </div>
       )}
 
-      <SpecularButton
-        variant="primary"
-        size="md"
-        onClick={onStart}
-        disabled={!canStart}
-      >
-        Começar
-      </SpecularButton>
-      <SpecularButton
-        variant="secondary"
-        size="md"
-        radius={12}
-        onClick={onShowCandidates}
-      >
-        Ver candidatos
-      </SpecularButton>
+      <div className="flex gap-4">
+        <SpecularButton
+          variant="primary"
+          size="md"
+          onClick={onStart}
+          disabled={!canStart}
+        >
+          Começar
+        </SpecularButton>
+        <SpecularButton
+          variant="secondary"
+          size="md"
+          radius={12}
+          onClick={onShowCandidates}
+        >
+          Ver candidatos
+        </SpecularButton>
+      </div>
     </section>
   )
 }
