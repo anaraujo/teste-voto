@@ -21,7 +21,9 @@ function openDatabase(): DatabaseSync {
   return db
 }
 
-function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecord {
+function makeCandidate(
+  overrides: Partial<CandidateRecord> = {},
+): CandidateRecord {
   const base: CandidateRecord = {
     id: '2026-PR-1',
     tseSequence: '1',
@@ -81,7 +83,10 @@ test('upsertCandidate insere, atualiza e mantém inalterado', () => {
   assert.equal(upsertCandidate(db, makeCandidate()).status, 'inserted')
   assert.equal(upsertCandidate(db, makeCandidate()).status, 'unchanged')
 
-  const changed = makeCandidate({ city: 'LONDRINA', updatedAt: '2026-09-02T00:00:00.000Z' })
+  const changed = makeCandidate({
+    city: 'LONDRINA',
+    updatedAt: '2026-09-02T00:00:00.000Z',
+  })
   assert.equal(upsertCandidate(db, changed).status, 'updated')
 
   const stored = getCandidate(db, '2026-PR-1')
@@ -118,7 +123,9 @@ test('upsertCandidate persiste os campos novos', () => {
   assert.equal(stored?.totalAssets, 45000)
   assert.deepEqual(stored?.socialLinks, ['HTTPS://WWW.FACEBOOK.COM/ANA'])
 
-  const columns = db.prepare('PRAGMA table_info(candidates)').all() as unknown as Array<{
+  const columns = db
+    .prepare('PRAGMA table_info(candidates)')
+    .all() as unknown as Array<{
     name: string
   }>
   const names = new Set(columns.map((column) => column.name))
@@ -135,7 +142,10 @@ test('upsertCandidate persiste os campos novos', () => {
 test('deactivateMissing marca removidos e lista apenas ativos', () => {
   const db = openDatabase()
   upsertCandidate(db, makeCandidate({ id: '2026-PR-1', tseSequence: '1' }))
-  upsertCandidate(db, makeCandidate({ id: '2026-PR-2', tseSequence: '2', ballotName: 'BIA' }))
+  upsertCandidate(
+    db,
+    makeCandidate({ id: '2026-PR-2', tseSequence: '2', ballotName: 'BIA' }),
+  )
 
   const removed = deactivateMissing(db, FILTER, ['2026-PR-1'])
   assert.equal(removed, 1)
@@ -148,13 +158,27 @@ test('storeRaw preserva a linha original em JSON', () => {
   const db = openDatabase()
   upsertCandidate(db, makeCandidate())
   storeRaw(db, '2026-PR-1', ['2026', 'PR', 'DEPUTADO FEDERAL', '1'])
-  storeRaw(db, '2026-PR-1', ['2026', 'PR', 'DEPUTADO FEDERAL', '1', 'atualizado'])
+  storeRaw(db, '2026-PR-1', [
+    '2026',
+    'PR',
+    'DEPUTADO FEDERAL',
+    '1',
+    'atualizado',
+  ])
 
-  const row = db.prepare('SELECT raw_json FROM candidates_raw WHERE id = ?').get('2026-PR-1') as {
+  const row = db
+    .prepare('SELECT raw_json FROM candidates_raw WHERE id = ?')
+    .get('2026-PR-1') as {
     raw_json: string
   }
   const parsed = JSON.parse(row.raw_json) as string[]
-  assert.deepEqual(parsed, ['2026', 'PR', 'DEPUTADO FEDERAL', '1', 'atualizado'])
+  assert.deepEqual(parsed, [
+    '2026',
+    'PR',
+    'DEPUTADO FEDERAL',
+    '1',
+    'atualizado',
+  ])
 })
 
 test('setPhotoUrls atualiza o caminho das fotos', () => {
@@ -183,7 +207,9 @@ test('writeSyncLog registra a sincronização', () => {
     error: null,
   })
 
-  const count = db.prepare('SELECT COUNT(*) AS n FROM sync_log').get() as { n: number }
+  const count = db.prepare('SELECT COUNT(*) AS n FROM sync_log').get() as {
+    n: number
+  }
   assert.equal(Number(count.n), 1)
 })
 

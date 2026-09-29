@@ -12,9 +12,20 @@
 
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http'
 import { extname, join, normalize } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, getParliamentary, getPoliticalMandates, type IncumbentRow } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+  listIncumbents,
+  getParliamentary,
+  getPoliticalMandates,
+  type IncumbentRow,
+} from '../src/data-sources/repository.ts'
 import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
@@ -117,7 +128,9 @@ async function toApiDetail(
   }
 }
 
-function toApiMandate(mandate: Awaited<ReturnType<typeof getParliamentary>>['mandates'][number]): ApiMandate {
+function toApiMandate(
+  mandate: Awaited<ReturnType<typeof getParliamentary>>['mandates'][number],
+): ApiMandate {
   return {
     casa: mandate.casa,
     legislatura: mandate.legislatura,
@@ -144,16 +157,23 @@ function toApiPoliticalMandate(
   }
 }
 
-function toApiRecord(record: Awaited<ReturnType<typeof getParliamentary>>['records'][number]): ApiParliamentaryRecord {
+function toApiRecord(
+  record: Awaited<ReturnType<typeof getParliamentary>>['records'][number],
+): ApiParliamentaryRecord {
   return {
     casa: record.casa,
     proposicoesPorAno: record.proposicoesPorAno,
-    comissoes: record.comissoes.map((comissao) => ({ sigla: comissao.sigla, nome: comissao.nome })),
+    comissoes: record.comissoes.map((comissao) => ({
+      sigla: comissao.sigla,
+      nome: comissao.nome,
+    })),
     despesasPorAno: record.despesasPorAno,
   }
 }
 
-function toApiVote(vote: Awaited<ReturnType<typeof getParliamentary>>['votes'][number]): ApiVote {
+function toApiVote(
+  vote: Awaited<ReturnType<typeof getParliamentary>>['votes'][number],
+): ApiVote {
   return {
     votacaoId: vote.votacaoId,
     tema: vote.tema,
@@ -191,7 +211,8 @@ function sendError(res: ServerResponse, status: number, message: string): void {
 }
 
 function parseUrlPath(req: IncomingMessage): string {
-  return new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`).pathname
+  return new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+    .pathname
 }
 
 const PHOTO_TYPES: Record<string, string> = {
@@ -222,7 +243,8 @@ async function servePhoto(res: ServerResponse, urlPath: string): Promise<void> {
     return
   }
 
-  const type = PHOTO_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
+  const type =
+    PHOTO_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
   res.writeHead(200, {
     'content-type': type,
     'cache-control': 'public, max-age=86400',
@@ -233,7 +255,10 @@ async function servePhoto(res: ServerResponse, urlPath: string): Promise<void> {
 
 async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
   if (urlPath === '/api/health') {
-    sendJson(res, 200, { status: 'ok', election: electionKey(CURRENT_ELECTION) })
+    sendJson(res, 200, {
+      status: 'ok',
+      election: electionKey(CURRENT_ELECTION),
+    })
     return
   }
 
@@ -303,5 +328,7 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(PORT, () => {
-  console.log(`[api] ouvindo em http://localhost:${PORT} (dados em ${DATA_DIR})`)
+  console.log(
+    `[api] ouvindo em http://localhost:${PORT} (dados em ${DATA_DIR})`,
+  )
 })

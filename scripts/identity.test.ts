@@ -1,10 +1,17 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { CandidateRecord } from '../src/shared/domain.ts'
-import { matchIncumbents, normalizeName } from '../src/data-sources/camara/identity.ts'
+import {
+  matchIncumbents,
+  normalizeName,
+} from '../src/data-sources/camara/identity.ts'
 import type { CamaraDeputy } from '../src/data-sources/camara/deputados.ts'
 
-function candidate(id: string, fullName: string, ballotName: string): CandidateRecord {
+function candidate(
+  id: string,
+  fullName: string,
+  ballotName: string,
+): CandidateRecord {
   const source = {
     provider: 'TSE',
     url: 'https://exemplo.com',
@@ -59,7 +66,15 @@ function candidate(id: string, fullName: string, ballotName: string): CandidateR
 }
 
 function deputy(id: number, nome: string, siglaPartido: string): CamaraDeputy {
-  return { id, nome, siglaPartido, siglaUf: 'PR', urlFoto: null, email: null, dataNascimento: null }
+  return {
+    id,
+    nome,
+    siglaPartido,
+    siglaUf: 'PR',
+    urlFoto: null,
+    email: null,
+    dataNascimento: null,
+  }
 }
 
 test('normalizeName remove acentos e pontuação', () => {
@@ -69,7 +84,9 @@ test('normalizeName remove acentos e pontuação', () => {
 
 test('matchIncumbents casa por nome completo', () => {
   const candidates = [candidate('1', 'LUIZ CARLOS HAULY', 'LUIZ HAULY')]
-  const result = matchIncumbents(candidates, [deputy(1, 'LUIZ CARLOS HAULY', 'PP')])
+  const result = matchIncumbents(candidates, [
+    deputy(1, 'LUIZ CARLOS HAULY', 'PP'),
+  ])
 
   assert.equal(result.matchedCount, 1)
   assert.equal(result.matches[0].candidateId, '1')
@@ -88,14 +105,18 @@ test('matchIncumbents casa pelo nome de urna mesmo sem nome civil', () => {
 
 test('matchIncumbents recusa nome de urna curto sem data de nascimento', () => {
   const candidates = [candidate('3', 'ANA PAULA SILVA', 'ANA')]
-  const result = matchIncumbents(candidates, [{ ...deputy(3, 'ANA', 'PT'), dataNascimento: null }])
+  const result = matchIncumbents(candidates, [
+    { ...deputy(3, 'ANA', 'PT'), dataNascimento: null },
+  ])
 
   assert.equal(result.matchedCount, 0)
   assert.equal(result.unmatchedDeputies.length, 1)
 })
 
 test('matchIncumbents aceita nome de urna curto com data de nascimento', () => {
-  const candidates = [{ ...candidate('3', 'ANA PAULA SILVA', 'ANA'), birthDate: '1975-08-12' }]
+  const candidates = [
+    { ...candidate('3', 'ANA PAULA SILVA', 'ANA'), birthDate: '1975-08-12' },
+  ]
   const result = matchIncumbents(candidates, [
     { ...deputy(3, 'ANA', 'PT'), dataNascimento: '1975-08-12' },
   ])
@@ -106,8 +127,14 @@ test('matchIncumbents aceita nome de urna curto com data de nascimento', () => {
 
 test('matchIncumbents desempata nomes iguais pela data de nascimento', () => {
   const candidates = [
-    { ...candidate('10', 'JOSÉ ANTÔNIO CLAUDINO', 'BRAZÃO'), birthDate: '1970-01-01' },
-    { ...candidate('11', 'JOSÉ ANTÔNIO CLAUDINO', 'BRAZÃO'), birthDate: '1975-05-05' },
+    {
+      ...candidate('10', 'JOSÉ ANTÔNIO CLAUDINO', 'BRAZÃO'),
+      birthDate: '1970-01-01',
+    },
+    {
+      ...candidate('11', 'JOSÉ ANTÔNIO CLAUDINO', 'BRAZÃO'),
+      birthDate: '1975-05-05',
+    },
   ]
   const result = matchIncumbents(candidates, [
     { ...deputy(4, 'BRAZÃO', 'PL'), dataNascimento: '1975-05-05' },

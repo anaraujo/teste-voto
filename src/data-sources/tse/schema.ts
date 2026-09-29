@@ -103,7 +103,10 @@ export interface RawCandidateRow {
   federation: string
 }
 
-export function mapRawRow(index: Map<string, number>, row: readonly string[]): RawCandidateRow {
+export function mapRawRow(
+  index: Map<string, number>,
+  row: readonly string[],
+): RawCandidateRow {
   const name = (field: TseField): string => {
     const column = TSE_COLUMNS[field][0]
     return readCell(index, row, column)
@@ -166,7 +169,9 @@ export function inspectCsv(
   lines.push(`- Separador: \`${separator}\``)
   lines.push(`- Linhas de dados: ${rows.length}`)
   lines.push(`- Colunas: ${headers.length}`)
-  lines.push(`- Colunas obrigatórias ausentes: ${missing.length === 0 ? 'nenhuma' : missing.join(', ')}`)
+  lines.push(
+    `- Colunas obrigatórias ausentes: ${missing.length === 0 ? 'nenhuma' : missing.join(', ')}`,
+  )
   lines.push('')
 
   if (headers.length > 0) {
@@ -197,7 +202,9 @@ export function inspectCsv(
 
 export { buildHeaderIndex }
 
-export function electionConfigFrom(election: ElectionConfig): CandidateCsvConfig {
+export function electionConfigFrom(
+  election: ElectionConfig,
+): CandidateCsvConfig {
   return {
     election: String(election.year),
     state: election.state,

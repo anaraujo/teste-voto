@@ -1,18 +1,31 @@
 import { useState } from 'react'
-import type { ApiCandidateDetail, ApiMandate, ApiParliamentaryRecord, ApiPoliticalMandate } from '../shared/api.ts'
+import type {
+  ApiCandidateDetail,
+  ApiMandate,
+  ApiParliamentaryRecord,
+  ApiPoliticalMandate,
+} from '../shared/api.ts'
 import { useCandidateDetail } from '../hooks/useCandidateDetail.ts'
-import { EDITORIAL_THEMES, hasEvidence, tipoEvidenciaLabel } from '../shared/ficha.ts'
+import {
+  EDITORIAL_THEMES,
+  hasEvidence,
+  tipoEvidenciaLabel,
+} from '../shared/ficha.ts'
 import { TEMA_LABEL } from '../shared/pautas.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 
-type Tab = 'resumo' | 'mandato' | 'historico' | 'votacoes' | 'posicoes' | 'fontes'
+type Tab =
+  'resumo' | 'mandato' | 'historico' | 'votacoes' | 'posicoes' | 'fontes'
 
 interface CandidateDetailScreenProps {
   candidateId: string
   onBack: () => void
 }
 
-function formatPeriod(dataInicio: string | null, dataFim: string | null): string {
+function formatPeriod(
+  dataInicio: string | null,
+  dataFim: string | null,
+): string {
   return [dataInicio, dataFim]
     .filter(Boolean)
     .map((date) => formatDate(date as string))
@@ -24,7 +37,13 @@ function votoLabel(voto: string | null): string {
   return voto
 }
 
-function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: () => void }) {
+function FichaStructure({
+  dado,
+  onBack,
+}: {
+  dado: ApiCandidateDetail
+  onBack: () => void
+}) {
   const [tab, setTab] = useState<Tab>('resumo')
   const candidate = dado
 
@@ -42,7 +61,9 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
         )}
         <h2>{candidate.ballotName}</h2>
         <p>
-          {candidate.ballotNumber && <span>Nº {candidate.ballotNumber} · </span>}
+          {candidate.ballotNumber && (
+            <span>Nº {candidate.ballotNumber} · </span>
+          )}
           {candidate.partyAcronym ?? candidate.party ?? 'Sem partido'}
         </p>
         <p>
@@ -50,7 +71,9 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
             Candidato(a) a deputado(a) federal pelo Paraná — Eleições 2026
           </small>
         </p>
-        {(candidate.isIncumbent || candidate.isReelection || candidate.parliamentary) && (
+        {(candidate.isIncumbent ||
+          candidate.isReelection ||
+          candidate.parliamentary) && (
           <p>
             <mark>
               {candidate.isIncumbent
@@ -64,12 +87,24 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
       </header>
 
       <nav aria-label="Ficha do candidato">
-        <button type="button" onClick={() => setTab('resumo')}>Resumo</button>
-        <button type="button" onClick={() => setTab('mandato')}>Mandato e histórico</button>
-        <button type="button" onClick={() => setTab('historico')}>Posições anteriores</button>
-        <button type="button" onClick={() => setTab('votacoes')}>Votações</button>
-        <button type="button" onClick={() => setTab('posicoes')}>Posições</button>
-        <button type="button" onClick={() => setTab('fontes')}>Fontes</button>
+        <button type="button" onClick={() => setTab('resumo')}>
+          Resumo
+        </button>
+        <button type="button" onClick={() => setTab('mandato')}>
+          Mandato e histórico
+        </button>
+        <button type="button" onClick={() => setTab('historico')}>
+          Posições anteriores
+        </button>
+        <button type="button" onClick={() => setTab('votacoes')}>
+          Votações
+        </button>
+        <button type="button" onClick={() => setTab('posicoes')}>
+          Posições
+        </button>
+        <button type="button" onClick={() => setTab('fontes')}>
+          Fontes
+        </button>
       </nav>
 
       {tab === 'resumo' && <ResumoTab dado={candidate} />}
@@ -87,7 +122,9 @@ function FichaStructure({ dado, onBack }: { dado: ApiCandidateDetail; onBack: ()
         </small>
       </p>
 
-      <button type="button" onClick={onBack}>Voltar</button>
+      <button type="button" onClick={onBack}>
+        Voltar
+      </button>
     </section>
   )
 }
@@ -108,20 +145,32 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
     <dl>
       <Campo label="Nome completo" value={dado.fullName} />
       <Campo label="Número de urna" value={dado.ballotNumber} />
-      <Campo label="Partido" value={dado.party ? `${dado.party}` : dado.partyAcronym} />
+      <Campo
+        label="Partido"
+        value={dado.party ? `${dado.party}` : dado.partyAcronym}
+      />
       <Campo label="Agremiação" value={candidacy} />
       <Campo label="Situação" value={dado.status ?? dado.campaignStatus} />
       <Campo label="Ocupação" value={dado.occupation} />
       <Campo label="Escolaridade" value={dado.education} />
       <Campo label="Estado civil" value={dado.maritalStatus} />
-      <Campo label="Nascimento" value={dado.birthDate ? formatDate(dado.birthDate) : null} />
+      <Campo
+        label="Nascimento"
+        value={dado.birthDate ? formatDate(dado.birthDate) : null}
+      />
       <Campo label="Natural de" value={birthSource} />
-      <Campo label="Idade na eleição" value={age !== null ? `${age} anos` : null} />
+      <Campo
+        label="Idade na eleição"
+        value={age !== null ? `${age} anos` : null}
+      />
       <Campo label="Sexo" value={dado.gender} />
       <Campo label="Cor/raça" value={dado.race} />
       <Campo label="Quilombola" value={dado.quilombola ? 'Sim' : null} />
       <Campo label="Etnia indígena" value={dado.indigenousEthnicity} />
-      <Campo label="Município" value={dado.city && dado.city.toUpperCase() !== 'PR' ? dado.city : null} />
+      <Campo
+        label="Município"
+        value={dado.city && dado.city.toUpperCase() !== 'PR' ? dado.city : null}
+      />
       <Campo label="Nacionalidade" value={dado.nationality} />
       <Campo label="E-mail" value={dado.email} />
       <Campo label="Bens declarados" value={bens} />
@@ -131,7 +180,13 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
       <Campo label="Teto de gastos de campanha" value={teto} />
       <Campo
         label="Prestação de contas"
-        value={dado.accountsDeclared === null ? null : dado.accountsDeclared ? 'Declarada' : 'Não declarada'}
+        value={
+          dado.accountsDeclared === null
+            ? null
+            : dado.accountsDeclared
+              ? 'Declarada'
+              : 'Não declarada'
+        }
       />
       {dado.socialLinks.length > 0 && (
         <div>
@@ -153,7 +208,13 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
   )
 }
 
-function Campo({ label, value }: { label: string; value: string | null | undefined }) {
+function Campo({
+  label,
+  value,
+}: {
+  label: string
+  value: string | null | undefined
+}) {
   if (!value) return null
   return (
     <div>
@@ -175,15 +236,20 @@ function MandatoTab({ dado }: { dado: ApiCandidateDetail }) {
         <p>
           <small>
             Os mandatos anteriores em outras posições políticas (vereador,
-            prefeito, deputado estadual etc.) ficam na aba “Posições anteriores”.
+            prefeito, deputado estadual etc.) ficam na aba “Posições
+            anteriores”.
           </small>
         </p>
       </div>
     )
   }
 
-  const camaraMandates = parliamentary.mandates.filter((m) => m.casa === 'camara')
-  const senadoMandates = parliamentary.mandates.filter((m) => m.casa === 'senado')
+  const camaraMandates = parliamentary.mandates.filter(
+    (m) => m.casa === 'camara',
+  )
+  const senadoMandates = parliamentary.mandates.filter(
+    (m) => m.casa === 'senado',
+  )
 
   return (
     <div>
@@ -194,7 +260,10 @@ function MandatoTab({ dado }: { dado: ApiCandidateDetail }) {
           <h4>Deputado federal (Câmara)</h4>
           <div>
             {camaraMandates.map((mandate) => (
-              <MandatoItem key={`${mandate.casa}-${mandate.legislatura}`} mandate={mandate} />
+              <MandatoItem
+                key={`${mandate.casa}-${mandate.legislatura}`}
+                mandate={mandate}
+              />
             ))}
           </div>
           <CameraRecord parliamentary={parliamentary} />
@@ -206,7 +275,10 @@ function MandatoTab({ dado }: { dado: ApiCandidateDetail }) {
           <h4>Senador (Senado)</h4>
           <div>
             {senadoMandates.map((mandate) => (
-              <MandatoItem key={`${mandate.casa}-${mandate.legislatura}`} mandate={mandate} />
+              <MandatoItem
+                key={`${mandate.casa}-${mandate.legislatura}`}
+                mandate={mandate}
+              />
             ))}
           </div>
           <p>
@@ -269,7 +341,9 @@ function HistoricoTab({ dado }: { dado: ApiCandidateDetail }) {
                     {mandate.ano} · {mandate.cargo}
                   </strong>
                   {lugar && <span> · {lugar}</span>}
-                  {mandate.partidoSigla && <span> · {mandate.partidoSigla}</span>}
+                  {mandate.partidoSigla && (
+                    <span> · {mandate.partidoSigla}</span>
+                  )}
                   {' — '}
                   <mark>{statusLabel(mandate.status)}</mark>
                 </p>
@@ -315,15 +389,27 @@ function MandatoItem({ mandate }: { mandate: ApiMandate }) {
   )
 }
 
-function CameraRecord({ parliamentary }: { parliamentary: NonNullable<ApiCandidateDetail['parliamentary']> }) {
-  const camara = parliamentary.records.find((record) => record.casa === 'camara')
+function CameraRecord({
+  parliamentary,
+}: {
+  parliamentary: NonNullable<ApiCandidateDetail['parliamentary']>
+}) {
+  const camara = parliamentary.records.find(
+    (record) => record.casa === 'camara',
+  )
   if (!camara) return null
-  const total = Object.values(camara.proposicoesPorAno).reduce((acc, item) => acc + item, 0)
+  const total = Object.values(camara.proposicoesPorAno).reduce(
+    (acc, item) => acc + item,
+    0,
+  )
   return (
     <div>
       <h5>Atuação na legislatura atual (métricas)</h5>
       <dl>
-        <Campo label="Proposições de autoria (2015–2026)" value={total > 0 ? String(total) : null} />
+        <Campo
+          label="Proposições de autoria (2015–2026)"
+          value={total > 0 ? String(total) : null}
+        />
         {Object.keys(camara.proposicoesPorAno).length > 0 && (
           <Campo
             label="Proposições por ano"
@@ -335,9 +421,15 @@ function CameraRecord({ parliamentary }: { parliamentary: NonNullable<ApiCandida
         )}
         <Campo
           label="Comissões"
-          value={camara.comissoes.map((comissao) => comissao.sigla).join(', ') || null}
+          value={
+            camara.comissoes.map((comissao) => comissao.sigla).join(', ') ||
+            null
+          }
         />
-        <Campo label="Despesas reembolsadas (total)" value={formatBRL(totalDespesas(camara))} />
+        <Campo
+          label="Despesas reembolsadas (total)"
+          value={formatBRL(totalDespesas(camara))}
+        />
         {Object.keys(camara.despesasPorAno).length > 0 && (
           <Campo
             label="Despesas por ano"
@@ -359,7 +451,10 @@ function CameraRecord({ parliamentary }: { parliamentary: NonNullable<ApiCandida
 }
 
 function totalDespesas(record: ApiParliamentaryRecord): number | null {
-  const total = Object.values(record.despesasPorAno).reduce((acc, item) => acc + item, 0)
+  const total = Object.values(record.despesasPorAno).reduce(
+    (acc, item) => acc + item,
+    0,
+  )
   return total > 0 ? total : null
 }
 
@@ -379,7 +474,12 @@ function VotacoesTab({ dado }: { dado: ApiCandidateDetail }) {
         {votes.map((vote) => (
           <li key={vote.votacaoId}>
             <p>
-              <strong>{TEMA_LABEL[vote.tema] ?? vote.tema}</strong> — {vote.voto ? <mark>{votoLabel(vote.voto)}</mark> : <strong>{votoLabel(vote.voto)}</strong>}
+              <strong>{TEMA_LABEL[vote.tema] ?? vote.tema}</strong> —{' '}
+              {vote.voto ? (
+                <mark>{votoLabel(vote.voto)}</mark>
+              ) : (
+                <strong>{votoLabel(vote.voto)}</strong>
+              )}
             </p>
             <p>
               <small>
@@ -403,7 +503,8 @@ function VotacoesTab({ dado }: { dado: ApiCandidateDetail }) {
       <p>
         <small>
           Votos extraídos dos registros nominais da Câmara. Quem não registrou
-          voto pode não ter participado daquela votação ou estar ausente na data.
+          voto pode não ter participado daquela votação ou estar ausente na
+          data.
         </small>
       </p>
     </div>
@@ -414,9 +515,7 @@ function PosicoesTab({ dado }: { dado: ApiCandidateDetail }) {
   const editorial = dado.editorial
   if (!editorial) {
     return (
-      <p>
-        Este candidato ainda não tem ficha editorial de posicionamento.
-      </p>
+      <p>Este candidato ainda não tem ficha editorial de posicionamento.</p>
     )
   }
   return (
@@ -437,7 +536,11 @@ function PosicoesTab({ dado }: { dado: ApiCandidateDetail }) {
                       {campo.fonte && (
                         <>
                           {' · '}
-                          <a href={campo.fonte} target="_blank" rel="noreferrer">
+                          <a
+                            href={campo.fonte}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             fonte
                           </a>
                         </>

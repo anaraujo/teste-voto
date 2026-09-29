@@ -1,9 +1,9 @@
 ---
 name: Relatório de bug
 about: Reporte algo que está quebrado
-title: ""
+title: ''
 labels: bug
-assignees: ""
+assignees: ''
 ---
 
 **Descreva o bug**

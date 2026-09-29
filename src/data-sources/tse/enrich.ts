@@ -16,7 +16,8 @@ export function applyComplementary(
     ...candidate,
     birthMunicipality: summary.birthMunicipality ?? candidate.birthMunicipality,
     quilombola: summary.quilombola ?? candidate.quilombola,
-    indigenousEthnicity: summary.indigenousEthnicity ?? candidate.indigenousEthnicity,
+    indigenousEthnicity:
+      summary.indigenousEthnicity ?? candidate.indigenousEthnicity,
     inBallot: summary.inBallot ?? candidate.inBallot,
     substituted: summary.substituted ?? candidate.substituted,
     accountsDeclared: summary.accountsDeclared ?? candidate.accountsDeclared,

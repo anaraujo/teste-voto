@@ -264,11 +264,15 @@ const SCHEMA_MIGRATIONS: Array<{ column: string; ddl: string }> = [
 
 /** Adiciona colunas faltantes a um banco já existente (sem recriar dados). */
 function migrateSchema(db: DatabaseSync): void {
-  const columns = db.prepare('PRAGMA table_info(candidates)').all() as unknown as Array<{ name: string }>
+  const columns = db
+    .prepare('PRAGMA table_info(candidates)')
+    .all() as unknown as Array<{ name: string }>
   const existing = new Set(columns.map((column) => column.name))
   for (const migration of SCHEMA_MIGRATIONS) {
     if (existing.has(migration.column)) continue
-    db.exec(`ALTER TABLE candidates ADD COLUMN ${migration.column} ${migration.ddl}`)
+    db.exec(
+      `ALTER TABLE candidates ADD COLUMN ${migration.column} ${migration.ddl}`,
+    )
   }
 }
 
@@ -328,7 +332,10 @@ function toColumns(candidate: CandidateRecord) {
     assets_declared: bool(candidate.assetsDeclared),
     is_reelection: bool(candidate.isReelection),
     campaign_spending_cap: candidate.campaignSpendingCap,
-    social_links: candidate.socialLinks.length > 0 ? JSON.stringify(candidate.socialLinks) : null,
+    social_links:
+      candidate.socialLinks.length > 0
+        ? JSON.stringify(candidate.socialLinks)
+        : null,
     source_provider: candidate.source.provider,
     source_url: candidate.source.url,
     source_dataset: candidate.source.dataset,
@@ -375,7 +382,9 @@ function toCandidate(row: CandidateRow): CandidateRecord {
     city: row.city,
     email: row.email,
     website: row.website,
-    socialLinks: row.social_links ? (JSON.parse(row.social_links) as string[]) : [],
+    socialLinks: row.social_links
+      ? (JSON.parse(row.social_links) as string[])
+      : [],
     photoUrl: row.photo_url,
     totalAssets: row.total_assets,
     maritalStatus: row.marital_status,
@@ -396,7 +405,11 @@ function toCandidate(row: CandidateRow): CandidateRecord {
   }
 }
 
-function single(db: DatabaseSync, sql: string, ...args: SQLInputValue[]): CandidateRow | undefined {
+function single(
+  db: DatabaseSync,
+  sql: string,
+  ...args: SQLInputValue[]
+): CandidateRow | undefined {
   const result = db.prepare(sql).get(...args)
   return result === undefined ? undefined : (result as unknown as CandidateRow)
 }
@@ -528,7 +541,11 @@ export function upsertCandidate(
 }
 
 /** Preserva a linha original do CSV para auditoria. */
-export function storeRaw(db: DatabaseSync, id: string, originalCells: readonly string[]): void {
+export function storeRaw(
+  db: DatabaseSync,
+  id: string,
+  originalCells: readonly string[],
+): void {
   db.prepare(
     `INSERT INTO candidates_raw (id, raw_json, synced_at)
      VALUES (?, ?, ?)
@@ -549,20 +566,24 @@ export function deactivateMissing(
   let result: { changes: number | bigint }
 
   if (activeIds.length === 0) {
-    result = db.prepare(
-      `UPDATE candidates SET is_active = 0
+    result = db
+      .prepare(
+        `UPDATE candidates SET is_active = 0
        WHERE election_year = ? AND state = ? AND office = ? AND is_active = 1`,
-    ).run(filter.electionYear, filter.state, filter.office)
+      )
+      .run(filter.electionYear, filter.state, filter.office)
   } else {
     const placeholders = activeIds.map(() => '?').join(',')
-    result = db.prepare(
-      `UPDATE candidates SET is_active = 0
+    result = db
+      .prepare(
+        `UPDATE candidates SET is_active = 0
        WHERE election_year = ?
          AND state = ?
          AND office = ?
          AND is_active = 1
          AND id NOT IN (${placeholders})`,
-    ).run(filter.electionYear, filter.state, filter.office, ...activeIds)
+      )
+      .run(filter.electionYear, filter.state, filter.office, ...activeIds)
   }
 
   return Number(result.changes)
@@ -604,19 +625,31 @@ export function listCandidates(
        WHERE election_year = ? AND state = ? AND office = ? AND is_active = 1
        ORDER BY ballot_name COLLATE NOCASE`,
     )
-    .all(filter.electionYear, filter.state, filter.office) as unknown as CandidateRow[]
+    .all(
+      filter.electionYear,
+      filter.state,
+      filter.office,
+    ) as unknown as CandidateRow[]
 
   return rows.map(toCandidate)
 }
 
-export function getCandidate(db: DatabaseSync, id: string): CandidateRecord | null {
+export function getCandidate(
+  db: DatabaseSync,
+  id: string,
+): CandidateRecord | null {
   const row = single(db, `SELECT * FROM candidates WHERE id = ?`, id)
   return row ? toCandidate(row) : null
 }
 
 /** Atualiza o caminho da foto dos candidatos presentes em `updates`. */
-export function setPhotoUrls(db: DatabaseSync, updates: Array<{ id: string; photoUrl: string | null }>): void {
-  const statement = db.prepare(`UPDATE candidates SET photo_url = ? WHERE id = ?`)
+export function setPhotoUrls(
+  db: DatabaseSync,
+  updates: Array<{ id: string; photoUrl: string | null }>,
+): void {
+  const statement = db.prepare(
+    `UPDATE candidates SET photo_url = ? WHERE id = ?`,
+  )
   for (const update of updates) {
     statement.run(update.photoUrl, update.id)
   }
@@ -655,7 +688,10 @@ function toIncumbentRow(row: IncumbentDbRow): IncumbentRow {
 }
 
 /** Substitui o mapa de incumbentes da eleição pelos casamentos atuais. */
-export function replaceIncumbents(db: DatabaseSync, entries: IncumbentEntry[]): void {
+export function replaceIncumbents(
+  db: DatabaseSync,
+  entries: IncumbentEntry[],
+): void {
   db.exec('BEGIN')
   try {
     db.prepare(`DELETE FROM incumbents`).run()
@@ -684,7 +720,9 @@ export function replaceIncumbents(db: DatabaseSync, entries: IncumbentEntry[]): 
 
 /** Retorna um mapa candidateId -> incumbente. */
 export function listIncumbents(db: DatabaseSync): Map<string, IncumbentRow> {
-  const rows = db.prepare(`SELECT * FROM incumbents`).all() as unknown as IncumbentDbRow[]
+  const rows = db
+    .prepare(`SELECT * FROM incumbents`)
+    .all() as unknown as IncumbentDbRow[]
   const map = new Map<string, IncumbentRow>()
   for (const row of rows) {
     map.set(row.candidate_id, toIncumbentRow(row))
@@ -739,7 +777,9 @@ function parseJsonObject(value: string | null): Record<string, number> {
   return {}
 }
 
-function toMandateRow(row: MandateDbRow): ParliamentaryData['mandates'][number] {
+function toMandateRow(
+  row: MandateDbRow,
+): ParliamentaryData['mandates'][number] {
   return {
     candidateId: row.candidate_id,
     casa: row.casa as 'camara',
@@ -754,7 +794,9 @@ function toMandateRow(row: MandateDbRow): ParliamentaryData['mandates'][number] 
 }
 
 function toRecordRow(row: RecordDbRow): ParliamentaryData['records'][number] {
-  const comissoes = row.comissoes ? ((JSON.parse(row.comissoes) as unknown[]) ?? []) : []
+  const comissoes = row.comissoes
+    ? ((JSON.parse(row.comissoes) as unknown[]) ?? [])
+    : []
   return {
     candidateId: row.candidate_id,
     casa: row.casa as 'camara',
@@ -781,7 +823,10 @@ function toVoteRow(row: VoteDbRow): ParliamentaryData['votes'][number] {
  * Substitui toda a camada parlamentar (mandatos, métricas e votos) de uma
  * vez, em transação. O script de sincronização recalcula o conjunto inteiro.
  */
-export function replaceParliamentary(db: DatabaseSync, data: ParliamentaryData): void {
+export function replaceParliamentary(
+  db: DatabaseSync,
+  data: ParliamentaryData,
+): void {
   db.exec('BEGIN')
   try {
     db.prepare(`DELETE FROM votes`).run()
@@ -857,34 +902,49 @@ export function replaceParliamentary(db: DatabaseSync, data: ParliamentaryData):
 export function getParliamentary(
   db: DatabaseSync,
   candidateId: string,
-): { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] } {
+): {
+  mandates: ParliamentaryData['mandates']
+  records: ParliamentaryData['records']
+  votes: ParliamentaryData['votes']
+} {
   const mandates = (
-    db.prepare(
-      `SELECT * FROM parliamentary_mandates WHERE candidate_id = ? ORDER BY legislatura`,
-    ).all(candidateId) as unknown as MandateDbRow[]
+    db
+      .prepare(
+        `SELECT * FROM parliamentary_mandates WHERE candidate_id = ? ORDER BY legislatura`,
+      )
+      .all(candidateId) as unknown as MandateDbRow[]
   ).map(toMandateRow)
   const records = (
-    db.prepare(
-      `SELECT * FROM parliamentary_records WHERE candidate_id = ?`,
-    ).all(candidateId) as unknown as RecordDbRow[]
+    db
+      .prepare(`SELECT * FROM parliamentary_records WHERE candidate_id = ?`)
+      .all(candidateId) as unknown as RecordDbRow[]
   ).map(toRecordRow)
   const votes = (
-    db.prepare(
-      `SELECT * FROM votes WHERE candidate_id = ? ORDER BY data`,
-    ).all(candidateId) as unknown as VoteDbRow[]
+    db
+      .prepare(`SELECT * FROM votes WHERE candidate_id = ? ORDER BY data`)
+      .all(candidateId) as unknown as VoteDbRow[]
   ).map(toVoteRow)
   return { mandates, records, votes }
 }
 
 /** Retorna um mapa candidateId -> dados parlamentares (para server/export). */
-export function listParliamentary(
-  db: DatabaseSync,
-): Map<string, { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] }> {
+export function listParliamentary(db: DatabaseSync): Map<
+  string,
+  {
+    mandates: ParliamentaryData['mandates']
+    records: ParliamentaryData['records']
+    votes: ParliamentaryData['votes']
+  }
+> {
   const mandates = (
-    db.prepare(`SELECT * FROM parliamentary_mandates`).all() as unknown as MandateDbRow[]
+    db
+      .prepare(`SELECT * FROM parliamentary_mandates`)
+      .all() as unknown as MandateDbRow[]
   ).map(toMandateRow)
   const records = (
-    db.prepare(`SELECT * FROM parliamentary_records`).all() as unknown as RecordDbRow[]
+    db
+      .prepare(`SELECT * FROM parliamentary_records`)
+      .all() as unknown as RecordDbRow[]
   ).map(toRecordRow)
   const votes = (
     db.prepare(`SELECT * FROM votes`).all() as unknown as VoteDbRow[]
@@ -892,7 +952,11 @@ export function listParliamentary(
 
   const byCandidate = new Map<
     string,
-    { mandates: ParliamentaryData['mandates']; records: ParliamentaryData['records']; votes: ParliamentaryData['votes'] }
+    {
+      mandates: ParliamentaryData['mandates']
+      records: ParliamentaryData['records']
+      votes: ParliamentaryData['votes']
+    }
   >()
   const get = (candidateId: string) => {
     let entry = byCandidate.get(candidateId)
@@ -902,7 +966,8 @@ export function listParliamentary(
     }
     return entry
   }
-  for (const mandate of mandates) get(mandate.candidateId).mandates.push(mandate)
+  for (const mandate of mandates)
+    get(mandate.candidateId).mandates.push(mandate)
   for (const record of records) get(record.candidateId).records.push(record)
   for (const vote of votes) get(vote.candidateId).votes.push(vote)
   return byCandidate
@@ -939,7 +1004,10 @@ function toPoliticalMandateRow(row: PoliticalMandateDbRow): PoliticalMandate {
  * Substitui todo o histórico de posições políticas (eleitos + suplentes) de
  * uma vez, em transação. O script de sincronização recalcula o conjunto inteiro.
  */
-export function replacePoliticalMandates(db: DatabaseSync, data: PoliticalMandate[]): void {
+export function replacePoliticalMandates(
+  db: DatabaseSync,
+  data: PoliticalMandate[],
+): void {
   db.exec('BEGIN')
   try {
     db.prepare(`DELETE FROM political_mandates`).run()
@@ -976,17 +1044,21 @@ export function getPoliticalMandates(
   candidateId: string,
 ): PoliticalMandate[] {
   return (
-    db.prepare(
-      `SELECT * FROM political_mandates WHERE candidate_id = ? ORDER BY ano, cargo`,
-    ).all(candidateId) as unknown as PoliticalMandateDbRow[]
+    db
+      .prepare(
+        `SELECT * FROM political_mandates WHERE candidate_id = ? ORDER BY ano, cargo`,
+      )
+      .all(candidateId) as unknown as PoliticalMandateDbRow[]
   ).map(toPoliticalMandateRow)
 }
 
 /** Mapa candidateId -> posições políticas anteriores (para server/export). */
-export function listPoliticalMandates(db: DatabaseSync): Map<string, PoliticalMandate[]> {
-  const rows = (
-    db.prepare(`SELECT * FROM political_mandates ORDER BY ano, cargo`).all() as unknown as PoliticalMandateDbRow[]
-  )
+export function listPoliticalMandates(
+  db: DatabaseSync,
+): Map<string, PoliticalMandate[]> {
+  const rows = db
+    .prepare(`SELECT * FROM political_mandates ORDER BY ano, cargo`)
+    .all() as unknown as PoliticalMandateDbRow[]
   const byCandidate = new Map<string, PoliticalMandate[]>()
   for (const row of rows) {
     const mandate = toPoliticalMandateRow(row)

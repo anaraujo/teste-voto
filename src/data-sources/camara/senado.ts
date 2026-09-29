@@ -30,7 +30,8 @@ export interface SenadorDetalhe {
 
 const BASE = 'https://legis.senado.leg.br/dadosabertos'
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Pequeno extrator de texto entre tags (para o XML dos web services). */
 function textOf(xml: string, tag: string): string {
@@ -57,12 +58,15 @@ function blocksOf(xml: string, tag: string): string[] {
 async function getXml(url: string, retries = 3): Promise<string> {
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     try {
-      const response = await fetch(url, { headers: { accept: 'application/xml' } })
+      const response = await fetch(url, {
+        headers: { accept: 'application/xml' },
+      })
       if (response.status === 429) {
         await sleep(2000 * attempt)
         continue
       }
-      if (!response.ok) throw new Error(`Senado respondeu ${response.status} para ${url}`)
+      if (!response.ok)
+        throw new Error(`Senado respondeu ${response.status} para ${url}`)
       return await response.text()
     } catch (error) {
       if (attempt === retries) throw error
@@ -81,7 +85,10 @@ export function parseParlamentar(raw: string, partido?: string): SenadorLista {
   const mandatos: SenadorMandato[] = []
   for (const mandato of blocksOf(raw, 'Mandato')) {
     const uf = textOf(mandato, 'UfParlamentar')
-    for (const tag of ['PrimeiraLegislaturaDoMandato', 'SegundaLegislaturaDoMandato']) {
+    for (const tag of [
+      'PrimeiraLegislaturaDoMandato',
+      'SegundaLegislaturaDoMandato',
+    ]) {
       for (const leg of blocksOf(mandato, tag)) {
         const legislatura = Number(textOf(leg, 'NumeroLegislatura'))
         if (!Number.isNaN(legislatura)) {
@@ -100,7 +107,9 @@ export function parseParlamentar(raw: string, partido?: string): SenadorLista {
 }
 
 /** Senadores de uma legislatura (55, 56, 57). */
-export async function fetchSenadoresPorLegislatura(legislatura: number): Promise<SenadorLista[]> {
+export async function fetchSenadoresPorLegislatura(
+  legislatura: number,
+): Promise<SenadorLista[]> {
   const xml = await getXml(`${BASE}/senador/lista/legislatura/${legislatura}`)
   const result: SenadorLista[] = []
   for (const parlamentar of blocksOf(xml, 'Parlamentar')) {
@@ -111,7 +120,9 @@ export async function fetchSenadoresPorLegislatura(legislatura: number): Promise
 }
 
 /** Detalhe do senador (data de nascimento) para confirmação de identidade. */
-export async function fetchSenadorDetalhe(codigo: number): Promise<SenadorDetalhe | null> {
+export async function fetchSenadorDetalhe(
+  codigo: number,
+): Promise<SenadorDetalhe | null> {
   try {
     const xml = await getXml(`${BASE}/senador/${codigo}`)
     const identificacao = textOf(xml, 'IdentificacaoParlamentar') || xml

@@ -23,7 +23,12 @@ const SEPARATOR_CANDIDATES = [';', ',', '\t'] as const
 
 export function detectEncoding(buffer: Buffer): CsvEncoding {
   // BOM UTF-8: EF BB BF
-  if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xef &&
+    buffer[1] === 0xbb &&
+    buffer[2] === 0xbf
+  ) {
     return 'utf8'
   }
   return 'latin1'
@@ -50,7 +55,10 @@ export function detectSeparator(content: string): string {
  * Tokeniza o conteúdo em registros, respeitando aspas e quebras de linha
  * de várias terminações (\n, \r\n, \r).
  */
-export function parseCsvTable(content: string, separator: string): { headers: string[]; rows: string[][] } {
+export function parseCsvTable(
+  content: string,
+  separator: string,
+): { headers: string[]; rows: string[][] } {
   const records: string[][] = []
   let field = ''
   let record: string[] = []
@@ -133,7 +141,9 @@ export function parseCsv(buffer: Buffer): ParsedCsv {
 /**
  * Índice de colunas por nome (cioso a maiúsculas/minúsculas e espaços).
  */
-export function buildHeaderIndex(headers: readonly string[]): Map<string, number> {
+export function buildHeaderIndex(
+  headers: readonly string[],
+): Map<string, number> {
   const index = new Map<string, number>()
   headers.forEach((header, i) => {
     index.set(normalizeHeader(header), i)

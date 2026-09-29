@@ -1,9 +1,4 @@
-import type {
-  Candidate,
-  OptionId,
-  Question,
-  QuestionId,
-} from '../data/quiz.ts'
+import type { Candidate, OptionId, Question, QuestionId } from '../data/quiz.ts'
 import { computeResult } from './scoring.ts'
 
 export interface DistributionEntry {

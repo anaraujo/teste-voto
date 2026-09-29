@@ -84,7 +84,8 @@ export function matchIncumbents(
     const withBirth = named.find(
       (item) => item.birthDate === deputy.dataNascimento,
     )
-    const candidate = withBirth ?? named.sort((a, b) => sortKey(a).localeCompare(sortKey(b)))[0]
+    const candidate =
+      withBirth ?? named.sort((a, b) => sortKey(a).localeCompare(sortKey(b)))[0]
     usedCandidates.add(candidate.id)
 
     matches.push({

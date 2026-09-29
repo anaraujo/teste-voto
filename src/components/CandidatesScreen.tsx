@@ -61,9 +61,8 @@ export function CandidatesScreen({
           <div>
             <p>
               <small>
-                {state.data.total} candidatos a {state.data.election.office}{' '}
-                em {state.data.election.state} ({state.data.election.year}).
-                Fonte:{' '}
+                {state.data.total} candidatos a {state.data.election.office} em{' '}
+                {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
                 <a
                   href="https://dadosabertos.tse.jus.br/"
                   target="_blank"
@@ -83,12 +82,11 @@ export function CandidatesScreen({
                     : candidate.birthState
                       ? candidate.birthState
                       : null
-                const birth =
-                  candidate.birthDate
-                    ? `${formatDate(candidate.birthDate)}${birthSource ? ` · natural de ${birthSource}` : ''}`
-                    : birthSource
-                      ? `Natural de ${birthSource}`
-                      : null
+                const birth = candidate.birthDate
+                  ? `${formatDate(candidate.birthDate)}${birthSource ? ` · natural de ${birthSource}` : ''}`
+                  : birthSource
+                    ? `Natural de ${birthSource}`
+                    : null
                 const age = ageAtElection(candidate.birthDate)
                 const city =
                   candidate.city &&
@@ -99,7 +97,10 @@ export function CandidatesScreen({
                 return (
                   <li key={candidate.id}>
                     <p>
-                      <button type="button" onClick={() => onShowCandidate(candidate.id)}>
+                      <button
+                        type="button"
+                        onClick={() => onShowCandidate(candidate.id)}
+                      >
                         Ver ficha
                       </button>
                     </p>

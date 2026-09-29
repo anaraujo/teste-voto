@@ -8,10 +8,19 @@
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, listParliamentary, listPoliticalMandates } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+  listIncumbents,
+  listParliamentary,
+  listPoliticalMandates,
+} from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
-import { emptyFichaParaCsv, type FichaExportada } from '../src/data-sources/parliament/export.ts'
+import {
+  emptyFichaParaCsv,
+  type FichaExportada,
+} from '../src/data-sources/parliament/export.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
 
 const DATA_DIR = defaultDataDir()
@@ -45,22 +54,27 @@ try {
   }
 
   await mkdir(OUT_DIR, { recursive: true })
-  const name = `ficha-${electionKey(CURRENT_ELECTION).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-  await writeFile(
-    join(OUT_DIR, `${name}.csv`),
-    toCsv(fichas),
-    'utf8',
-  )
+  const name = `ficha-${electionKey(CURRENT_ELECTION)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}`
+  await writeFile(join(OUT_DIR, `${name}.csv`), toCsv(fichas), 'utf8')
   await writeFile(
     join(OUT_DIR, `${name}.json`),
     `${JSON.stringify(
-      { election: electionKey(CURRENT_ELECTION), generatedAt: new Date().toISOString(), count: fichas.length, candidates: fichas },
+      {
+        election: electionKey(CURRENT_ELECTION),
+        generatedAt: new Date().toISOString(),
+        count: fichas.length,
+        candidates: fichas,
+      },
       null,
       2,
     )}\n`,
     'utf8',
   )
-  console.log(`[ficha] exportados ${fichas.length} candidatos em data/ficha/${name}.csv e .json`)
+  console.log(
+    `[ficha] exportados ${fichas.length} candidatos em data/ficha/${name}.csv e .json`,
+  )
 } finally {
   db.close()
 }
@@ -129,7 +143,9 @@ function toCsv(rows: readonly FichaExportada[]): string {
 
   const lines = [headers.map(escapeCsv).join(';')]
   for (const row of rows) {
-    lines.push(headers.map((header) => escapeCsv(row[header] as never)).join(';'))
+    lines.push(
+      headers.map((header) => escapeCsv(row[header] as never)).join(';'),
+    )
   }
   return `\uFEFF${lines.join('\n')}\n`
 }
