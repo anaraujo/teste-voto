@@ -69,6 +69,14 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
+- **A lista de candidatos mostra os 428 de uma vez**: o botão "Mostrar mais"
+  (50 por vez) foi removido. Ele existia só porque 428 cards de uma vez parecem
+  caros, mas a medição mostra que não são: a API já devolve a lista inteira em
+  uma requisição — o corte era um `slice` no cliente, sem ganho de rede —, as
+  fotos são locais (161×225, ~5,5 KB de mediana) e já estavam em
+  `loading="lazy"`. Renderizar tudo custa ~21 ms de layout. Ganho prático: o
+  Ctrl+F acha qualquer candidato sem espera. O custo é o HTML pré-renderizado
+  de `/candidatos`, de 589 KB para 785 KB.
 - Lista de candidatos usa a ficha de detalhe; a tela de detalhe disponibiliza
   abas com fontes oficiais e links para os registros (Câmara, Senado e Dados
   Abertos).

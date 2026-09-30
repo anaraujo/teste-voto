@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
@@ -10,9 +9,6 @@ interface CandidatesScreenProps {
   onRetry: () => void
   onShowCandidate: (candidateId: string) => void
 }
-
-/** Quantos cards entram por vez, para a página não ficar com 428 de uma vez. */
-const PAGE = 50
 
 /** Clique com modificador (abrir em nova aba) não é interceptado. */
 function isModifiedClick(event: {
@@ -33,10 +29,7 @@ function isModifiedClick(event: {
 
 function toChromaItem(candidate: ApiCandidate): ChromaItem {
   const partido = partyColor(candidate.partyAcronym)
-  // O fundo do card é a segunda cor do partido, não a primária. Quem não tem
-  // secundária cadastrada — o SEM_PARTIDO, por exemplo — cai na primária, que
-  // é o mesmo cinza e passa em AA com tinta branca.
-  const base = partido.secondary[0] ?? partido.primary
+  const base = partido.primary
 
   return {
     image: candidate.photoUrl,
@@ -48,8 +41,8 @@ function toChromaItem(candidate: ApiCandidate): ChromaItem {
     number: candidate.ballotNumber,
     party: candidate.partyAcronym ?? 'Sem partido',
     // A tinta vem da cor, não do partido: `readableOn` escolhe entre branco e
-    // #111 pelo contraste. Sobre as 30 secundárias a escolha passa em AA, com
-    // CIDADANIA como pior caso (4,58:1).
+    // #111 pelo contraste. Sobre as 30 primárias a escolha passa em AA, com
+    // CIDADANIA como pior caso (4,66:1).
     textColor: readableOn(base),
     // Cor chapada. O texto fica sempre sobre ela, então um gradiente
     // deslocaria a luminância do fundo e o contraste medido acima deixaria de
@@ -75,8 +68,6 @@ export function CandidatesScreen({
   onRetry,
   onShowCandidate,
 }: CandidatesScreenProps) {
-  const [limit, setLimit] = useState(PAGE)
-
   if (state.status === 'loading') return <p>Carregando candidatos...</p>
 
   if (state.status === 'error') {
@@ -114,7 +105,6 @@ export function CandidatesScreen({
   }
 
   const candidates = state.data.candidates
-  const visible = candidates.slice(0, limit)
 
   return (
     <section>
@@ -134,19 +124,13 @@ export function CandidatesScreen({
         </small>
       </p>
 
+      {/* Os 428 candidatos entram de uma vez. Não há paginação na API — o
+        seed já vem inteiro — e as fotos são `loading="lazy"`, então o custo
+        de render fica no navegador, não na rede. */}
       <ChromaGrid
-        items={visible.map(toChromaItem)}
-        onSelect={(_item, index) => onShowCandidate(visible[index].id)}
+        items={candidates.map(toChromaItem)}
+        onSelect={(_item, index) => onShowCandidate(candidates[index].id)}
       />
-
-      {limit < candidates.length && (
-        <p>
-          <button type="button" onClick={() => setLimit(limit + PAGE)}>
-            Mostrar mais {Math.min(PAGE, candidates.length - limit)} de{' '}
-            {candidates.length - visible.length} restantes
-          </button>
-        </p>
-      )}
     </section>
   )
 }

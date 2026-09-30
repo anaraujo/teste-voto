@@ -1,7 +1,7 @@
 /*
  * Chroma Grid — experimental, em avaliação visual.
  *
- * Grade de cards de candidato. O card é chapado na cor secundária do partido
+ * Grade de cards de candidato. O card é chapado na cor primária do partido
  * e o texto usa a tinta que `readableOn` escolhe para essa cor, o que faz as
  * 30 cores passarem em AA sem nenhum ajuste por partido.
  *
@@ -52,7 +52,11 @@ export interface ChromaGridProps {
   onSelect?: (item: ChromaItem, index: number) => void
 }
 
-export function ChromaGrid({ items, className = '', onSelect }: ChromaGridProps) {
+export function ChromaGrid({
+  items,
+  className = '',
+  onSelect,
+}: ChromaGridProps) {
   return (
     <div className={`chroma-grid ${className}`}>
       {items.map((item, index) => (

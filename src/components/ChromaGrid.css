@@ -2,7 +2,7 @@
  * Chroma Grid — experimental, em avaliação visual.
  *
  * Card de candidato: header com o número de urna, foto sangrada, corpo com o
- * nome e a sigla, e footer com a pílula da ficha. O fundo é a cor secundária
+ * nome e a sigla, e footer com a pílula da ficha. O fundo é a cor primária
  * do partido e a tinta é a que o `readableOn` escolheu para ela.
  *
  * Não há efeito de disco aqui. O componente nasceu como uma porta do
@@ -81,7 +81,7 @@ main > section:has(> .chroma-grid) {
  *
  * A sombra é a do `.sb-link`, que é a única elevação que o app já usa. Fica
  * um pouco abaixo dos 25% dele porque aqui a borda de 30% da tinta já
- * desenha o contorno — nas secundárias claras, como a branca do PT, é a
+ * desenha o contorno — nas primárias claras, como o amarelo do PSB, é a
  * sombra que separa o card do fundo `#f0ead6`. Em repouso não há sombra: são
  * 428 cards, e o estado parado fica mais barato e mais quieto sem ela.
  *

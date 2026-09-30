@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { existsSync, readFileSync } from 'node:fs'
 import { renderPage } from '../src/shared/html.ts'
 
 const SHELL = `<!doctype html>
@@ -93,3 +94,57 @@ test('renderPage escapa < no JSON embutido', () => {
   assert.ok(!html.includes('</script><b>'))
   assert.match(html, /\\u003c\/script>/)
 })
+
+/**
+ * A lista de candidatos renderiza todos de uma vez, sem "Mostrar mais".
+ *
+ * Não há runner de DOM no projeto — `node --test` puro não compila JSX — então
+ * um teste não consegue montar o componente e contar os cards. A garantia vem
+ * de duas checagens que cobrem ângulos diferentes: o código-fonte, que sempre
+ * roda, e o HTML realmente gerado, que roda depois de `npm run build`.
+ */
+test('a lista de candidatos não volta a paginar', () => {
+  const source = readFileSync(
+    new URL('../src/components/CandidatesScreen.tsx', import.meta.url),
+    'utf8',
+  )
+  assert.ok(
+    !source.includes('Mostrar mais'),
+    'o botão "Mostrar mais" não deve voltar: a API já devolve a lista inteira',
+  )
+  assert.match(
+    source,
+    /items=\{candidates\.map\(toChromaItem\)\}/,
+    'o grid deve receber todos os candidatos, sem slice',
+  )
+})
+
+const CANDIDATOS_HTML = new URL(
+  '../dist/candidatos/index.html',
+  import.meta.url,
+)
+
+test(
+  'o HTML de /candidatos tem um card por candidato',
+  {
+    skip: existsSync(CANDIDATOS_HTML)
+      ? false
+      : 'rode `npm run build` antes de `npm test` para checar o HTML gerado',
+  },
+  () => {
+    const html = readFileSync(CANDIDATOS_HTML, 'utf8')
+    const seed = html.match(/id="__prerender-data"[^>]*>(.*?)<\/script>/s)?.[1]
+    assert.ok(seed, 'o seed dos candidatos deveria estar embutido na página')
+
+    const { payload } = JSON.parse(seed) as {
+      payload: { total: number; candidates: unknown[] }
+    }
+    const cards = html.match(/class="chroma-card"/g) ?? []
+
+    // Conta contra o seed, não contra um número fixo: a eleição pode mudar de
+    // tamanho no próximo `npm run ingest` sem quebrar o teste.
+    assert.equal(payload.candidates.length, payload.total)
+    assert.equal(cards.length, payload.candidates.length)
+    assert.ok(!html.includes('Mostrar mais'))
+  },
+)
