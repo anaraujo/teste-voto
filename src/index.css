@@ -30,7 +30,7 @@
    * (primary), 3,61:1 (secondary) e 2,15:1 (tertiary) contra #ffffff. Com
    * #111 as três passam (4,93:1, 5,24:1 e 8,79:1), então é esse o par
    * declarado aqui. Quem pinta uma superfície com a cor cheia — o card do
-   * Chroma Grid, por exemplo — pega o `-on` correspondente em vez de hardcodar
+   * Candidate Grid, por exemplo — pega o `-on` correspondente em vez de hardcodar
    * branco, que sumiria no amarelo.
    */
   --color-primary-on: #111111;

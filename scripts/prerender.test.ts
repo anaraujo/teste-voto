@@ -114,7 +114,7 @@ test('a lista de candidatos não volta a paginar', () => {
   )
   assert.match(
     source,
-    /items=\{candidates\.map\(toChromaItem\)\}/,
+    /items=\{candidates\.map\(toCandidateItem\)\}/,
     'o grid deve receber todos os candidatos, sem slice',
   )
 })
@@ -139,7 +139,7 @@ test(
     const { payload } = JSON.parse(seed) as {
       payload: { total: number; candidates: unknown[] }
     }
-    const cards = html.match(/class="chroma-card"/g) ?? []
+    const cards = html.match(/class="candidate-card"/g) ?? []
 
     // Conta contra o seed, não contra um número fixo: a eleição pode mudar de
     // tamanho no próximo `npm run ingest` sem quebrar o teste.

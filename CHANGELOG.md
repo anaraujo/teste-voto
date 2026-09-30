@@ -77,6 +77,14 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `loading="lazy"`. Renderizar tudo custa ~21 ms de layout. Ganho prático: o
   Ctrl+F acha qualquer candidato sem espera. O custo é o HTML pré-renderizado
   de `/candidatos`, de 589 KB para 785 KB.
+- **`ChromaGrid` virou `CandidateGrid`**: o nome era herança do
+  [reactbits](https://www.reactbits.dev), de onde o componente é uma porta. Não
+  sobrou nenhum efeito cromático — restou o card na cor do partido com
+  highlight de hover. Renomeados o arquivo (`.tsx` e `.css`), os símbolos
+  (`CandidateGrid`, `CandidateItem`, `toCandidateItem`) e as oito classes CSS
+  (`.chroma-card` → `.candidate-card`, e assim por diante). A origem continua
+  nos comentários do arquivo, com o nome do componente original e o caminho do
+  código-fonte.
 - Lista de candidatos usa a ficha de detalhe; a tela de detalhe disponibiliza
   abas com fontes oficiais e links para os registros (Câmara, Senado e Dados
   Abertos).

@@ -2,7 +2,7 @@ import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { partyColor, readableOn } from '../shared/party-colors.ts'
-import { ChromaGrid, type ChromaItem } from './ChromaGrid.tsx'
+import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
@@ -27,7 +27,7 @@ function isModifiedClick(event: {
   )
 }
 
-function toChromaItem(candidate: ApiCandidate): ChromaItem {
+function toCandidateItem(candidate: ApiCandidate): CandidateItem {
   const partido = partyColor(candidate.partyAcronym)
   const base = partido.primary
 
@@ -50,7 +50,7 @@ function toChromaItem(candidate: ApiCandidate): ChromaItem {
     base,
     children: (
       <a
-        className="chroma-ficha"
+        className="candidate-ficha"
         href={candidatePath(candidate.id)}
         onClick={(event) => {
           if (isModifiedClick(event)) return
@@ -127,8 +127,8 @@ export function CandidatesScreen({
       {/* Os 428 candidatos entram de uma vez. Não há paginação na API — o
         seed já vem inteiro — e as fotos são `loading="lazy"`, então o custo
         de render fica no navegador, não na rede. */}
-      <ChromaGrid
-        items={candidates.map(toChromaItem)}
+      <CandidateGrid
+        items={candidates.map(toCandidateItem)}
         onSelect={(_item, index) => onShowCandidate(candidates[index].id)}
       />
     </section>

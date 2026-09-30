@@ -1,5 +1,5 @@
 /*
- * Chroma Grid — experimental, em avaliação visual.
+ * Candidate Grid — experimental, em avaliação visual.
  *
  * Card de candidato: header com o número de urna, foto sangrada, corpo com o
  * nome e a sigla, e footer com a pílula da ficha. O fundo é a cor primária
@@ -24,11 +24,11 @@
  * section; onde não há suporte a regra simplesmente não casa e o grid volta
  * ao comportamento anterior.
  */
-main > section:has(> .chroma-grid) {
+main > section:has(> .candidate-grid) {
   min-width: 0;
 }
 
-.chroma-grid {
+.candidate-grid {
   position: relative;
   width: 100%;
   max-width: 1200px;
@@ -50,13 +50,13 @@ main > section:has(> .chroma-grid) {
 
 /* Abaixo de 480px sobra uma coluna só, e o padding encolhe junto. */
 @media (max-width: 480px) {
-  .chroma-grid {
+  .candidate-grid {
     gap: 0.5rem;
     padding: 0.5rem;
   }
 }
 
-.chroma-card {
+.candidate-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -90,8 +90,8 @@ main > section:has(> .chroma-grid) {
  * `:focus-within` dá ao teclado o mesmo feedback que o `:hover` dá ao
  * ponteiro.
  */
-.chroma-card:hover,
-.chroma-card:focus-within {
+.candidate-card:hover,
+.candidate-card:focus-within {
   border-color: var(--card-on, #fff);
   box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
   transform: translateY(-2px);
@@ -104,10 +104,10 @@ main > section:has(> .chroma-grid) {
  * da urna é o identificador que a pessoa procura, e o "Nº" é só o rótulo.
  *
  * O `border-bottom` é o fio que separa o header do corpo. Nenhuma das seções
- * repete o fundo do card: quem pinta a cor é o `.chroma-card`, e elas são
+ * repete o fundo do card: quem pinta a cor é o `.candidate-card`, e elas são
  * transparentes.
  */
-.chroma-head {
+.candidate-head {
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
@@ -120,7 +120,7 @@ main > section:has(> .chroma-grid) {
   letter-spacing: 0.12em;
 }
 
-.chroma-head .head-value {
+.candidate-head .head-value {
   font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -137,13 +137,13 @@ main > section:has(> .chroma-grid) {
  *
  * A foto entra sem filtro, em cor cheia.
  */
-.chroma-img-wrapper {
+.candidate-img-wrapper {
   flex: none;
   aspect-ratio: 161 / 225;
   box-sizing: border-box;
 }
 
-.chroma-img-wrapper img {
+.candidate-img-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -157,7 +157,7 @@ main > section:has(> .chroma-grid) {
  * a pessoa quando não há retrato. O número repetido no header é reforço, não
  * a fonte principal.
  */
-.chroma-img-placeholder {
+.candidate-img-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,7 +180,7 @@ main > section:has(> .chroma-grid) {
  * caracteres) isso cabe: 425 dos 428 cabem em duas linhas. Com o nome completo
  * — de até 46 caracteres — o mesmo espaçamento custava uma linha inteira.
  */
-.chroma-info {
+.candidate-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -190,7 +190,7 @@ main > section:has(> .chroma-grid) {
   font-family: system-ui, sans-serif;
 }
 
-.chroma-info .name {
+.candidate-info .name {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -208,7 +208,7 @@ main > section:has(> .chroma-grid) {
  * Sem `opacity`: a hierarquia aqui é o tamanho e o peso, não o alpha, que só
  * derrubaria o contraste que o `readableOn` garante.
  */
-.chroma-info .party {
+.candidate-info .party {
   margin: 0;
   font-size: 0.72rem;
   font-weight: 500;
@@ -217,7 +217,7 @@ main > section:has(> .chroma-grid) {
 }
 
 /* Footer: a pílula da ficha, alinhada à esquerda, e o fio que fecha o card. */
-.chroma-foot {
+.candidate-foot {
   padding: 0.5rem 0.75rem 0.75rem;
   border-top: 1px solid
     color-mix(in srgb, var(--card-on, #fff) 28%, transparent);
@@ -234,7 +234,7 @@ main > section:has(> .chroma-grid) {
  * contraste. Como `readableOn` escolheu a tinta *contra* a cor do card,
  * inverter devolve exatamente a mesma razão, então o hover passa nas 30.
  */
-.chroma-foot .chroma-ficha {
+.candidate-foot .candidate-ficha {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -253,11 +253,11 @@ main > section:has(> .chroma-grid) {
   transition: transform 150ms;
 }
 
-.chroma-foot .chroma-ficha:hover {
+.candidate-foot .candidate-ficha:hover {
   color: var(--card-base, #6b7280);
   background: var(--card-on, #fff);
 }
 
-.chroma-foot .chroma-ficha:active {
+.candidate-foot .candidate-ficha:active {
   transform: scale(0.97);
 }

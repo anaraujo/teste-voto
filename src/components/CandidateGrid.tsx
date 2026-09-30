@@ -1,5 +1,5 @@
 /*
- * Chroma Grid — experimental, em avaliação visual.
+ * Candidate Grid — experimental, em avaliação visual.
  *
  * Grade de cards de candidato. O card é chapado na cor primária do partido
  * e o texto usa a tinta que `readableOn` escolhe para essa cor, o que faz as
@@ -18,9 +18,9 @@
  */
 
 import { type CSSProperties, type ReactNode } from 'react'
-import './ChromaGrid.css'
+import './CandidateGrid.css'
 
-export interface ChromaItem {
+export interface CandidateItem {
   /** Foto (URL absoluta ou relativa a /photos). Sem foto, cai no placeholder. */
   image: string | null
   title: string
@@ -46,23 +46,23 @@ export interface ChromaItem {
   children?: ReactNode
 }
 
-export interface ChromaGridProps {
-  items: ChromaItem[]
+export interface CandidateGridProps {
+  items: CandidateItem[]
   className?: string
-  onSelect?: (item: ChromaItem, index: number) => void
+  onSelect?: (item: CandidateItem, index: number) => void
 }
 
-export function ChromaGrid({
+export function CandidateGrid({
   items,
   className = '',
   onSelect,
-}: ChromaGridProps) {
+}: CandidateGridProps) {
   return (
-    <div className={`chroma-grid ${className}`}>
+    <div className={`candidate-grid ${className}`}>
       {items.map((item, index) => (
         <article
           key={`${item.title}-${index}`}
-          className="chroma-card"
+          className="candidate-card"
           onClick={(event) => {
             // Com modificador, quem abre em nova aba é o <a> da ficha; não
             // navega o app junto.
@@ -85,24 +85,24 @@ export function ChromaGrid({
             } as CSSProperties
           }
         >
-          <header className="chroma-head">
+          <header className="candidate-head">
             <span className="head-label">Nº</span>
             {item.number && <span className="head-value">{item.number}</span>}
           </header>
-          <div className="chroma-img-wrapper">
+          <div className="candidate-img-wrapper">
             {item.image ? (
               <img src={item.image} alt={item.title} loading="lazy" />
             ) : (
-              <span className="chroma-img-placeholder" aria-hidden="true">
+              <span className="candidate-img-placeholder" aria-hidden="true">
                 {item.placeholder ?? ''}
               </span>
             )}
           </div>
-          <div className="chroma-info">
+          <div className="candidate-info">
             <h3 className="name">{item.title}</h3>
             {item.party && <p className="party">{item.party}</p>}
           </div>
-          <footer className="chroma-foot">{item.children}</footer>
+          <footer className="candidate-foot">{item.children}</footer>
         </article>
       ))}
     </div>
