@@ -1,0 +1,297 @@
+/*
+ * GooeyNav — a navegação de abas da ficha.
+ *
+ * O efeito vem de três coisas que precisam concordar entre si: o `blur` +
+ * `contrast(100)` no filtro, o `mix-blend-mode: lighten` que só revela o que
+ * for *mais claro* que o fundo, e a cápsula escura do próprio contêiner.
+ *
+ * A pílula é branca e derrete no filtro; as partículas, porém, vivem numa
+ * camada própria (`.effect.particles`), fora do `contrast`, para manter a cor
+ * sólida do partido em vez de virar um clarão branco. Sobre o eggshell da ficha
+ * — claro — a pílula branca sumiria sem a superfície escura, e é por isso que
+ * a navegação traz a própria cápsula escura.
+ */
+
+.gooey-nav-container {
+  /*
+   * O `--gooey-accent` chega por prop (a cor do partido). A superfície é a cor
+   * escurecida: o branco da pílula precisa de contraste em cima, e um amarelo
+   * de partido puro não passaria.
+   */
+  --gooey-surface: color-mix(
+    in srgb,
+    var(--gooey-accent, #7a3ea3) 62%,
+    #0b0a10
+  );
+  --gooey-pill: #ffffff;
+  --gooey-ink: #14120f;
+
+  position: relative;
+  display: inline-block;
+  padding: 0.35rem;
+  border-radius: 100vw;
+  background: var(--gooey-surface);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 8px 24px -8px rgb(0 0 0 / 0.4);
+}
+
+.gooey-nav-container nav {
+  display: flex;
+  position: relative;
+  /* Sem o nudge de 0.01px o filtro é achatado num só plano e o gooey some. */
+  transform: translate3d(0, 0, 0.01px);
+}
+
+.gooey-nav-container nav ul {
+  display: flex;
+  gap: 0.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  z-index: 3;
+}
+
+.gooey-nav-container nav ul li {
+  border-radius: 100vw;
+  position: relative;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow: 0 0 0.5px 1.5px transparent;
+  color: #ffffff;
+}
+
+.gooey-nav-container nav ul li button {
+  display: inline-block;
+  padding: 0.55em 1em;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.1;
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 100vw;
+  text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
+}
+
+.gooey-nav-container nav ul li:focus-within {
+  box-shadow: 0 0 0.5px 1.5px #ffffff;
+}
+
+.gooey-nav-container nav ul li button:focus-visible {
+  outline: 2px solid var(--gooey-pill);
+  outline-offset: 1px;
+}
+
+/* A pílula nítida, por baixo do texto */
+.gooey-nav-container nav ul li::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 100vw;
+  background: var(--gooey-pill);
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.gooey-nav-container nav ul li.active {
+  color: var(--gooey-ink);
+  text-shadow: none;
+}
+
+.gooey-nav-container nav ul li.active button {
+  text-shadow: none;
+}
+
+.gooey-nav-container nav ul li.active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.gooey-nav-container .effect {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 1;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+/* A cópia do texto que escorre junto com a pílula */
+.gooey-nav-container .effect.text {
+  color: #ffffff;
+  transition: color 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.gooey-nav-container .effect.text.active {
+  color: var(--gooey-ink);
+}
+
+/* Aqui está o truque: blur + contraste devolvem as bordas "derretidas". */
+.gooey-nav-container .effect.filter {
+  filter: blur(7px) contrast(100) blur(0);
+  mix-blend-mode: lighten;
+}
+
+/*
+ * Camada das partículas, separada do filtro de propósito: o `contrast(100)`
+ * esmagaria qualquer cor para preto/branco, e o `lighten` esconderia o que
+ * fosse escuro. Aqui a cor chega sólida, sem blur e sem blend — acima da
+ * pílula, abaixo do texto das abas (`z-index: 3`).
+ */
+.gooey-nav-container .effect.particles {
+  z-index: 2;
+}
+
+.gooey-nav-container .effect.filter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gooey-pill);
+  transform: scale(0);
+  opacity: 0;
+  z-index: -1;
+  border-radius: 100vw;
+}
+
+.gooey-nav-container .effect.active::after {
+  animation: gooey-pill 0.3s ease both;
+}
+
+@keyframes gooey-pill {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.particle,
+.point {
+  display: block;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 100%;
+  transform-origin: center;
+}
+
+.particle {
+  --time: 5s;
+  position: absolute;
+  top: calc(50% - 8px);
+  left: calc(50% - 8px);
+  animation: particle calc(var(--time)) ease 1 -350ms;
+}
+
+.point {
+  background: var(--color, #ffffff);
+  opacity: 1;
+  animation: point calc(var(--time)) ease 1 -350ms;
+}
+
+@keyframes particle {
+  0% {
+    transform: rotate(0deg)
+      translate(calc(var(--start-x)), calc(var(--start-y)));
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+
+  70% {
+    transform: rotate(calc(var(--rotate) * 0.5))
+      translate(calc(var(--end-x) * 1.2), calc(var(--end-y) * 1.2));
+    opacity: 1;
+    animation-timing-function: ease;
+  }
+
+  85% {
+    transform: rotate(calc(var(--rotate) * 0.66))
+      translate(calc(var(--end-x)), calc(var(--end-y)));
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(calc(var(--rotate) * 1.2))
+      translate(calc(var(--end-x) * 0.5), calc(var(--end-y) * 0.5));
+    opacity: 1;
+  }
+}
+
+@keyframes point {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+
+  25% {
+    transform: scale(calc(var(--scale) * 0.25));
+  }
+
+  38% {
+    opacity: 1;
+  }
+
+  65% {
+    transform: scale(var(--scale));
+    opacity: 1;
+    animation-timing-function: ease;
+  }
+
+  85% {
+    transform: scale(var(--scale));
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/*
+ * A pílula ainda precisa mudar de aba para ser legível; o que se corta é o
+ * estouro de partículas e a transição de cor. Sem movimento reduzido, a aba
+ * ativa ficaria invisível.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .particle,
+  .point {
+    display: none;
+  }
+
+  .gooey-nav-container .effect.active::after {
+    animation: none;
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .gooey-nav-container nav ul li::after {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .gooey-nav-container {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .gooey-nav-container::-webkit-scrollbar {
+    display: none;
+  }
+}
