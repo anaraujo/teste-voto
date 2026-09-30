@@ -95,6 +95,57 @@ export function readableOn(hex: string): string {
     : TINTA_ESCURA
 }
 
+/** Os três canais de um `#rrggbb`, para poder misturar. */
+function canais(hex: string): [number, number, number] {
+  const n = Number.parseInt(hex.slice(1), 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+
+/** O inverso de `canais`, em minúsculo como as constantes do arquivo. */
+function paraHex(rgb: readonly number[]): string {
+  return `#${rgb.map((canal) => canal.toString(16).padStart(2, '0')).join('')}`
+}
+
+/** Contraste mínimo que WCAG AA pede para texto normal. */
+const MINIMO_AA = 4.5
+
+/**
+ * Preenchimento que continua legível sob a tinta que o card escolheu.
+ *
+ * A secundária pura não serve para ir atrás de texto: ela foi escolhida como
+ * cor de bandeira, não como fundo. Medido nas 31 entradas (as 30 da tabela e
+ * o cinza de sem partido), com a tinta que `readableOn` dá para a primária, em
+ * 20 delas a secundária fica entre 1,00:1 e 3,93:1 — a branca de PT, PV, PP,
+ * PCB e DEMOCRATA é idêntica à tinta branca do card, e o texto sumiria.
+ *
+ * Aqui a secundária é misturada na direção do preto quando a tinta é branca,
+ * ou na direção do branco quando é #111, até passar de 4,5:1. A busca é em
+ * passos inteiros de 1%, do zero para cima, então devolve sempre a cor mais
+ * próxima da original que ainda funciona: 11 partidos não precisam de mistura
+ * nenhuma e o pior caso é 54%, nos cinco de secundária branca, que viram um
+ * cinza. Quem não tem secundária cadastrada cai na primária, como no card.
+ */
+export function readableFill(party: PartyColor, tinta: string): string {
+  const base = party.secondary[0] ?? party.primary
+  const alvo: [number, number, number] =
+    tinta === TINTA_ESCURA ? [255, 255, 255] : [0, 0, 0]
+  const origem = canais(base)
+
+  for (let passo = 0; passo <= 100; passo += 1) {
+    const fracao = passo / 100
+    const mistura = paraHex(
+      origem.map((canal, i) =>
+        Math.round(canal * (1 - fracao) + alvo[i] * fracao),
+      ),
+    )
+    if (contraste(mistura, tinta) >= MINIMO_AA) return mistura
+  }
+
+  // Atingir 100% já é preto ou branco puro, que sempre contrasta com as duas
+  // tintas. unreachable na prática, mas mantém o retorno bem tipado.
+  return paraHex(alvo)
+}
+
 /**
  * Cor do partido pela sigla, ou o cinza de quem não tem partido.
  *

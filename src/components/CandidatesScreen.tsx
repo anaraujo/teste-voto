@@ -1,7 +1,7 @@
 import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
-import { partyColor, readableOn } from '../shared/party-colors.ts'
+import { partyColor, readableFill, readableOn } from '../shared/party-colors.ts'
 import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
 
 interface CandidatesScreenProps {
@@ -30,6 +30,8 @@ function isModifiedClick(event: {
 function toCandidateItem(candidate: ApiCandidate): CandidateItem {
   const partido = partyColor(candidate.partyAcronym)
   const base = partido.primary
+  const textColor = readableOn(base)
+  const fill = readableFill(partido, textColor)
 
   return {
     image: candidate.photoUrl,
@@ -43,11 +45,15 @@ function toCandidateItem(candidate: ApiCandidate): CandidateItem {
     // A tinta vem da cor, não do partido: `readableOn` escolhe entre branco e
     // #111 pelo contraste. Sobre as 30 primárias a escolha passa em AA, com
     // CIDADANIA como pior caso (4,66:1).
-    textColor: readableOn(base),
+    textColor,
     // Cor chapada. O texto fica sempre sobre ela, então um gradiente
     // deslocaria a luminância do fundo e o contraste medido acima deixaria de
     // valer na parte mais clara.
     base,
+    // O preenchimento da pílula vem da secundária do partido, mas afastada da
+    // tinta: a secundária pura esconderia o texto em 20 dos 31 casos. Ver
+    // `readableFill`.
+    fill,
     children: (
       <a
         className="candidate-ficha"

@@ -251,6 +251,18 @@ main > section:has(> .candidate-grid) {
   background: transparent;
   border: 1px solid var(--card-on, #fff);
   transition: transform 150ms;
+  /* Listras de 5px pintados a cada 10px da pílula. Tem que vir depois do
+     `background` acima, que é shorthand e zeraria o `background-image`. A
+     cor é a secundária do partido já afastada da tinta (`--card-fill`), senão
+     o texto sumiria sob as listras. O `:hover` abaixo não precisa mexer
+     nada: o `background` dele também é shorthand e apaga o gradiente, o que é
+     o comportamento desejado. */
+  background-image: linear-gradient(
+    to bottom,
+    var(--card-fill, #6b7280) 50%,
+    transparent 50%
+  );
+  background-size: 100% 10px;
 }
 
 .candidate-foot .candidate-ficha:hover {

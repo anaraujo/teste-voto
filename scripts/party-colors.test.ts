@@ -5,6 +5,7 @@ import {
   SEM_PARTIDO,
   contraste,
   partyColor,
+  readableFill,
   readableOn,
 } from '../src/shared/party-colors.ts'
 
@@ -129,4 +130,47 @@ test('contraste é simétrico e tem os extremos da escala', () => {
   assert.equal(contraste('#123456', '#abcdef'), contraste('#abcdef', '#123456'))
   assert.ok(Math.abs(contraste('#ffffff', '#ffffff') - 1) < 0.001)
   assert.ok(Math.abs(contraste('#000000', '#ffffff') - 21) < 0.01)
+})
+
+/** Todas as entradas que um card pode receber, com a tinta que ele usaria. */
+const COM_TINTA = Object.entries({ ...PARTY_COLORS, SEM_PARTIDO }).map(
+  ([sigla, party]) => ({
+    sigla,
+    party,
+    tinta: readableOn(party.primary),
+  }),
+)
+
+test('o preenchimento derivado passa em AA com a tinta do card', () => {
+  for (const { sigla, party, tinta } of COM_TINTA) {
+    const fill = readableFill(party, tinta)
+    const razao = contraste(fill, tinta)
+    assert.ok(
+      razao >= 4.5,
+      `${sigla}: ${fill} sobre ${tinta} dá ${razao.toFixed(2)}:1`,
+    )
+  }
+})
+
+test('sem secundária cadastrada, o preenchimento é a própria primária', () => {
+  assert.deepEqual(SEM_PARTIDO.secondary, [])
+  assert.equal(
+    readableFill(SEM_PARTIDO, readableOn(SEM_PARTIDO.primary)),
+    SEM_PARTIDO.primary.toLowerCase(),
+  )
+})
+
+test('a secundária entra inteira quando ela já contrasta com a tinta', () => {
+  // Onze partidos não precisam de mistura. Se um dia `readableFill` empurrar
+  // a cor mesmo assim, é regressão: a lista de confirmados trava isso.
+  // NOVO fica de fora de propósito: o azul-marinho da secundária sobre o
+  // laranja da primária cai para 2,59:1 e precisa de 38% de mistura.
+  for (const sigla of ['CIDADANIA', 'REDE', 'PRD', 'PDT', 'PODE']) {
+    const party = PARTY_COLORS[sigla]
+    assert.equal(
+      readableFill(party, readableOn(party.primary)),
+      (party.secondary[0] ?? party.primary).toLowerCase(),
+      sigla,
+    )
+  }
 })

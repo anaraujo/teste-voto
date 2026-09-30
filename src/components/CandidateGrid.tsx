@@ -40,6 +40,13 @@ export interface CandidateItem {
    * sobre cor clara.
    */
   textColor?: string
+  /**
+   * Cor do preenchimento listrado da pílula "Ver ficha". Precisa contrastar
+   * com a `textColor` acima, porque o texto da pílula é o mesmo do card e
+   * passa por cima das listras. Vem de `readableFill`, que parte da cor
+   * secundária do partido e a afasta da tinta até passar em AA.
+   */
+  fill?: string
   /** Rótulo do placeholder quando não há foto. */
   placeholder?: string
   /** Conteúdo extra dentro do card (o resto dos dados do candidato). */
@@ -81,6 +88,7 @@ export function CandidateGrid({
             {
               '--card-on': item.textColor ?? '#fff',
               '--card-base': item.base,
+              '--card-fill': item.fill,
               cursor: onSelect ? 'pointer' : 'default',
             } as CSSProperties
           }
