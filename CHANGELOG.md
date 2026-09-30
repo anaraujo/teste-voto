@@ -10,18 +10,17 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ### Adicionado
 
 - **Listras na pílula "Ver ficha"**: a pílula deixou de ser vazia e ganhou
-  listras de 5px a cada 10px, na cor secundária do partido. A secundária pura
-  não podia ir atrás do texto: medida nas 31 entradas da paleta (as 30 da
-  tabela e o cinza de quem não tem partido), ela fica entre 1,00:1 e 3,93:1 sob
-  a tinta que o card escolhe, porque em PT, PV, PP, PCB e DEMOCRATA ela é
-  branca — a mesma cor do texto. O novo `readableFill` parte da secundária e a
-  mistura na direção do preto, ou na direção do branco quando a tinta é #111,
-  até passar de 4,5:1, em passos de 1%, e devolve a cor mais próxima da
-  original que ainda funciona: 11 partidos não precisam de mistura nenhuma e o
-  pior caso é 54%, nos cinco de secundária branca, que viram um cinza. As 23
-  siglas do banco ficam entre 4,54:1 e 21:1. Quem não tem secundária cadastrada
-  cai na primária, como no card. No `:hover` as listras somem sem regra nova,
-  porque o `background` de lá já é shorthand e zera o `background-image`.
+  listras de 2,5px a cada 5px, na tinta contrária à do texto do card — brancas
+  quando o texto é #111, pretas quando é branco. São as duas tintas que o
+  projeto já usa, então a combinação dá 18,9:1 nos dois sentidos e o texto
+  nunca some. A cor secundária do partido foi a primeira ideia e não serviu:
+  ela é cor de bandeira, não de fundo, e em 20 das 31 entradas da paleta ela
+  ficaria entre 1,00:1 e 3,93:1 atrás do texto — em PT, PV, PP, PCB e
+  DEMOCRATA ela é branca, ou seja, a mesma cor do texto. Afastá-la da tinta
+  até passar em AA resolvia o contraste, mas devolvia um cinza sem relação com
+  a bandeira. As 23 siglas do banco saem invertidas nos dois sentidos. No
+  `:hover` as listras somem sem regra nova, porque o `background` de lá já é
+  shorthand e zera o `background-image`.
 - **Páginas estáticas no build**: `npm run build` agora gera um HTML por rota
   (`dist/candidatos/index.html`, `dist/candidato/<id>/index.html`,
   `dist/quiz/1…5/index.html` — 436 páginas, 5,3 MB) com título, description,

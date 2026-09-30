@@ -132,45 +132,30 @@ test('contraste é simétrico e tem os extremos da escala', () => {
   assert.ok(Math.abs(contraste('#000000', '#ffffff') - 21) < 0.01)
 })
 
-/** Todas as entradas que um card pode receber, com a tinta que ele usaria. */
+/** Cada tinta que um card real vai receber: a que `readableOn` dá. */
 const COM_TINTA = Object.entries({ ...PARTY_COLORS, SEM_PARTIDO }).map(
-  ([sigla, party]) => ({
-    sigla,
-    party,
-    tinta: readableOn(party.primary),
-  }),
+  ([sigla, party]) => ({ sigla, tinta: readableOn(party.primary) }),
 )
 
-test('o preenchimento derivado passa em AA com a tinta do card', () => {
-  for (const { sigla, party, tinta } of COM_TINTA) {
-    const fill = readableFill(party, tinta)
-    const razao = contraste(fill, tinta)
-    assert.ok(
-      razao >= 4.5,
-      `${sigla}: ${fill} sobre ${tinta} dá ${razao.toFixed(2)}:1`,
-    )
+test('o preenchimento é a tinta contrária à do texto', () => {
+  assert.equal(readableFill('#ffffff'), '#111111')
+  assert.equal(readableFill('#111111'), '#ffffff')
+})
+
+test('texto e listras nunca ficam com a mesma tinta', () => {
+  // Vale para as duas tintas possíveis, e também para cada tinta que um card
+  // real vai receber: se `readableOn` passar a devolver outra coisa, a
+  // inversão continua valendo porque o preenchimento nunca é a própria tinta.
+  for (const tinta of ['#ffffff', '#111111']) {
+    const fill = readableFill(tinta)
+    assert.notEqual(fill, tinta)
+    assert.ok(contraste(fill, tinta) >= 4.5)
   }
-})
-
-test('sem secundária cadastrada, o preenchimento é a própria primária', () => {
-  assert.deepEqual(SEM_PARTIDO.secondary, [])
-  assert.equal(
-    readableFill(SEM_PARTIDO, readableOn(SEM_PARTIDO.primary)),
-    SEM_PARTIDO.primary.toLowerCase(),
-  )
-})
-
-test('a secundária entra inteira quando ela já contrasta com a tinta', () => {
-  // Onze partidos não precisam de mistura. Se um dia `readableFill` empurrar
-  // a cor mesmo assim, é regressão: a lista de confirmados trava isso.
-  // NOVO fica de fora de propósito: o azul-marinho da secundária sobre o
-  // laranja da primária cai para 2,59:1 e precisa de 38% de mistura.
-  for (const sigla of ['CIDADANIA', 'REDE', 'PRD', 'PDT', 'PODE']) {
-    const party = PARTY_COLORS[sigla]
-    assert.equal(
-      readableFill(party, readableOn(party.primary)),
-      (party.secondary[0] ?? party.primary).toLowerCase(),
-      sigla,
+  for (const { sigla, tinta } of COM_TINTA) {
+    assert.notEqual(
+      readableFill(tinta),
+      tinta,
+      `${sigla}: listra do mesmo tom do texto`,
     )
   }
 })

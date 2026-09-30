@@ -41,10 +41,9 @@ export interface CandidateItem {
    */
   textColor?: string
   /**
-   * Cor do preenchimento listrado da pílula "Ver ficha". Precisa contrastar
-   * com a `textColor` acima, porque o texto da pílula é o mesmo do card e
-   * passa por cima das listras. Vem de `readableFill`, que parte da cor
-   * secundária do partido e a afasta da tinta até passar em AA.
+   * Cor das listras da pílula "Ver ficha". É a tinta contrária à `textColor`
+   * acima, porque o texto da pílula é o mesmo do card e passa por cima delas.
+   * Vem de `readableFill`.
    */
   fill?: string
   /** Rótulo do placeholder quando não há foto. */
