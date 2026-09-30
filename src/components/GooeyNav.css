@@ -17,12 +17,13 @@
    * O `--gooey-accent` chega por prop (a cor do partido). A superfície é a cor
    * escurecida: o branco da pílula precisa de contraste em cima, e um amarelo
    * de partido puro não passaria.
+   *
+   * O 55% é o piso: a etiqueta branca da aba inativa sai em 4,77:1 na MISSÃO,
+   * o partido mais claro — a 62% ela ficava em 3,95:1 e reprovava AA. Todos
+   * os onze partidos atuais passam a partir daí; aba ativa é tinta escura na
+   * pílula branca, 18,70:1, e não depende dessa mistura.
    */
-  --gooey-surface: color-mix(
-    in srgb,
-    var(--gooey-accent, #7a3ea3) 62%,
-    #0b0a10
-  );
+  --gooey-surface: var(--gooey-accent);
   --gooey-pill: #ffffff;
   --gooey-ink: #14120f;
 
