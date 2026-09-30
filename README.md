@@ -167,6 +167,9 @@ src/
 ├── components/
 │   ├── StartScreen.tsx     Tela de boas-vindas
 │   ├── CandidatesScreen.tsx Lista de candidatos oficiais (via API)
+│   ├── CandidateDetailScreen.tsx Ficha: abas, seções e notas editoriais
+│   ├── GooeyNav.tsx        Navegação de abas com a pílula gooey (port do react-bits, sem deps)
+│   ├── LineSidebar.tsx     Trilho lateral de seções (port do react-bits, sem deps)
 │   ├── QuestionStep.tsx     Uma pergunta, suas opções e o progresso
 │   ├── ResultScreen.tsx     Ranking de todos os candidatos, 1º destacado
 │   ├── FairnessScreen.tsx   Auditoria de distribuição imparcial

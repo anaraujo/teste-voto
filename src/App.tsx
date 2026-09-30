@@ -7,7 +7,12 @@ import { useCandidates } from './hooks/useCandidates.ts'
 import { useQuizAnswers } from './hooks/useQuizAnswers.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
 import type { PrerenderData } from './shared/prerender.ts'
-import { candidatePath, type Route } from './shared/router.ts'
+import {
+  candidatePath,
+  DEFAULT_TAB,
+  type Route,
+  type Tab,
+} from './shared/router.ts'
 import { AppHeader } from './components/AppHeader.tsx'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { CandidateDetailScreen } from './components/CandidateDetailScreen.tsx'
@@ -24,6 +29,9 @@ export interface NavigateOptions {
 export interface AppProps {
   route: Route
   onNavigate: (to: string, options?: NavigateOptions) => void
+  /** Aba viva da ficha; o build estático usa sempre a padrão. */
+  tab?: Tab
+  onTabChange?: (tab: Tab) => void
   /** Dados embutidos no HTML pré-renderizado da rota atual. */
   data?: PrerenderData
 }
@@ -33,7 +41,16 @@ function questionIndex(step: number): number {
   return Math.min(Math.max(step - 1, 0), questions.length - 1)
 }
 
-function App({ route, onNavigate, data }: AppProps) {
+/** No build estático não há URL para trocar: a aba padrão fica onde está. */
+function noopTabChange(): void {}
+
+function App({
+  route,
+  onNavigate,
+  tab = DEFAULT_TAB,
+  onTabChange,
+  data,
+}: AppProps) {
   const { answers, answer, reset } = useQuizAnswers()
 
   const seedCandidates = data?.kind === 'candidates' ? data.payload : undefined
@@ -82,7 +99,16 @@ function App({ route, onNavigate, data }: AppProps) {
   }
 
   return (
-    <main className="min-h-screen bg-eggshell flex items-center justify-center">
+    <main
+      className={
+        // A ficha é a única tela alta o bastante para passar da dobra. Com
+        // `items-center` o topo de um conteúdo mais longo que a tela some
+        // atrás do topo do documento; as demais telas continuam centralizadas.
+        route.name === 'candidate'
+          ? 'min-h-screen bg-eggshell flex items-start justify-center'
+          : 'min-h-screen bg-eggshell flex items-center justify-center'
+      }
+    >
       <AppHeader route={route} onNavigate={onNavigate} />
 
       {route.name === 'start' && (
@@ -111,6 +137,8 @@ function App({ route, onNavigate, data }: AppProps) {
         <CandidateDetailScreen
           candidateId={route.id}
           initialData={seedDetail}
+          tab={tab}
+          onTabChange={onTabChange ?? noopTabChange}
         />
       )}
 

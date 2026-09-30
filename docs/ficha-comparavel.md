@@ -52,6 +52,32 @@ votos ou métricas por conta própria.
   com cargo, município e partido), **Votações** (voto nominal por pauta + link
   para o registro oficial), **Posições** (camada editorial) e **Fontes** (todas
   as URLs usadas).
+- As abas ficam numa **navegação gooey** logo abaixo do cabeçalho
+  (`src/components/GooeyNav.tsx`) e são `tablist` de verdade: `role="tab"`,
+  `aria-selected`, `aria-controls` e navegação por setas, Home e End. A aba viva
+  viaja em `?tab=` na query, sem entrar no `matchRoute` — a rota continua sendo
+  só o pathname, e por isso o build estático não muda. Trocar de aba faz
+  `replaceState`.
+- A navegação é **controlada**: o índice ativo vem da URL, não de um estado
+  interno, então as setas do teclado também movem a pílula. O efeito gooey
+  depende de `mix-blend-mode: lighten` sobre fundo escuro, e por isso a
+  navegação tem cápsula própria (a cor do partido escurecida) em vez de usar o
+  eggshell da página. As partículas só nascem no cliente: são `Math.random` e
+  `document.createElement`, que quebrariam a hidratação das páginas estáticas.
+- As partículas saem da **primária do partido**, em cor sólida. Elas vivem numa
+  camada própria, fora do `filter: blur/contrast` da pílula: o `contrast(100)`
+  esmagaria a cor para preto/branco e o `lighten` esconderia o que fosse escuro.
+- Dentro de cada aba, um **trilho de seções** à esquerda
+  (`src/components/LineSidebar.tsx`) marca em que parte do conteúdo a leitura
+  está. As seções e o trilho saem da mesma função de âncoras, ao lado do
+  componente que as desenha (`resumoAnchors`, `mandatoAnchors` etc.), para o
+  item do trilho não poder apontar para uma seção que não existe. Aba com uma
+  seção só — Fontes, por exemplo — esconde o trilho. Ambos os componentes
+  respeitam `prefers-reduced-motion` e o trilho some abaixo de 900px.
+- A cor de destaque da navegação e do trilho é a **primária** do partido
+  (`partyColor(candidate.partyAcronym).primary`). O card da lista usa
+  `secondary[0]` como fundo, então a ficha mostra justamente a cor que a lista
+  não mostra.
 - A aba "Posições" mostra "Não encontrei evidência suficiente" enquanto o
   template editorial estiver vazio.
 - Export aberto: `npm run export:ficha` gera

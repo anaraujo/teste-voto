@@ -9,6 +9,36 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Trilho lateral e navegação gooey na ficha** (`/candidato/:id`): as seis abas
+  (Resumo, Mandato e histórico, Posições anteriores, Votações, Posições,
+  Fontes) passam a ser uma **navegação gooey** logo abaixo do cabeçalho, e cada
+  aba ganha um **trilho de seções** à esquerda que acompanha a rolagem. Os dois
+  são ports de [React Bits](https://www.reactbits.dev) (`LineSidebar` e
+  `GooeyNav`), adaptados ao projeto: a navegação é **controlada pela URL** em
+  vez de guardar o índice em estado próprio, os itens são `<button role="tab">`
+  e não links, e as partículas só disparam no cliente — `Math.random` durante a
+  renderização quebraria a hidratação das 436 páginas estáticas. As partículas
+  saem da primária do partido, em cor sólida — numa camada própria, fora do
+  `filter`/`blend` da pílula, para o `contrast(100)` não esmagá-las para
+  preto/branco. O efeito gooey depende
+  desse blend sobre fundo escuro, então a navegação traz a própria cápsula,
+  tingida com a cor do partido e escurecida para o branco da pílula ter
+  contraste. As abas viraram `tablist` de verdade — `role="tab"`,
+  `aria-selected`, `aria-controls` e navegação por setas, Home e End — com o
+  nome completo de cada aba no `aria-label`; o trilho some abaixo de 900px e
+  ambos respeitam `prefers-reduced-motion` (com movimento reduzido a pílula se
+  move, mas sem partículas).
+- **Abas da ficha na URL**: a aba viva passa a viajar em `?tab=` na query da
+  ficha, então uma aba pode ser compartilhada e sobrevive a um F5. A query não
+  entra em `matchRoute`, que continua casando só o pathname — por isso as 436
+  páginas do build estático não mudam. Trocar de aba usa `replaceState`, para o
+  botão voltar continuar sendo "sair da ficha" em vez de desandar aba por aba.
+
+### Removido
+
+- A dependência `motion`. Ela existia só para a dock flutuante que a navegação
+  gooey substituiu; o `GooeyNav` é CSS puro, então ela saiu do `package.json`.
+
 - **Listras na pílula "Ver ficha"**: a pílula ganhou listras de 2,5px a cada
   5px, num tom de 20% da tinta **contrária** à do texto — brancas a 20% quando
   o texto é #111, pretas a 20% quando é branco. No hover a pílula inverte: o
@@ -91,14 +121,6 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `loading="lazy"`. Renderizar tudo custa ~21 ms de layout. Ganho prático: o
   Ctrl+F acha qualquer candidato sem espera. O custo é o HTML pré-renderizado
   de `/candidatos`, de 589 KB para 785 KB.
-- **`ChromaGrid` virou `CandidateGrid`**: o nome era herança do
-  [reactbits](https://www.reactbits.dev), de onde o componente é uma porta. Não
-  sobrou nenhum efeito cromático — restou o card na cor do partido com
-  highlight de hover. Renomeados o arquivo (`.tsx` e `.css`), os símbolos
-  (`CandidateGrid`, `CandidateItem`, `toCandidateItem`) e as oito classes CSS
-  (`.chroma-card` → `.candidate-card`, e assim por diante). A origem continua
-  nos comentários do arquivo, com o nome do componente original e o caminho do
-  código-fonte.
 - Lista de candidatos usa a ficha de detalhe; a tela de detalhe disponibiliza
   abas com fontes oficiais e links para os registros (Câmara, Senado e Dados
   Abertos).

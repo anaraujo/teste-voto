@@ -1,10 +1,15 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  candidatePath,
+  DEFAULT_TAB,
+  isTab,
   matchRoute,
   parentPath,
+  parseTab,
   routeToPath,
   showsBackButton,
+  TABS,
   type Route,
 } from '../src/shared/router.ts'
 
@@ -77,4 +82,43 @@ test('parentPath dá um destino determinístico e a inicial não mostra voltar',
   assert.equal(parentPath({ name: 'question', step: 1 }), '/')
   assert.equal(showsBackButton({ name: 'start' }), false)
   assert.equal(showsBackButton({ name: 'result' }), true)
+})
+
+test('a aba da ficha vive na query, e a rota continua só no pathname', () => {
+  // A mesma ficha com e sem `?tab=` é a mesma rota: `matchRoute` não olha a
+  // query, e é por isso que o build estático das 436 páginas não muda.
+  assert.deepEqual(matchRoute('/candidato/2026-PR-160002'), {
+    name: 'candidate',
+    id: '2026-PR-160002',
+  })
+
+  assert.equal(parseTab(''), DEFAULT_TAB)
+  assert.equal(parseTab('?tab=votacoes'), 'votacoes')
+  assert.equal(parseTab('?tab=resumo'), 'resumo')
+  assert.equal(parseTab('?tab=mandato&outro=1'), 'mandato')
+})
+
+test('uma aba fora da lista cai na padrão, em vez de quebrar a página', () => {
+  assert.equal(parseTab('?tab=inventada'), DEFAULT_TAB)
+  assert.equal(parseTab('?tab='), DEFAULT_TAB)
+  assert.equal(isTab('fontes'), true)
+  assert.equal(isTab('INVENTADA'), false)
+  assert.equal(TABS.length, 6)
+})
+
+test('candidatePath só acrescenta a query quando a aba não é a padrão', () => {
+  assert.equal(candidatePath('2026-PR-160002'), '/candidato/2026-PR-160002')
+  assert.equal(
+    candidatePath('2026-PR-160002', 'resumo'),
+    '/candidato/2026-PR-160002',
+  )
+  assert.equal(
+    candidatePath('2026-PR-160002', 'posicoes'),
+    '/candidato/2026-PR-160002?tab=posicoes',
+  )
+  // Ida e volta: o caminho com query volta para a mesma aba.
+  assert.equal(
+    parseTab(new URL(candidatePath('x', 'fontes'), 'http://localhost').search),
+    'fontes',
+  )
 })

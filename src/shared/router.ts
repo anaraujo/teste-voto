@@ -82,8 +82,47 @@ export function routeToPath(route: Route): string {
 }
 
 /** Caminho da ficha de um candidato (para links e para `navigate`). */
-export function candidatePath(id: string): string {
-  return routeToPath({ name: 'candidate', id })
+export function candidatePath(id: string, tab?: string): string {
+  const path = routeToPath({ name: 'candidate', id })
+  return tab && tab !== DEFAULT_TAB
+    ? `${path}?tab=${encodeURIComponent(tab)}`
+    : path
+}
+
+/*
+ * Abas da ficha.
+ *
+ * A aba viva vai na *query string*, não no caminho: `matchRoute` continua
+ * casando só o pathname, então `/candidato/2026-PR-160002?tab=votacoes` e
+ * `/candidato/2026-PR-160002` continuam sendo a mesma rota, e o build
+ * estático — que emite o caminho sem query — não muda em nada.
+ */
+
+export const TABS = [
+  'resumo',
+  'mandato',
+  'historico',
+  'votacoes',
+  'posicoes',
+  'fontes',
+] as const
+
+export type Tab = (typeof TABS)[number]
+
+export const DEFAULT_TAB: Tab = 'resumo'
+
+export function isTab(value: string): value is Tab {
+  return (TABS as readonly string[]).includes(value)
+}
+
+/**
+ * Lê a aba de uma query string, caindo na padrão quando não vier nenhuma ou
+ * vier algo fora da lista — uma URL adulterada volta ao Resumo em vez de
+ * quebrar a página.
+ */
+export function parseTab(search: string): Tab {
+  const raw = new URLSearchParams(search).get('tab')
+  return raw !== null && isTab(raw) ? raw : DEFAULT_TAB
 }
 
 /**
