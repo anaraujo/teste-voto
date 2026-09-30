@@ -94,7 +94,6 @@ main > section:has(> .candidate-grid) {
 .candidate-card:focus-within {
   border-color: var(--card-on, #fff);
   box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
-  transform: translateY(-2px);
 }
 
 /*
@@ -239,34 +238,47 @@ main > section:has(> .candidate-grid) {
   align-items: center;
   justify-content: center;
   min-height: 34px;
+  width: 100%;
   padding: 0 1rem;
   border-radius: 999px;
   text-decoration: none;
   font-family: system-ui, sans-serif;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--card-on, #fff);
   background: transparent;
   border: 1px solid var(--card-on, #fff);
   transition: transform 150ms;
-}
-
-/* As listras só entram no hover, e no foco pelo teclado. No repouso a pílula
-   fica vazia, para o grid de 428 cards não virar xadrez de listras. A cor é a
-   tinta contrária à do texto (`--card-fill`), o que dá 18,9:1 nos dois
-   sentidos — é a mesma inversão que faz o texto sumir se elas viessem na cor
-   secundária do partido. O texto não muda aqui: a inversão sólida que havia
-   antes colocava a cor do partido por cima das listras e reprovava em 10 de
-   10 siglas (MISSÃO e PSB a 1,67:1). O `background` abaixo é shorthand e vem
-   antes da imagem, senão a zeraria. */
-.candidate-foot .candidate-ficha:hover,
-.candidate-foot .candidate-ficha:focus-visible {
-  background: transparent;
+  /* Listras de 2,5px a cada 5px, num tom de 20% da tinta CONTRÁRIA à do
+     texto: se a listra fosse um tom da própria tinta, o texto sentaria em
+     cima de listras da sua cor e o contraste despencava (19 dos 31 partidos
+     abaixo de 4,5:1, com o pior em 3,28:1). Assim o pior caso é 6,28:1, e no
+     vão entre as listras quem aparece é a cor do card, que já contrastava.
+     O `color-mix` é quem dá o alfa: `var()` não aceita função dentro, e a cor
+     do partido é um hex, então não há como enfiar "20%" nela. Precisa vir
+     depois do `background` acima, que é shorthand e zeraria a imagem. */
   background-image: linear-gradient(
     to bottom,
-    var(--card-fill, #111) 50%,
+    color-mix(in srgb, var(--card-fill, #000) 20%, transparent) 50%,
+    transparent 50%
+  );
+  background-size: 100% 5px;
+}
+
+.candidate-foot .candidate-ficha:hover {
+  color: var(--card-fill, #000);
+  border: 1px solid var(--card-fill, #000);
+  /* O texto é a tinta contrária, então o fundo precisa ser a tinta: sem ela o
+     vão entre as listras mostra a cor do partido e o contraste cai para
+     1,67:1 no MISSÃO. Com o fundo sólido são 18,88:1. A listra aqui é um tom
+     da cor do partido sobre a tinta, que é a direção oposta do texto, e o
+     pior caso sobe para 11,99:1. */
+  background: var(--card-on, #fff);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--card-base, #6b7280) 20%, transparent) 50%,
     transparent 50%
   );
   background-size: 100% 5px;

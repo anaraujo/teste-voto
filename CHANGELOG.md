@@ -9,16 +9,19 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Listras na pílula "Ver ficha", só no hover**: no repouso a pílula segue
-  vazia, e as listras de 2,5px a cada 5px aparecem quando o mouse passa por
-  cima ou quando o foco chega pelo teclado (`:focus-visible`) — o grid de 428
-  cards não fica um xadrez de listras. A cor é a tinta contrária à do texto:
-  brancas quando o texto é #111, pretas quando é branco, o que dá 18,9:1 nos
-  dois sentidos, e nos vãos das listras quem aparece é a cor do card, que já
-  contrastava com o texto. O texto não muda no hover, e isso é obrigatório: a
-  inversão sólida que havia antes punha a cor do partido por cima das listras
-  e reprovava nas 10 siglas medidas, com MISSÃO e PSB a 1,67:1. A secundária
-  do partido nunca chegou a servir — ela é cor de bandeira, não de fundo, e em
+- **Listras na pílula "Ver ficha"**: a pílula ganhou listras de 2,5px a cada
+  5px, num tom de 20% da tinta **contrária** à do texto — brancas a 20% quando
+  o texto é #111, pretas a 20% quando é branco. No hover a pílula inverte: o
+  fundo fica sólido na tinta, o texto na tinta contrária e as listras viram um
+  tom de 20% da cor do partido, que é a direção oposta do texto de novo. O
+  detalhe que faz a diferença é a listra ser sempre o tom da cor **oposta** ao
+  texto que está sobre ela: com um tom da própria tinta o texto senta em cima
+  de listras da sua cor, e o contraste despenca — 19 dos 31 partidos ficavam
+  abaixo de 4,5:1 no repouso (pior 3,28:1) e os 31 no hover (pior 1,09:1). No
+  estado final o pior caso é 4,66:1 no repouso, no vão entre as listras onde
+  aparece a cor do card, e 12,21:1 no hover. O alfa vem de `color-mix`, porque
+  `var()` não aceita função dentro e a cor do partido é um hex. A secundária
+  do partido nunca chegou a servir: ela é cor de bandeira, não de fundo, e em
   20 das 31 entradas da paleta ficaria entre 1,00:1 e 3,93:1 atrás do texto.
 - **Páginas estáticas no build**: `npm run build` agora gera um HTML por rota
   (`dist/candidatos/index.html`, `dist/candidato/<id>/index.html`,
