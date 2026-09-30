@@ -251,23 +251,25 @@ main > section:has(> .candidate-grid) {
   background: transparent;
   border: 1px solid var(--card-on, #fff);
   transition: transform 150ms;
-  /* Listras de 5px pintados a cada 10px da pílula. Tem que vir depois do
-     `background` acima, que é shorthand e zeraria o `background-image`. A
-     cor é a tinta contrária à do texto (`--card-fill`), senão o texto sumiria
-     sob as listras. O `:hover` abaixo não precisa mexer nada: o `background`
-     dele também é shorthand e apaga o gradiente, que é o comportamento
-     desejado. */
+}
+
+/* As listras só entram no hover, e no foco pelo teclado. No repouso a pílula
+   fica vazia, para o grid de 428 cards não virar xadrez de listras. A cor é a
+   tinta contrária à do texto (`--card-fill`), o que dá 18,9:1 nos dois
+   sentidos — é a mesma inversão que faz o texto sumir se elas viessem na cor
+   secundária do partido. O texto não muda aqui: a inversão sólida que havia
+   antes colocava a cor do partido por cima das listras e reprovava em 10 de
+   10 siglas (MISSÃO e PSB a 1,67:1). O `background` abaixo é shorthand e vem
+   antes da imagem, senão a zeraria. */
+.candidate-foot .candidate-ficha:hover,
+.candidate-foot .candidate-ficha:focus-visible {
+  background: transparent;
   background-image: linear-gradient(
     to bottom,
     var(--card-fill, #111) 50%,
     transparent 50%
   );
   background-size: 100% 5px;
-}
-
-.candidate-foot .candidate-ficha:hover {
-  color: var(--card-base, #6b7280);
-  background: var(--card-on, #fff);
 }
 
 .candidate-foot .candidate-ficha:active {

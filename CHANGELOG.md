@@ -9,18 +9,17 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
-- **Listras na pílula "Ver ficha"**: a pílula deixou de ser vazia e ganhou
-  listras de 2,5px a cada 5px, na tinta contrária à do texto do card — brancas
-  quando o texto é #111, pretas quando é branco. São as duas tintas que o
-  projeto já usa, então a combinação dá 18,9:1 nos dois sentidos e o texto
-  nunca some. A cor secundária do partido foi a primeira ideia e não serviu:
-  ela é cor de bandeira, não de fundo, e em 20 das 31 entradas da paleta ela
-  ficaria entre 1,00:1 e 3,93:1 atrás do texto — em PT, PV, PP, PCB e
-  DEMOCRATA ela é branca, ou seja, a mesma cor do texto. Afastá-la da tinta
-  até passar em AA resolvia o contraste, mas devolvia um cinza sem relação com
-  a bandeira. As 23 siglas do banco saem invertidas nos dois sentidos. No
-  `:hover` as listras somem sem regra nova, porque o `background` de lá já é
-  shorthand e zera o `background-image`.
+- **Listras na pílula "Ver ficha", só no hover**: no repouso a pílula segue
+  vazia, e as listras de 2,5px a cada 5px aparecem quando o mouse passa por
+  cima ou quando o foco chega pelo teclado (`:focus-visible`) — o grid de 428
+  cards não fica um xadrez de listras. A cor é a tinta contrária à do texto:
+  brancas quando o texto é #111, pretas quando é branco, o que dá 18,9:1 nos
+  dois sentidos, e nos vãos das listras quem aparece é a cor do card, que já
+  contrastava com o texto. O texto não muda no hover, e isso é obrigatório: a
+  inversão sólida que havia antes punha a cor do partido por cima das listras
+  e reprovava nas 10 siglas medidas, com MISSÃO e PSB a 1,67:1. A secundária
+  do partido nunca chegou a servir — ela é cor de bandeira, não de fundo, e em
+  20 das 31 entradas da paleta ficaria entre 1,00:1 e 3,93:1 atrás do texto.
 - **Páginas estáticas no build**: `npm run build` agora gera um HTML por rota
   (`dist/candidatos/index.html`, `dist/candidato/<id>/index.html`,
   `dist/quiz/1…5/index.html` — 436 páginas, 5,3 MB) com título, description,
