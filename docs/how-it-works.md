@@ -38,9 +38,12 @@ src/
 ├── hooks/useCandidateDetail.ts  Estado de carregamento da ficha (API ou seed)
 ├── hooks/useQuizAnswers.ts   Respostas do quiz (sessionStorage)
 ├── lib/scoring.ts            Pontuação pura + desempate (ranking)
+├── lib/search.ts             Busca fuzzy de candidatos (índice + ranking)
 ├── components/               Um componente por tela
 │   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
-│   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (via API)
+│   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (busca + grid)
+│   ├── CandidateGrid.tsx     Grid de cards da lista (foto, número, partido, nome)
+│   ├── CandidateDetailScreen.tsx  Ficha do candidato (abas, seções, fontes)
 │   ├── QuestionStep.tsx      Uma pergunta e suas opções
 │   ├── ResultScreen.tsx      Ranking completo dos candidatos
 │   ├── FairnessScreen.tsx    Auditoria de parcialidade
@@ -309,11 +312,18 @@ O Vite encaminha `/api` e `/photos` para a API em dev e preview (mesma origem).
 ### A página de candidatos
 
 `CandidatesScreen.tsx` consome `GET /api/candidates` via hook e cobre quatro
-estados: carregando, erro (sugere `npm run ingest`), vazio e lista. O resumo
-mostra foto, nome de urna, número, partido, agremiação e ocupação; `<details>`
-expande escolaridade, estado civil, nascimento (data + município), idade na
-eleição, quilombola/etnia, bens declarados e redes sociais. Marcas de
-reeleição/incumbência aparecem como `<mark>`.
+estados: carregando, erro (sugere `npm run ingest`), vazio e lista. A lista é um
+grid de cards (`CandidateGrid.tsx`): cada card traz a foto em 1:1, o número de
+urna, a sigla do partido e o nome de urna, com o fundo na cor primária do
+partido e a tinta escolhida por contraste (`readableOn`). O nome de urna encolhe
+em runtime para caber em uma linha. O campo de busca filtra no submit por nome
+(de urna e completo), número, partido, ocupação, cidade e coligação, com
+correspondência fuzzy (`src/lib/search.ts`).
+
+Os dados completos do candidato (escolaridade, estado civil, nascimento, idade,
+bens, redes sociais, marcas de reeleição/incumbência) não ficam no card: moram
+na ficha (`CandidateDetailScreen`, `/candidato/:id`), para os 428 cards não
+virarem uma parede de texto.
 
 ## As decisões de projeto definitivas
 

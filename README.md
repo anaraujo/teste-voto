@@ -79,24 +79,24 @@ Todas são opcionais; os padrões vêm comentados em [`.env.example`](.env.examp
 
 ### Scripts
 
-| Comando                       | O que faz                                                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                                                    |
-| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                                                       |
-| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                                         |
-| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                                             |
-| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                                            |
-| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                                                |
-| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                                                |
-| `npm run build`               | Tipos + bundle do app + build SSR + 436 páginas estáticas em `dist/`                                                            |
-| `npm run build:ssr`           | Só o bundle do servidor (`dist-ssr/entry-server.js`), usado pelo passo seguinte                                                 |
-| `npm run build:pages`         | Só as páginas: HTML pré-renderizado por rota, `sitemap.xml` e `robots.txt`                                                      |
-| `npm run preview`             | Visualiza o build de produção na porta 2026                                                                                     |
-| `npm run lint`                | Executa o lint com Oxlint                                                                                                       |
-| `npm run format`              | Aplica o Prettier em todo o repositório (aspas simples, sem `;`)                                                                |
-| `npm run format:check`        | Verifica a formatação sem alterar arquivos                                                                                      |
-| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz, pontuação, rotas e pré-renderização |
-| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                                             |
+| Comando                       | O que faz                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                                                           |
+| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                                                              |
+| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                                                |
+| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                                                    |
+| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                                                   |
+| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                                                       |
+| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                                                       |
+| `npm run build`               | Tipos + bundle do app + build SSR + 436 páginas estáticas em `dist/`                                                                   |
+| `npm run build:ssr`           | Só o bundle do servidor (`dist-ssr/entry-server.js`), usado pelo passo seguinte                                                        |
+| `npm run build:pages`         | Só as páginas: HTML pré-renderizado por rota, `sitemap.xml` e `robots.txt`                                                             |
+| `npm run preview`             | Visualiza o build de produção na porta 2026                                                                                            |
+| `npm run lint`                | Executa o lint com Oxlint                                                                                                              |
+| `npm run format`              | Aplica o Prettier em todo o repositório (aspas simples, sem `;`)                                                                       |
+| `npm run format:check`        | Verifica a formatação sem alterar arquivos                                                                                             |
+| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz, pontuação, busca, rotas e pré-renderização |
+| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                                                    |
 
 ## Dados oficiais do TSE
 
@@ -163,12 +163,14 @@ src/
 │       ├── deputados.ts   Deputados em exercício (API de Dados Abertos)
 │       └── identity.ts    Casamento por nome + data de nascimento
 ├── lib/scoring.ts          Pontuação por compatibilidade de perfil + desempate
+├── lib/search.ts           Busca fuzzy de candidatos (índice + ranking)
 ├── lib/utils.ts            `cn()` — junta classes e resolve conflitos Tailwind
 ├── lib/links.ts            Clique com modificador (abrir em nova aba)
 ├── index.css               Design tokens (Tailwind v4 @theme) — veja docs/design-tokens.md
 ├── components/
 │   ├── StartScreen.tsx     Tela de boas-vindas
-│   ├── CandidatesScreen.tsx Lista de candidatos oficiais (via API)
+│   ├── CandidatesScreen.tsx Lista de candidatos oficiais (busca + grid)
+│   ├── CandidateGrid.tsx   Grid de cards (foto, número, partido e nome de urna)
 │   ├── CandidateDetailScreen.tsx Ficha: abas, seções e notas editoriais
 │   ├── GooeyNav.tsx        Navegação de abas com a pílula gooey (port do react-bits, sem deps)
 │   ├── LineSidebar.tsx     Trilho lateral de seções (port do react-bits, sem deps)
@@ -238,7 +240,8 @@ Existem dois botões, com fronteiras explícitas:
 - **`SpecularButton`** — CTA de destaque ("Começar", "Recomeçar"). É a
   assinatura visual do app: um shader WebGL que segue o ponteiro.
 - **`Button`** (do kit) — todo o resto: opções do quiz, "Tentar novamente",
-  voltar, ações de ficha. Listas longas usam o `.sb-link`, porque cada
+  voltar, ações de ficha. O resultado, quando mostra todos de uma vez, usa o
+  `.sb-link`, e a lista de candidatos usa os cards do `CandidateGrid`: cada
   `SpecularButton` abre um contexto WebGL e o navegador aceita poucos.
 
 Formatação padronizada com Prettier (aspas simples, sem `;`). Leia

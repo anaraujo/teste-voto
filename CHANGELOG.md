@@ -120,6 +120,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
+- **A lista de candidatos virou um grid de cards** (`CandidateGrid.tsx`): cada
+  card traz a foto em 1:1 (161×225, sem upscale), o número de urna, a sigla do
+  partido e o nome de urna, sobre a cor primária do partido e com a tinta
+  escolhida por contraste (`readableOn`). O nome de urna encolhe em runtime para
+  caber em uma linha. Junto vieram a fonte **Inter** (self-hospedada, variável) e
+  uma paleta de duas superfícies — fundo do app `#FAD86A` e painel do grid
+  `#5C719C` — mais o campo de busca (fuzzy) no topo da lista.
 - **A lista de candidatos mostra os 428 de uma vez**: o botão "Mostrar mais"
   (50 por vez) foi removido. Ele existia só porque 428 cards de uma vez parecem
   caros, mas a medição mostra que não são: a API já devolve a lista inteira em
@@ -156,14 +163,14 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `npm run sync:incumbents`), tabela `incumbents` e marcação de
   "Deputado(a) federal em exercício" na lista (25/428 casados; 5 deputados não
   concorrem à reeleição nesta eleição).
-- Card de candidato enriquecido: natural de <município (UF)>, idade na eleição,
+- Ficha do candidato enriquecida: natural de <município (UF)>, idade na eleição,
   quilombola/etnia indígena, bens declarados (R$) e redes sociais com links.
 - Testes novos: parser do complementar, identidade (casamento Câmara), campos
   novos do repositório — 51 testes no total.
 - Documentação: `docs/quiz-design.md` (desenho e decisões do quiz, coberturas)
   e atualizações de `how-it-works`, `authoring-content`, `README` e changelog.
 
-- Na lista de candidatos, resumo por candidato com partido, agremiação
+- Na ficha do candidato, resumo com partido, agremiação
   (federação/partido isolado), ocupação e detalhes expansíveis (`<details>`
   "Mais informações") com escolaridade, estado civil, nascimento (data e UF),
   sexo e cor/raça.

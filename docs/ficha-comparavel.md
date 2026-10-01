@@ -62,7 +62,7 @@ votos ou métricas por conta própria.
   interno, então as setas do teclado também movem a pílula. O efeito gooey
   depende de `mix-blend-mode: lighten` sobre fundo escuro, e por isso a
   navegação tem cápsula própria (a cor do partido escurecida) em vez de usar o
-  eggshell da página. As partículas só nascem no cliente: são `Math.random` e
+  fundo claro da página. As partículas só nascem no cliente: são `Math.random` e
   `document.createElement`, que quebrariam a hidratação das páginas estáticas.
 - As partículas saem da **primária do partido**, em cor sólida. Elas vivem numa
   camada própria, fora do `filter: blur/contrast` da pílula: o `contrast(100)`

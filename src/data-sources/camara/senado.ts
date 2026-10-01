@@ -22,12 +22,6 @@ export interface SenadorLista {
   mandatos: SenadorMandato[]
 }
 
-export interface SenadorDetalhe {
-  codigo: number
-  nome: string
-  dataNascimento: string | null
-}
-
 const BASE = 'https://legis.senado.leg.br/dadosabertos'
 
 const sleep = (ms: number): Promise<void> =>
@@ -117,21 +111,4 @@ export async function fetchSenadoresPorLegislatura(
     if (!Number.isNaN(parsed.codigo)) result.push(parsed)
   }
   return result
-}
-
-/** Detalhe do senador (data de nascimento) para confirmação de identidade. */
-export async function fetchSenadorDetalhe(
-  codigo: number,
-): Promise<SenadorDetalhe | null> {
-  try {
-    const xml = await getXml(`${BASE}/senador/${codigo}`)
-    const identificacao = textOf(xml, 'IdentificacaoParlamentar') || xml
-    return {
-      codigo,
-      nome: textOf(xml, 'NomeParlamentar') || textOf(xml, 'Nome'),
-      dataNascimento: textOf(identificacao, 'DataNascimento') || null,
-    }
-  } catch {
-    return null
-  }
 }

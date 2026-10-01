@@ -12,10 +12,12 @@ Backend só com o padrão do Node — sem dependências novas sem conversa.
 ```sh
 npm run dev                     # app (2026) + API (2027)
 npm run ingest                  # dados do TSE -> data/tse.db (SQLite)
-npm run sync:incumbents | sync:parliament | sync:history
+npm run sync:incumbents         # deputados federais em exercício (Câmara)
+npm run sync:parliament         # histórico parlamentar (Câmara/Senado)
+npm run sync:history            # histórico de posições (TSE)
 npm test                        # node:test
 npm run lint                    # oxlint
-npm run build                   # tsc -b && vite build
+npm run build                   # tsc -b && vite build + build:ssr + build:pages
 npm run check:distribution      # auditoria de imparcialidade (480 combinações)
 ```
 

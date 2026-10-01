@@ -24,12 +24,18 @@ O projeto usa **Tailwind CSS v4**, integrado como plugin do Vite — não existe
   --color-primary-soft: #069400;
 
   /* Laranja — variante secondary do botão */
-  --color-secondary: #f59e0b;
-  --color-secondary-soft: #fb3f13;
+  --color-secondary: #fb3f13;
+  --color-secondary-soft: #f97316;
 
-  /* Neutros */
+  /* Amarelo — variante tertiary do botão */
+  --color-tertiary: #f59e0b;
+  --color-tertiary-soft: #fedd00;
+
+  /* Neutros e superfícies */
   --color-gray: #bcb7bc;
   --color-eggshell: #f0ead6;
+  --color-canvas: #fad86a;
+  --color-panel: #5c719c;
 }
 ```
 
@@ -41,19 +47,21 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
 ### Tokens atuais
 
-| Token                    | Hex       | Papel                    | Uso principal                       |
-| ------------------------ | --------- | ------------------------ | ----------------------------------- |
-| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary        |
-| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary         |
-| `--color-secondary`      | `#fb3f13` | Laranja                  | texto/linha do botão secondary      |
-| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary       |
-| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary       |
-| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary        |
-| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary   |
-| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary |
-| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary  |
-| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface               |
-| `--color-eggshell`       | `#f0ead6` | Fundo creme da página    | fundo do app (`bg-eggshell`)        |
+| Token                    | Hex       | Papel                     | Uso principal                                      |
+| ------------------------ | --------- | ------------------------- | -------------------------------------------------- |
+| `--color-primary`        | `#009739` | Verde principal (escuro)  | texto/linha do botão primary                       |
+| `--color-primary-soft`   | `#069400` | Verde intermediário       | tint/borda do botão primary                        |
+| `--color-secondary`      | `#fb3f13` | Laranja                   | texto/linha do botão secondary                     |
+| `--color-secondary-soft` | `#f97316` | Laranja claro             | tint/borda do botão secondary                      |
+| `--color-tertiary`       | `#f59e0b` | Amarelo                   | texto/linha do botão tertiary                      |
+| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo              | tint/borda do botão tertiary                       |
+| `--color-primary-on`     | `#111111` | Texto sobre `primary`     | conteúdo sobre superfície primary                  |
+| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`   | conteúdo sobre superfície secondary                |
+| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`    | conteúdo sobre superfície tertiary                 |
+| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica  | detalhes de interface                              |
+| `--color-eggshell`       | `#f0ead6` | Creme da camada semântica | superfície base do kit (`--background`, `--card`)  |
+| `--color-canvas`         | `#fad86a` | Fundo do app              | fundo da página (`bg-canvas`)                      |
+| `--color-panel`          | `#5c719c` | Painel do grid            | fundo do grid de candidatos (`var(--color-panel)`) |
 
 Os tokens `-on` existem porque nenhuma das três cores da marca passa em
 WCAG AA com texto branco (3,83:1, 3,61:1 e 2,15:1 contra `#ffffff`); com
@@ -124,7 +132,7 @@ três cores da marca.
 Em **JSX/TSX**, prefira as utilitárias Tailwind:
 
 ```tsx
-<main className="min-h-screen bg-primary">…</main>
+<main className="min-h-screen bg-canvas">…</main>
 <p className="text-primary-soft">…</p>
 ```
 
@@ -147,8 +155,9 @@ O app tem **dois** botões, com fronteiras explícitas.
 | `Button` (`src/components/ui/button.tsx`)              | Tudo o mais: opções do quiz, "Tentar novamente", voltar, ações de ficha | Botão comum, sem WebGL. É o que viabiliza listas longas.                                       |
 
 A fronteira não é estética, é de contexto WebGL: cada `SpecularButton` abre um
-contexto próprio, e o navegador aceita poucos. Por isso a lista de 428 candidatos
-usa o `.sb-link` (um `<a>` de verdade) e o resultado, quando mostra todos, também.
+contexto próprio, e o navegador aceita poucos. Por isso o resultado, quando
+mostra todos de uma vez, usa o `.sb-link` (um `<a>` de verdade), e a lista de
+428 candidatos usa os cards do `CandidateGrid`, que não abrem contexto nenhum.
 Ver o comentário em `src/index.css`.
 
 ### O `SpecularButton` em detalhe
