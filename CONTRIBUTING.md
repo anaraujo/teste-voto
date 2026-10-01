@@ -16,10 +16,36 @@ trabalhar com o código e como mantê-lo assim.
 - **Siga o design system.** As cores do app vêm dos tokens em
   `src/index.css` (Tailwind v4 `@theme`), não de hexes soltos no código. Cores
   novas vão primeiro para a página de tokens — veja
-  [docs/design-tokens.md](docs/design-tokens.md). O `SpecularButton` tem duas
-  variantes (primary verde, secondary laranja) que compartilham o mesmo estilo.
+  `docs/design-tokens.md`. Existem dois botões com fronteiras explícitas:
+  `SpecularButton` para CTA de destaque (WebGL) e `Button` para o resto.
+- **Componha a partir do kit.** `src/components/ui/` tem os componentes
+  básicos (button, card, badge, input, label, skeleton, progress, radio-group,
+  sheet, tooltip, sonner). Antes de escrever um componente do zero, veja se o
+  kit já resolve — e siga o formato dele ao adicionar.
 - **Zero dependências desnecessárias.** Antes de adicionar uma biblioteca,
   pergunte: dá para fazer com o que já temos? Normalmente dá.
+
+### Sobre o shadcn/ui
+
+O kit segue o **formato** do shadcn/ui, com uma diferença que importa: os
+componentes são **código deste repositório**, não um pacote. `npx shadcn@latest
+add <nome>` copia o arquivo para `src/components/ui/` e a partir daí ele é seu —
+editar o `button.tsx` é um commit normal aqui.
+
+Isso é o que autoriza o kit dentro da regra de zero dependências: não há
+dependência nova para justificar, só código que o time mantém.
+
+Dois pontos de atenção:
+
+- **Nunca rode `shadcn init`.** Ele reescreve o bloco `@theme` de
+  `src/index.css`, que é a fonte única das cores. O `components.json` da raiz já
+  está configurado — use apenas `add`.
+- **Depois do `add`, revise as cores.** As classes precisam apontar para os
+  tokens do projeto (`primary`, `secondary`, `tertiary`, `muted`, `border`,
+  `ring`, `card`) e nunca para hex solto nem para a paleta neutra padrão do
+  shadcn.
+
+Detalhes em `docs/design-tokens.md`.
 
 ## Configuração
 

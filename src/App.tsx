@@ -21,6 +21,8 @@ import { NotFoundScreen } from './components/NotFoundScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
 import { ResultScreen } from './components/ResultScreen.tsx'
 import { StartScreen } from './components/StartScreen.tsx'
+import { Button } from './components/ui/button.tsx'
+import { Card } from './components/ui/card.tsx'
 
 export interface NavigateOptions {
   replace?: boolean
@@ -163,12 +165,18 @@ function App({
             onShowCandidate={showCandidate}
           />
         ) : (
-          <section>
-            <h2>Não foi possível calcular o resultado</h2>
-            <p>Responda as perguntas para ver o ranking dos candidatos.</p>
-            <button type="button" onClick={handleStart}>
-              Responder o quiz
-            </button>
+          <section className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4">
+            <Card>
+              <h2 className="text-base font-semibold">
+                Não foi possível calcular o resultado
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Responda as perguntas para ver o ranking dos candidatos.
+              </p>
+              <div>
+                <Button onClick={handleStart}>Responder o quiz</Button>
+              </div>
+            </Card>
           </section>
         ))}
 

@@ -18,6 +18,7 @@ import { partyColor } from '../shared/party-colors.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 import { GooeyNav } from './GooeyNav.tsx'
 import { LineSidebar, type SectionAnchor } from './LineSidebar.tsx'
+import { Skeleton } from './ui/skeleton.tsx'
 import './ficha.css'
 
 interface CandidateDetailScreenProps {
@@ -926,8 +927,14 @@ export function CandidateDetailScreen({
 
   if (state.status === 'loading') {
     return (
-      <section>
-        <p>Carregando ficha...</p>
+      <section
+        aria-live="polite"
+        aria-busy="true"
+        className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4"
+      >
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-64 w-full" />
       </section>
     )
   }

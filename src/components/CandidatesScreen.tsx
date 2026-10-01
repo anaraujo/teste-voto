@@ -1,30 +1,17 @@
 import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
+import { isModifiedClick } from '../lib/links.ts'
 import { partyColor, readableFill, readableOn } from '../shared/party-colors.ts'
 import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
+import { Button } from './ui/button.tsx'
+import { Card } from './ui/card.tsx'
+import { Skeleton } from './ui/skeleton.tsx'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
   onRetry: () => void
   onShowCandidate: (candidateId: string) => void
-}
-
-/** Clique com modificador (abrir em nova aba) não é interceptado. */
-function isModifiedClick(event: {
-  metaKey: boolean
-  ctrlKey: boolean
-  shiftKey: boolean
-  altKey: boolean
-  button: number
-}): boolean {
-  return (
-    event.metaKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.altKey ||
-    event.button !== 0
-  )
 }
 
 function toCandidateItem(candidate: ApiCandidate): CandidateItem {
@@ -73,60 +60,91 @@ export function CandidatesScreen({
   onRetry,
   onShowCandidate,
 }: CandidatesScreenProps) {
-  if (state.status === 'loading') return <p>Carregando candidatos...</p>
+  /*
+   * As três telas abaixo — carregando, erro e vazio — são as únicas que ainda
+   * não tinham contêiner visual. `aria-live` faz a troca de uma para outra ser
+   * anunciada: sem ele, quem navega pelo teclado só perceberia a mudança de
+   * contexto pelo título da aba.
+   */
+  if (state.status === 'loading') {
+    return (
+      <section
+        aria-live="polite"
+        aria-busy="true"
+        className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4"
+      >
+        <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+        <span className="sr-only">Carregando candidatos...</span>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className="h-44 w-full rounded-lg" />
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   if (state.status === 'error') {
     return (
-      <div>
-        <p>Não foi possível carregar a lista de candidatos.</p>
-        <p>
-          <small>
+      <section
+        aria-live="assertive"
+        className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4"
+      >
+        <Card>
+          <h2 className="text-base font-semibold">
+            Não foi possível carregar a lista de candidatos.
+          </h2>
+          <p className="text-sm text-muted-foreground">
             Verifique se os dados do TSE foram carregados com{' '}
             <code>npm run ingest</code> e se a API está rodando.
-          </small>
-        </p>
-        <p>
-          <small>({state.message})</small>
-        </p>
-        <button type="button" onClick={onRetry}>
-          Tentar novamente
-        </button>
-      </div>
+          </p>
+          <p className="text-xs text-muted-foreground">({state.message})</p>
+          <div>
+            <Button variant="outline" onClick={onRetry}>
+              Tentar novamente
+            </Button>
+          </div>
+        </Card>
+      </section>
     )
   }
 
   if (state.data.candidates.length === 0) {
     return (
-      <div>
-        <p>Nenhum candidato encontrado para esta eleição.</p>
-        <p>
-          <small>
+      <section
+        aria-live="polite"
+        className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4"
+      >
+        <Card>
+          <h2 className="text-base font-semibold">
+            Nenhum candidato encontrado para esta eleição.
+          </h2>
+          <p className="text-sm text-muted-foreground">
             Rode <code>npm run ingest</code> para carregar os dados oficiais do
             TSE.
-          </small>
-        </p>
-      </div>
+          </p>
+        </Card>
+      </section>
     )
   }
 
   const candidates = state.data.candidates
 
   return (
-    <section>
-      <h2>Candidatos</h2>
-      <p>
-        <small>
-          {state.data.total} candidatos a {state.data.election.office} em{' '}
-          {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
-          <a
-            href="https://dadosabertos.tse.jus.br/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            dados abertos do TSE
-          </a>
-          .
-        </small>
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4">
+      <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+      <p className="text-sm text-muted-foreground">
+        {state.data.total} candidatos a {state.data.election.office} em{' '}
+        {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
+        <a
+          className="underline underline-offset-4 hover:text-foreground"
+          href="https://dadosabertos.tse.jus.br/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          dados abertos do TSE
+        </a>
+        .
       </p>
 
       {/* Os 428 candidatos entram de uma vez. Não há paginação na API — o

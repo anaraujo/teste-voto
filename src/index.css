@@ -43,6 +43,70 @@
 }
 
 /*
+ * Camada semântica — ponte para os componentes em `src/components/ui/`.
+ *
+ * Os tokens do bloco `@theme` acima continuam sendo a fonte única das cores:
+ * este bloco não repete nenhum hex, apenas aponta para eles (mais
+ * `--foreground`, o texto base, que ainda não tinha token).
+ *
+ * Nomes como `primary` e `secondary` NÃO são redeclarados de propósito — o
+ * shadcn usa esses nomes com o mesmo sentido que o projeto já usa, então
+ * `bg-primary` continua resolvendo para `--color-primary`. O bloco
+ * `@theme inline` abaixo expõe ao Tailwind só os nomes que ainda não existiam.
+ */
+:root {
+  --foreground: #111111;
+  --background: var(--color-eggshell);
+  /*
+   * Superfície elevada: o creme da página aclarado em direção ao branco, para
+   * o card se destacar do fundo sem introduzir uma cor nova na marca.
+   */
+  --card: color-mix(in srgb, var(--color-eggshell) 70%, #ffffff);
+  --card-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
+  --accent: color-mix(in srgb, var(--color-primary-soft) 12%, transparent);
+  --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
+  --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
+  --ring: var(--color-primary);
+  --destructive: var(--color-secondary);
+}
+
+@theme inline {
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  /*
+   * `-foreground` = conteúdo sobre a cor cheia. Aponta para os tokens `-on`,
+   * que já garantem contraste AA — o shadcn usaria branco aqui e o texto
+   * sumiria sobre o amarelo (`docs/design-tokens.md`).
+   */
+  --color-primary-foreground: var(--color-primary-on);
+  --color-secondary-foreground: var(--color-secondary-on);
+  --color-tertiary-foreground: var(--color-tertiary-on);
+
+  /*
+   * Escala de raio derivada de um único `--radius`, no mesmo espírito dos
+   * tokens de cor: mudar `--radius` move o app inteiro. O base acompanha os
+   * 16px que `.sb-link` e o SpecularButton já usavam.
+   */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  --radius: 1rem;
+}
+
+/*
  * `.sb-link` — link com o visual do SpecularButton, sem WebGL.
  *
  * A lista de candidatos tem 428 itens, e cada SpecularButton abriria um

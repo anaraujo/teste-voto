@@ -186,6 +186,14 @@ export function SpecularButton({
     let renderer: Renderer | null = null
     let raf = 0
     let ro: ResizeObserver | null = null
+    let io: IntersectionObserver | null = null
+
+    /*
+     * Com movimento reduzido o botão continua um botão — tint, blur e sombra
+     * vêm do estilo inline abaixo — mas sem o brilho que segue o ponteiro nem
+     * o rAF que o anima. Mesmo critério que GooeyNav e LineSidebar já usam.
+     */
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const onPointerMove = (e: PointerEvent) => {
       const rect = btn.getBoundingClientRect()
@@ -273,12 +281,15 @@ export function SpecularButton({
       let idleAngle = 2.4
       let bright = 0
       let last = performance.now()
+      let visible = true
 
       const lineC = new Color()
       const baseC = new Color()
 
       const update = (now: number) => {
-        raf = requestAnimationFrame(update)
+        // Fora da tela o laço para de vez (não há quadro a pedir): o
+        // IntersectionObserver abaixo é quem o religa quando o botão volta.
+        raf = visible ? requestAnimationFrame(update) : 0
         const dt = Math.min((now - last) / 1000, 0.05)
         last = now
         const p = propsRef.current
@@ -310,6 +321,24 @@ export function SpecularButton({
         render.render({ scene: mesh })
       }
       raf = requestAnimationFrame(update)
+
+      /*
+       * Um CTA só costuma estar visível durante parte da tela, então o rAF
+       * pausa fora do viewport e volta quando o botão reaparece. Também evita
+       * competir com a rolagem de uma ficha longa.
+       */
+      io = new IntersectionObserver(
+        ([entry]) => {
+          const wasVisible = visible
+          visible = entry.isIntersecting
+          if (visible && !wasVisible) {
+            last = performance.now()
+            if (!raf) raf = requestAnimationFrame(update)
+          }
+        },
+        { rootMargin: '128px' },
+      )
+      io.observe(btn)
     } catch {
       renderer = null
     }
@@ -318,6 +347,7 @@ export function SpecularButton({
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onPointerMove)
       ro?.disconnect()
+      io?.disconnect()
       if (renderer && renderer.gl.canvas.parentNode === fx) {
         fx.removeChild(renderer.gl.canvas)
       }

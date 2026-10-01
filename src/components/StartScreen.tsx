@@ -1,4 +1,6 @@
 import { SpecularButton } from './SpecularButton.tsx'
+import { Button } from './ui/button.tsx'
+import { Card } from './ui/card.tsx'
 
 interface StartScreenProps {
   questionCount: number
@@ -30,24 +32,28 @@ export function StartScreen({
         rápidas.
       </p>
 
-      {loading && <p>Carregando candidatos...</p>}
+      {loading && (
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          Carregando candidatos...
+        </p>
+      )}
 
       {error && (
-        <div>
-          <p>Não foi possível carregar os dados dos candidatos.</p>
-          <p>
-            <small>
-              Verifique se os dados do TSE foram carregados com{' '}
-              <code>npm run ingest</code> e se a API está rodando.
-            </small>
+        <Card className="max-w-md text-left">
+          <p className="text-sm font-medium">
+            Não foi possível carregar os dados dos candidatos.
           </p>
-          <p>
-            <small>({error})</small>
+          <p className="text-sm text-muted-foreground">
+            Verifique se os dados do TSE foram carregados com{' '}
+            <code>npm run ingest</code> e se a API está rodando.
           </p>
-          <button type="button" onClick={onRetry}>
-            Tentar novamente
-          </button>
-        </div>
+          <p className="text-xs text-muted-foreground">({error})</p>
+          <div>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Tentar novamente
+            </Button>
+          </div>
+        </Card>
       )}
 
       <div className="flex gap-4">

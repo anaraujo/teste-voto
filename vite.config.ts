@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { join, normalize } from 'node:path'
+import { join, normalize, resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
@@ -65,6 +65,11 @@ type Middleware = (
 
 export default defineConfig(({ isSsrBuild }) => ({
   plugins: [prerenderedPages(), tailwindcss(), react()],
+  resolve: {
+    // Espelha o `paths` de tsconfig.app.json, para os componentes em
+    // `src/components/ui/` importarem por `@/…`.
+    alias: { '@': resolve(import.meta.dirname, 'src') },
+  },
   // O manifest descreve os assets do shell; o build de páginas confere que
   // HTML pré-renderizado e bundle do cliente saem do mesmo build.
   build: isSsrBuild

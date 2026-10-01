@@ -163,6 +163,8 @@ src/
 │       ├── deputados.ts   Deputados em exercício (API de Dados Abertos)
 │       └── identity.ts    Casamento por nome + data de nascimento
 ├── lib/scoring.ts          Pontuação por compatibilidade de perfil + desempate
+├── lib/utils.ts            `cn()` — junta classes e resolve conflitos Tailwind
+├── lib/links.ts            Clique com modificador (abrir em nova aba)
 ├── index.css               Design tokens (Tailwind v4 @theme) — veja docs/design-tokens.md
 ├── components/
 │   ├── StartScreen.tsx     Tela de boas-vindas
@@ -176,7 +178,10 @@ src/
 │   ├── AppHeader.tsx        Cabeçalho com o botão de voltar
 │   ├── NotFoundScreen.tsx   Rota desconhecida
 │   ├── SpecularButton.tsx   Botão de CTA com variantes primary/secondary (WebGL)
-│   └── specularTheme.ts     Mapeamento variante→token; lê as cores do CSS
+│   ├── specularTheme.ts     Mapeamento variante→token; lê as cores do CSS
+│   ├── ui/                  Kit no padrão shadcn: button, card, badge, input,
+│   │                        label, skeleton, progress, radio-group, sheet,
+│   │                        tooltip, sonner (código do repo, não pacote)
 ├── AppRouter.tsx           Cliente do roteamento (History API)
 └── App.tsx                 Renderiza a tela da rota
 server/index.ts             API HTTP (node:http): candidatos + fotos
@@ -216,10 +221,28 @@ o shell vazio. Ver [docs/how-it-works.md](docs/how-it-works.md).
 
 As cores do app são declaradas em uma única página de tokens
 (`src/index.css`, bloco `@theme` do Tailwind v4): cada cor vira uma variável
-CSS global e utilitárias (`bg-primary`, `text-primary-soft` etc.). O
-`SpecularButton` usa essas cores em duas variantes que compartilham o mesmo
-estilo — **primary** (verde) e **secondary** (laranja). Formatação padronizada
-com Prettier (aspas simples, sem `;`). Leia [docs/design-tokens.md](docs/design-tokens.md).
+CSS global e utilitárias (`bg-primary`, `text-primary-soft` etc.).
+
+Sobre esse bloco há uma **camada semântica** (`:root` + `@theme inline`) que dá
+ao kit em `src/components/ui/` os nomes que ele espera — `background`, `muted`,
+`border`, `ring` — sem introduzir uma segunda fonte de cor: cada valor aponta
+para um token do `@theme`.
+
+Os componentes básicos seguem o **formato** do shadcn/ui (Radix +
+`class-variance-authority`, `cn()`), mas o código é **deste repositório**:
+`npx shadcn@latest add <nome>` copia o arquivo para `src/components/ui/` e a
+partir daí ele é seu. É o que mantém o kit dentro da regra de zero dependências.
+
+Existem dois botões, com fronteiras explícitas:
+
+- **`SpecularButton`** — CTA de destaque ("Começar", "Recomeçar"). É a
+  assinatura visual do app: um shader WebGL que segue o ponteiro.
+- **`Button`** (do kit) — todo o resto: opções do quiz, "Tentar novamente",
+  voltar, ações de ficha. Listas longas usam o `.sb-link`, porque cada
+  `SpecularButton` abre um contexto WebGL e o navegador aceita poucos.
+
+Formatação padronizada com Prettier (aspas simples, sem `;`). Leia
+[docs/design-tokens.md](docs/design-tokens.md).
 
 ## Contribuindo
 

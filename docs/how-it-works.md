@@ -9,11 +9,14 @@ cabeça em uma única leitura.
 O projeto valoriza a leveza acima de tudo:
 
 - Cores guiadas por um design system enxuto: tokens em `src/index.css`
-  (Tailwind v4 `@theme`) e um componente de botão com variantes
-  (`SpecularButton`, primary verde / secondary laranja). Nada de hexes soltos
-  no código — veja [docs/design-tokens.md](design-tokens.md).
+  (Tailwind v4 `@theme`), uma camada semântica que aponta para eles, e dois
+  botões com fronteiras explícitas (`SpecularButton`, CTA de destaque com
+  WebGL, e `Button`, do kit, para o resto). Nada de hexes soltos no código —
+  veja [docs/design-tokens.md](design-tokens.md).
 - Nenhuma dependência desnecessária. Toda dependência precisa conquistar seu
-  lugar em uma conversa primeiro.
+  lugar em uma conversa primeiro. Os componentes básicos em
+  `src/components/ui/` seguem o formato do shadcn/ui mas são **código do
+  repositório**, não um pacote: por isso não contam como dependência.
 - Módulos pequenos e focados, cada um com uma única responsabilidade.
 - A lógica é pura e os dados são declarativos, para que o aplicativo possa ser
   auditado, estendido e testado sem cerimônia.
