@@ -300,7 +300,11 @@ export function GooeyNav({
         </ul>
       </nav>
       <span className="effect filter" ref={filterRef} aria-hidden="true" />
-      <span className="effect particles" ref={particlesRef} aria-hidden="true" />
+      <span
+        className="effect particles"
+        ref={particlesRef}
+        aria-hidden="true"
+      />
       <span className="effect text" ref={textRef} aria-hidden="true" />
     </div>
   )
