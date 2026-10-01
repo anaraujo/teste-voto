@@ -107,8 +107,8 @@ function App({
         // `items-center` o topo de um conteúdo mais longo que a tela some
         // atrás do topo do documento; as demais telas continuam centralizadas.
         route.name === 'candidate'
-          ? 'min-h-screen bg-eggshell flex items-start justify-center'
-          : 'min-h-screen bg-eggshell flex items-center justify-center'
+          ? 'min-h-screen bg-primary flex items-start justify-center'
+          : 'min-h-screen bg-primary flex items-center justify-center'
       }
     >
       <AppHeader route={route} onNavigate={onNavigate} />

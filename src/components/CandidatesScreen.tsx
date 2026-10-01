@@ -4,6 +4,9 @@ import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { isModifiedClick } from '../lib/links.ts'
 import { partyColor, readableFill, readableOn } from '../shared/party-colors.ts'
 import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
+// O esqueleto de carregamento usa a classe `.candidate-grid`, e no estado de
+// carregamento o `CandidateGrid` não é montado para trazer o CSS junto.
+import './CandidateGrid.css'
 import { Button } from './ui/button.tsx'
 import { Card } from './ui/card.tsx'
 import { Skeleton } from './ui/skeleton.tsx'
@@ -71,13 +74,33 @@ export function CandidatesScreen({
       <section
         aria-live="polite"
         aria-busy="true"
-        className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4"
+        className="mx-auto flex w-full flex-col gap-3 px-4"
       >
         <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
         <span className="sr-only">Carregando candidatos...</span>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {/*
+         * O esqueleto usa a classe do grid de verdade em vez de contar
+         * colunas no Tailwind. `grid-cols` com `lg:` é um degrau de viewport,
+         * e o grid real resolve as colunas contra o próprio `--max-columns`. Os
+         * dois nunca casavam.
+         *
+         * O número de esqueletos é 8 na mão porque o `--max-columns` é uma
+         * custom property do CSS, e o JS não a lê. Numa tela estreita sobram
+         * esqueletos fora da vista, que é a mesma coisa que acontece com o
+         * grid real. Precisa acompanhar o `--max-columns` do CSS à mão.
+         *
+         * A altura é a da foto (`aspect-161/225`), não a do card inteiro: um
+         * card real tem header, foto, nome e a pílula "Ver ficha" empilhados.
+         * Este esqueleto é só a caixa da foto, então ele é mais curto que o
+         * card que substitui e a página sobe quando os dados chegam.
+         *
+         * A largura não é fixada: vem da coluna do grid, que é o que o
+         * esqueleto precisa acompanhar. Fixar os dois lados aqui faria o
+         * esqueleto discordar do grid real de novo em cada ajuste de tamanho.
+         */}
+        <div className="candidate-grid" aria-hidden="true">
           {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className="h-44 w-full rounded-lg" />
+            <Skeleton key={i} className="aspect-161/225 rounded-[20px]" />
           ))}
         </div>
       </section>
@@ -131,7 +154,12 @@ export function CandidatesScreen({
   const candidates = state.data.candidates
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4">
+    /*
+     * Sem `max-w-*`: o teto de colunas mora no `CandidateGrid.css`, em
+     * `--max-columns`, e a section só cede a largura que sobra. Ver o
+     * comentário do `.candidate-grid`.
+     */
+    <section className="mx-auto flex w-full flex-col gap-3 px-4">
       <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
       <p className="text-sm text-muted-foreground">
         {state.data.total} candidatos a {state.data.election.office} em{' '}
