@@ -1302,3 +1302,82 @@ export function getMunicipalMandatesByIbge(
     ).all(ibgeCode) as unknown as MunicipalMandateDbRow[]
   )
 }
+
+/** Resumo de cobertura do histórico municipal, por município (IBGE). */
+export interface MunicipalCoverage {
+  municipalityIbgeCode: string
+  access: string
+  note: string | null
+}
+
+/**
+ * Resolve a situação do histórico municipal de um candidato.
+ *
+ * A distinção que importa está em `coverage`: `read` é "a fonte do município
+ * foi consultada", `unavailable` é "não há fonte legível aqui". Sem isso a
+ * ficha afirmaria que alguém não exerceu mandato só porque a Câmara não publica
+ * dados.
+ */
+export function getMunicipalHistory(
+  db: DatabaseSync,
+  candidateId: string,
+): {
+  coverage: 'read' | 'unavailable'
+  coverageNote: string | null
+  coverageByIbge: MunicipalCoverage[]
+  identities: MunicipalIdentityDbRow[]
+  mandates: Map<string, MunicipalMandateDbRow[]>
+} {
+  const identities = listMunicipalIdentities(db).filter(
+    (row) => row.candidate_id === candidateId,
+  )
+
+  const linked = identities.filter((row) => row.source_person_id !== null)
+  const readIds = new Set(linked.map((row) => row.source_id))
+
+  const coverages = (
+    db.prepare(`SELECT municipality_ibge_code, access, note FROM municipal_chambers`).all() as unknown as Array<{
+      municipality_ibge_code: string
+      access: string
+      note: string | null
+    }>
+  )
+    .filter((row) => identities.some((i) => i.municipality_ibge_code === row.municipality_ibge_code))
+    .map((row) => ({
+      municipalityIbgeCode: row.municipality_ibge_code,
+      access: row.access,
+      note: row.note,
+    }))
+
+  const mandatesByPerson = new Map<string, MunicipalMandateDbRow[]>()
+  if (readIds.size > 0) {
+    const all = db
+      .prepare(
+        `SELECT * FROM municipal_mandates WHERE source_id IN (${[...readIds]
+          .map(() => '?')
+          .join(',')})`,
+      )
+      .all(...readIds) as unknown as MunicipalMandateDbRow[]
+
+    for (const row of all) {
+      if (row.source_person_id === null) continue
+      const list = mandatesByPerson.get(row.source_person_id)
+      if (list) list.push(row)
+      else mandatesByPerson.set(row.source_person_id, [row])
+    }
+  }
+
+  const read = coverages.some((c) => c.access === 'verified')
+  const note = read
+    ? null
+    : coverages.map((c) => c.note).find((n): n is string => n !== null) ??
+      'Nenhuma fonte oficial legível foi localizada para este município.'
+
+  return {
+    coverage: read ? 'read' : 'unavailable',
+    coverageNote: note,
+    coverageByIbge: coverages,
+    identities,
+    mandates: mandatesByPerson,
+  }
+}

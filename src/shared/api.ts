@@ -120,4 +120,55 @@ export interface ApiCandidateDetail extends ApiCandidate {
   editorial: Record<string, ApiEditorialField> | null
   /** Mandatos/posições políticas anteriores (TSE, 2004+). */
   politicalMandates: ApiPoliticalMandate[]
+  /**
+   * Histórico de vereação nas Câmaras Municipais (SAPL).
+   *
+   * Sempre presente, mesmo sem dado: `coverage` diz se a fonte foi consultada
+   * ou se não há fonte legível, que são coisas diferentes para o leitor.
+   */
+  municipal: ApiMunicipalHistory
+}
+/**
+ * Vínculo entre candidato e cadastro de vereador na Câmara.
+ *
+ * `status` decide o que a ficha pode afirmar. `probable` é o máximo hoje: o
+ * SAPL não publica o `sq_candidato` do TSE, então ninguém é `confirmed`.
+ */
+export type ApiMunicipalMatchStatus = 'confirmed' | 'probable' | 'unresolved'
+
+/** Um mandato como a Câmara o registra. */
+export interface ApiMunicipalMandate {
+  sourceId: string
+  municipalityName: string
+  legislatureLabel: string | null
+  startDate: string | null
+  endDate: string | null
+  titular: boolean | null
+  party: string | null
+  sourceUrl: string
+  sourcePublisher: string
+}
+
+/** Vínculo candidato -> vereador, com o que sustenta a decisão. */
+export interface ApiMunicipalIdentity {
+  sourceId: string
+  municipalityName: string
+  matchingStatus: ApiMunicipalMatchStatus
+  matchingEvidence: string | null
+  /** Mandatos da Câmara ligada a este cadastro; vazio se não houver. */
+  mandates: ApiMunicipalMandate[]
+}
+
+/**
+ * Situação do histórico municipal para este candidato.
+ *
+ * `coverage` diz se a fonte foi de fato consultada. `unavailable` é diferente
+ * de `no-match`: a primeira é "não achei onde procurar", a segunda é "procurei
+ * e não achei" — a ficha precisa distinguir as duas.
+ */
+export interface ApiMunicipalHistory {
+  coverage: 'read' | 'unavailable'
+  /** Por que a fonte não pôde ser lida; null quando `coverage === 'read'`. */
+  coverageNote: string | null
+  identities: ApiMunicipalIdentity[]
 }

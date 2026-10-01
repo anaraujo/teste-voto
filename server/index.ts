@@ -13,8 +13,9 @@
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import type { DatabaseSync } from 'node:sqlite'
 import { extname, join, normalize } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, getParliamentary, getPoliticalMandates, type IncumbentRow } from '../src/data-sources/repository.ts'
+import { openRepository, listCandidates, listIncumbents, getParliamentary, getPoliticalMandates, getMunicipalHistory, type IncumbentRow } from '../src/data-sources/repository.ts'
 import { readEditorialFicha } from '../src/data-sources/parliament/editorial.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
@@ -24,6 +25,8 @@ import type {
   ApiCandidateDetail,
   ApiEditorialField,
   ApiMandate,
+  ApiMunicipalHistory,
+  ApiMunicipalMatchStatus,
   ApiParliamentary,
   ApiParliamentaryRecord,
   ApiPoliticalMandate,
@@ -111,6 +114,7 @@ async function toApiDetail(
       parliamentary,
       editorial: editorial ? toApiEditorial(editorial) : null,
       politicalMandates: politicalMandates.map(toApiPoliticalMandate),
+      municipal: toApiMunicipalHistory(db, candidate.id),
     }
   } finally {
     db.close()
@@ -127,6 +131,63 @@ function toApiMandate(mandate: Awaited<ReturnType<typeof getParliamentary>>['man
     uf: mandate.uf,
     dataInicio: mandate.dataInicio,
     dataFim: mandate.dataFim,
+  }
+}
+
+/**
+ * Monta o histórico municipal para a ficha.
+ *
+ * Vínculo `unresolved` não entra: ele significa "não consegui afirmar que é esta
+ * pessoa", e mostrar a lista ali seria transformar uma dúvida em fato. O
+ * registro continua no banco, com a evidência, para auditoria.
+ */
+function toApiMunicipalHistory(
+  db: DatabaseSync,
+  candidateId: string,
+): ApiMunicipalHistory {
+  const history = getMunicipalHistory(db, candidateId)
+
+  const chamberName = new Map(
+    (
+      db.prepare(`SELECT municipality_ibge_code, chamber_name FROM municipal_chambers`).all() as unknown as Array<{
+        municipality_ibge_code: string
+        chamber_name: string
+      }>
+    ).map((row) => [row.municipality_ibge_code, row.chamber_name]),
+  )
+
+  const identities = history.identities
+    .filter((row) => row.matching_status !== 'unresolved' && row.source_person_id !== null)
+    .map((row) => ({
+      sourceId: row.source_id,
+      municipalityName: chamberName.get(row.municipality_ibge_code) ?? row.municipality_ibge_code,
+      matchingStatus: row.matching_status as ApiMunicipalMatchStatus,
+      matchingEvidence: row.matching_evidence,
+      mandates: (history.mandates.get(row.source_person_id as string) ?? [])
+        .map((mandate) => {
+          const source = JSON.parse(mandate.source_json) as {
+            url: string
+            publisher: string
+          }
+          return {
+            sourceId: mandate.source_id,
+            municipalityName: chamberName.get(mandate.municipality_ibge_code) ?? '',
+            legislatureLabel: mandate.legislature_label,
+            startDate: mandate.start_date,
+            endDate: mandate.end_date,
+            titular: mandate.titular === null ? null : mandate.titular === 1,
+            party: mandate.party,
+            sourceUrl: source.url,
+            sourcePublisher: source.publisher,
+          }
+        })
+        .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')),
+    }))
+
+  return {
+    coverage: history.coverage,
+    coverageNote: history.coverageNote,
+    identities,
   }
 }
 

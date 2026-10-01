@@ -130,6 +130,9 @@ votos ou métricas por conta própria.
 - **Nenhum vínculo municipal é `confirmed`.** O SAPL não expõe o número de
   candidato do TSE, então todo vínculo é `probable` (nome + município + período)
   ou `unresolved`. A ficha diz "provável" e guarda a evidência de cada um.
+- **As datas do mandato são mais firmes que o nome.** O SAPL registra as datas;
+  o que é apenas provável é que o cadastro seja da mesma pessoa. A ficha mostra
+  "registrado pela Câmara entre X e Y" para separar as duas coisas.
 - **Matérias, presenças e votações na Câmara municipal** (Phase 4) ainda não
   entram. O SAPL tem esses endpoints, mas o volume é grande — Araucária tem mais
   de 21 mil matérias — e o formato precisa ser conferido antes de afirmar algo.

@@ -19,6 +19,8 @@ import {
   listMunicipalChambers,
   listMunicipalIdentitiesByCandidate,
   listMunicipalMandates,
+  getMunicipalHistory,
+  listMunicipalIdentities,
 } from '../src/data-sources/repository.ts'
 import {
   resolveIdentity,
@@ -677,5 +679,159 @@ test('vínculo com candidato inexistente viola a FK (proteção de integridade)'
       },
     ]),
   )
+  db.close()
+})
+
+/* ------------------------------------------------------------------ *
+ * O que a ficha pode afirmar
+ * ------------------------------------------------------------------ */
+
+function seedCandidatosComVereador(db: DatabaseSync, ids: string[]): void {
+  for (const id of ids) {
+    seedCandidate(db, id)
+    db.prepare(
+      `INSERT INTO political_mandates (
+        candidate_id, ano, cargo, uf, municipio, status, turno, updated_at
+      ) VALUES (?, 2020, 'VEREADOR', 'PR', 'Araucária', 'eleito', 1, '2026-09-30')`,
+    ).run(id)
+  }
+}
+
+test('município sem fonte legível diz unavailable, não "não exerceu"', () => {
+  // É a diferença que impede a ficha de afirmar que alguém nunca exerceu
+  // mandato só porque a Câmara não publica dados.
+  const db = new DatabaseSync(':memory:')
+  prepareDatabase(db)
+  seedCandidate(db, 'c1')
+
+  replaceMunicipalChambers(db, [
+    {
+      municipalityIbgeCode: '4101804',
+      municipalityName: 'Araucária',
+      state: 'PR',
+      chamberName: 'Câmara Municipal de Araucária',
+      chamberUrl: null,
+      sourceType: 'unknown',
+      apiBaseUrl: null,
+      access: 'not-found',
+      capabilities: { ...NO_CAPABILITIES },
+      lastVerifiedAt: VERIFIED_AT,
+      note: 'Nenhuma fonte localizada.',
+    },
+  ])
+  replaceMunicipalIdentities(db, [
+    {
+      candidateId: 'c1',
+      sourceId: 'pr:4101804',
+      sourcePersonId: null,
+      municipalityIbgeCode: '4101804',
+      fullName: 'Ana Paula Souza',
+      matchingStatus: 'unresolved',
+      matchingMethod: 'other',
+      matchingEvidence: 'sem cadastro',
+      verifiedAt: VERIFIED_AT,
+    },
+  ])
+
+  const history = getMunicipalHistory(db, 'c1')
+  assert.equal(history.coverage, 'unavailable')
+  assert.equal(history.coverageNote, 'Nenhuma fonte localizada.')
+
+  db.close()
+})
+
+test('fonte consultada sem correspondência é read, não unavailable', () => {
+  const db = new DatabaseSync(':memory:')
+  prepareDatabase(db)
+  seedCandidate(db, 'c1')
+
+  replaceMunicipalChambers(db, [
+    {
+      municipalityIbgeCode: '4101804',
+      municipalityName: 'Araucária',
+      state: 'PR',
+      chamberName: 'Câmara Municipal de Araucária',
+      chamberUrl: 'https://sapl.araucaria.pr.leg.br',
+      sourceType: 'sapl',
+      apiBaseUrl: 'https://sapl.araucaria.pr.leg.br',
+      access: 'verified',
+      capabilities: { ...NO_CAPABILITIES },
+      lastVerifiedAt: VERIFIED_AT,
+    },
+  ])
+  replaceMunicipalIdentities(db, [
+    {
+      candidateId: 'c1',
+      sourceId: 'pr:4101804',
+      sourcePersonId: null,
+      municipalityIbgeCode: '4101804',
+      fullName: 'Ana Paula Souza',
+      matchingStatus: 'unresolved',
+      matchingMethod: 'other',
+      matchingEvidence: 'nenhum cadastro com esse nome',
+      verifiedAt: VERIFIED_AT,
+    },
+  ])
+
+  const history = getMunicipalHistory(db, 'c1')
+  assert.equal(history.coverage, 'read')
+  assert.equal(history.coverageNote, null)
+
+  db.close()
+})
+
+test('mandato fica ligado ao cadastro da pessoa, não solto', () => {
+  const db = new DatabaseSync(':memory:')
+  prepareDatabase(db)
+  seedCandidatosComVereador(db, ['c1'])
+
+  replaceMunicipalChambers(db, [
+    {
+      municipalityIbgeCode: '4101804',
+      municipalityName: 'Araucária',
+      state: 'PR',
+      chamberName: 'Câmara Municipal de Araucária',
+      chamberUrl: 'https://sapl.araucaria.pr.leg.br',
+      sourceType: 'sapl',
+      apiBaseUrl: 'https://sapl.araucaria.pr.leg.br',
+      access: 'verified',
+      capabilities: { ...NO_CAPABILITIES },
+      lastVerifiedAt: VERIFIED_AT,
+    },
+  ])
+  replaceMunicipalIdentities(db, [
+    {
+      candidateId: 'c1',
+      sourceId: 'pr:4101804',
+      sourcePersonId: 'p1',
+      municipalityIbgeCode: '4101804',
+      fullName: 'Ana Paula Souza',
+      matchingStatus: 'probable',
+      matchingMethod: 'exact-name-plus-context',
+      matchingEvidence: 'nome idêntico',
+      verifiedAt: VERIFIED_AT,
+    },
+  ])
+  replaceMunicipalMandates(db, [mandatoDe('pr:4101804', '1')])
+
+  const history = getMunicipalHistory(db, 'c1')
+  assert.equal(history.coverage, 'read')
+  assert.equal(history.identities.length, 1)
+  assert.equal(history.mandates.get('p1')?.length, 1)
+
+  db.close()
+})
+
+test('vínculo unresolved não traz mandato para a ficha', () => {
+  // unresolved significa "não consegui afirmar que é esta pessoa"; mostrar o
+  // mandato dela ali transformaria uma dúvida em fato. O servidor filtra, e o
+  // registro continua no banco para auditoria.
+  const db = new DatabaseSync(':memory:')
+  prepareDatabase(db)
+  seedCandidate(db, 'c1')
+
+  const rows = listMunicipalIdentities(db)
+  assert.equal(rows.length, 0)
+
   db.close()
 })

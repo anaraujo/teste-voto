@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ApiCandidateDetail, ApiMandate, ApiParliamentaryRecord, ApiPoliticalMandate } from '../shared/api.ts'
+import type { ApiCandidateDetail, ApiMandate, ApiMunicipalHistory, ApiParliamentaryRecord, ApiPoliticalMandate } from '../shared/api.ts'
 import { useCandidateDetail } from '../hooks/useCandidateDetail.ts'
 import { EDITORIAL_THEMES, hasEvidence, tipoEvidenciaLabel } from '../shared/ficha.ts'
 import { TEMA_LABEL } from '../shared/pautas.ts'
@@ -288,7 +288,135 @@ function HistoricoTab({ dado }: { dado: ApiCandidateDetail }) {
           a 2024 (TSE), incluindo eleitos e suplentes que tenham assumido.
         </small>
       </p>
+
+      <HistoricoMunicipal municipal={dado.municipal} />
     </div>
+  )
+}
+
+/**
+ * Histórico de vereação nas Câmaras Municipais.
+ *
+ * A seção aparece para todos os candidatos, mesmo sem dado, porque "procuramos e
+ * não achamos" e "não havia fonte para procurar" precisam ficar distinguíveis:
+ * sem isso, quem lê concluiria que a pessoa nunca exerceu mandato.
+ *
+ * Os vínculos ficam marcados como **prováveis**. O SAPL não publica o número de
+ * candidato do TSE, então nunca há identidade confirmada — e as datas do mandato
+ * são mostradas como o que a Câmara registrou, não como prova de que a pessoa é
+ * a mesma.
+ */
+function HistoricoMunicipal({ municipal }: { municipal: ApiMunicipalHistory }) {
+  return (
+    <section aria-labelledby="historico-municipal">
+      <h3 id="historico-municipal">Atuação em Câmara Municipal</h3>
+
+      {municipal.coverage === 'unavailable' && (
+        <p>
+          Não encontramos uma fonte oficial legível para consultar o mandato
+          neste município.
+          {municipal.coverageNote && (
+            <>
+              {' '}
+              <small>{municipal.coverageNote}</small>
+            </>
+          )}
+        </p>
+      )}
+
+      {municipal.coverage === 'read' && municipal.identities.length === 0 && (
+        <p>
+          Consultamos o registro de vereadores da Câmara deste município e não
+          encontramos correspondência com este candidato.
+          <br />
+          <small>
+            Isso não significa que não tenha exercido mandato: pode haver outro
+            registro na Câmara, ou o cadastro estar com outro nome.
+          </small>
+        </p>
+      )}
+
+      {municipal.identities.map((identity) => (
+        <div key={identity.sourceId}>
+          <h4>{identity.municipalityName}</h4>
+
+          {identity.matchingStatus === 'probable' && (
+            <p>
+              <mark>Vínculo provável</mark>{' '}
+              <small>
+                O mesmo nome aparece no cadastro da Câmara, no mesmo município e
+                em período compatível com a eleição. A Câmara não publica o
+                número de candidato do TSE, então não dá para confirmar que é a
+                mesma pessoa.
+              </small>
+            </p>
+          )}
+
+          {identity.matchingStatus === 'confirmed' && (
+            <p>
+              <mark>Vínculo confirmado</mark>{' '}
+              <small>
+                O número de candidato do TSE é o mesmo no cadastro da Câmara.
+              </small>
+            </p>
+          )}
+
+          {identity.mandates.length === 0 ? (
+            <p>
+              <small>
+                A Câmara registra este cadastro, mas não publica mandato com
+                datas.
+              </small>
+            </p>
+          ) : (
+            <ul>
+              {identity.mandates.map((mandate) => (
+                <li key={`${mandate.sourceId}-${mandate.startDate ?? mandate.legislatureLabel}`}>
+                  <p>
+                    <strong>
+                      {mandate.legislatureLabel ?? 'Mandato'}
+                    </strong>
+                    {mandate.party && <span> · {mandate.party}</span>}
+                    {' — '}
+                    <small>
+                      registrado pela Câmara entre{' '}
+                      {formatPeriod(mandate.startDate, mandate.endDate)}
+                    </small>
+                    {mandate.titular === false && (
+                      <>
+                        {' '}
+                        <small>(suplente, sem exercício registrado)</small>
+                      </>
+                    )}
+                  </p>
+                  <p>
+                    <small>
+                      <a href={mandate.sourceUrl} target="_blank" rel="noreferrer">
+                        Fonte: {mandate.sourcePublisher}
+                      </a>
+                    </small>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {identity.matchingEvidence && (
+            <p>
+              <small>Como este vínculo foi feito: {identity.matchingEvidence}</small>
+            </p>
+          )}
+        </div>
+      ))}
+
+      <p>
+        <small>
+          Dados das Câmaras Municipais do Paraná (sistema SAPL), lidos das APIs
+          oficiais de cada Câmara. Onde a Câmara não publica dados estruturados,
+          dizemos que não há fonte — não que o mandato não existiu.
+        </small>
+      </p>
+    </section>
   )
 }
 
