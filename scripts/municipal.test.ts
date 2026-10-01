@@ -68,6 +68,7 @@ function person(
   return {
     sourceId: 'pr:4104302',
     municipalityIbgeCode: '4104302',
+    alternateName: null,
     mandateStartDate: '2021-01-01',
     sqCandidato: null,
     ...overrides,

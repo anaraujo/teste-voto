@@ -3,6 +3,7 @@ import type { ApiCandidateDetail, ApiMandate, ApiMunicipalHistory, ApiParliament
 import { useCandidateDetail } from '../hooks/useCandidateDetail.ts'
 import { EDITORIAL_THEMES, hasEvidence, tipoEvidenciaLabel } from '../shared/ficha.ts'
 import { TEMA_LABEL } from '../shared/pautas.ts'
+import { municipalityOrNull } from '../shared/elections.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 
 type Tab = 'resumo' | 'mandato' | 'historico' | 'votacoes' | 'posicoes' | 'fontes'
@@ -121,7 +122,7 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
       <Campo label="Cor/raça" value={dado.race} />
       <Campo label="Quilombola" value={dado.quilombola ? 'Sim' : null} />
       <Campo label="Etnia indígena" value={dado.indigenousEthnicity} />
-      <Campo label="Município" value={dado.city && dado.city.toUpperCase() !== 'PR' ? dado.city : null} />
+      <Campo label="Município" value={municipalityOrNull(dado.city, 'PR')} />
       <Campo label="Nacionalidade" value={dado.nationality} />
       <Campo label="E-mail" value={dado.email} />
       <Campo label="Bens declarados" value={bens} />

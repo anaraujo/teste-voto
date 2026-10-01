@@ -96,6 +96,7 @@ export interface RawCandidateRow {
   gender: string
   race: string
   nationality: string
+  /** Município de domicílio eleitoral, ou '' quando o TSE não informa. */
   city: string
   email: string
   maritalStatus: string
@@ -126,12 +127,33 @@ export function mapRawRow(index: Map<string, number>, row: readonly string[]): R
     gender: name('gender'),
     race: name('race'),
     nationality: name('nationality'),
-    city: name('city'),
+    city: electoralMunicipality(index, row),
     email: name('email'),
     maritalStatus: name('maritalStatus'),
     birthState: name('birthState'),
     federation: name('federation'),
   }
+}
+
+/**
+ * Município de domicílio eleitoral, ou string vazia quando o TSE não diz.
+ *
+ * `NM_UE` (unidade eleitoral) não é sempre município. Em 2004-2024 ela traz o
+ * município (`SG_UE` = código do município, `NM_UE` = "LARANJEIRAS DO SUL");
+ * no arquivo de 2026 ela traz a unidade da eleição, que para Deputado Federal é
+ * o próprio estado (`SG_UE` = "PR", `NM_UE` = "PARANÁ"). Escrever "PARANÁ" no
+ * campo município faria a ficha afirmar que 428 candidatos nasceram/eleitaram na
+ * cidade de Paraná, que não existe.
+ *
+ * O sinal é `SG_UE === SG_UF`: quando a unidade eleitoral é igual à UF, ela não
+ * é município. Não há coluna de município de domicílio no arquivo de 2026, então
+ * a resposta honesta é não informar.
+ */
+function electoralMunicipality(index: Map<string, number>, row: readonly string[]): string {
+  const unit = readCell(index, row, 'SG_UE').toUpperCase()
+  const state = readCell(index, row, 'SG_UF').toUpperCase()
+  if (unit !== '' && unit === state) return ''
+  return readCell(index, row, 'NM_UE')
 }
 
 /** Lista de colunas obrigatórias para cadastrar candidatos. */

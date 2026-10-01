@@ -83,6 +83,20 @@ export function legislatorName(parlamentar: SaplParlamentar): string {
   return completo ?? trimToNull(parlamentar.nome_parlamentar) ?? ''
 }
 
+/**
+ * O nome que `legislatorName` não usou. Instalações que não publicam o nome
+ * civil (Castro é um exemplo: 32 cadastros, todos com `nome_completo` vazio)
+ * deixam o nome de gabinete como `fullName`, e aí o nome civil é justamente o
+ * que o matcher precisa tentar.
+ */
+export function legislatorAlternateName(parlamentar: SaplParlamentar): string | null {
+  const completo = trimToNull(parlamentar.nome_completo)
+  const gabinete = trimToNull(parlamentar.nome_parlamentar)
+  if (completo === null) return gabinete
+  if (gabinete === null) return null
+  return completo === gabinete ? null : gabinete
+}
+
 function trimToNull(value: string | null | undefined): string | null {
   if (value === null || value === undefined) return null
   const trimmed = value.trim()
@@ -97,6 +111,7 @@ export function mapParlamentar(
     sourceId: context.source.id,
     sourcePersonId: String(parlamentar.id),
     fullName: legislatorName(parlamentar),
+    alternateName: legislatorAlternateName(parlamentar),
     municipalityIbgeCode: context.municipalityIbgeCode,
   }
 }

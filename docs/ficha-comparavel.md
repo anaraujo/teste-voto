@@ -91,8 +91,12 @@ Por isso toda identidade guarda um `matchingStatus` explícito:
   neste caso; a ausência aparece como "não encontrei evidência suficiente".
 
 O SAPL também usa *nome de gabinete* ("Dra. Ana") quando o nome civil não está
-preenchido. Nomes curtos demais para comparar com segurança são recusados antes
-do casamento, não adivinhados.
+preenchido, e algumas Câmaras preenchem só um dos dois: em Castro, os 32
+cadastros têm `nome_completo` vazio. O casamento tenta **os dois nomes**, porque
+casar só num deles perde a pessoa. Ambiguidade real (o nome casa com duas pessoas diferentes) continua recusada.
+
+Nomes curtos demais para comparar com segurança são recusados antes do
+casamento, não adivinhados.
 
 ## A regra de ouro
 
@@ -133,6 +137,13 @@ votos ou métricas por conta própria.
 - **As datas do mandato são mais firmes que o nome.** O SAPL registra as datas;
   o que é apenas provável é que o cadastro seja da mesma pessoa. A ficha mostra
   "registrado pela Câmara entre X e Y" para separar as duas coisas.
+- **`NM_UE` do TSE não é sempre município.** Em 2004-2024 a coluna traz o
+  município do candidato; no arquivo de 2026 traz a unidade eleitoral do cargo,
+  que para Deputado Federal é o próprio estado (`NM_UE` = "PARANÁ",
+  `SG_UE` = "PR"). O TSE não publica município de domicílio em 2026, então o
+  campo fica vazio em vez de afirmar que o candidato é de uma cidade "Paraná"
+  que não existe. O sinal é `SG_UE === SG_UF`; a guarda de tela
+  (`municipalityOrNull`) rejeita tanto a sigla quanto o nome do estado.
 - **Matérias, presenças e votações na Câmara municipal** (Phase 4) ainda não
   entram. O SAPL tem esses endpoints, mas o volume é grande — Araucária tem mais
   de 21 mil matérias — e o formato precisa ser conferido antes de afirmar algo.

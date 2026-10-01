@@ -119,11 +119,20 @@ export interface MunicipalSourceRef {
   retrievedAt: string
 }
 
-/** Pessoa registrada na Câmara (não confundir com o candidato do TSE). */
+/**
+ * Pessoa registrada na Câmara (não confundir com o candidato do TSE).
+ *
+ * `fullName` é o nome civil quando a Câmara o publica; senão é o nome de
+ * gabinete. `alternateName` guarda o outro, porque o casamento precisa tentar
+ * os dois: em Castro, por exemplo, os 32 cadastro têm `nome_completo` vazio e
+ * só o nome de gabinete preenchido.
+ */
 export interface MunicipalLegislator {
   sourceId: string
   sourcePersonId: string
   fullName: string
+  /** O outro nome publicado pela Câmara, quando existir. */
+  alternateName: string | null
   municipalityIbgeCode: string
 }
 

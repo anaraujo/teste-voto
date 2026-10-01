@@ -8,7 +8,8 @@ import {
   parseDate,
   parseMoney,
 } from '../src/data-sources/tse/normalize.ts'
-import type { RawCandidateRow } from '../src/data-sources/tse/schema.ts'
+import { mapRawRow, type RawCandidateRow } from '../src/data-sources/tse/schema.ts'
+import { municipalityOrNull } from '../src/shared/elections.ts'
 
 function sampleRow(overrides: Partial<RawCandidateRow> = {}): RawCandidateRow {
   return {
@@ -153,4 +154,101 @@ test('candidateChecksum muda quando o conteúdo muda', () => {
     candidateChecksum(base),
     candidateChecksum(federationChanged),
   )
+})
+/* ------------------------------------------------------------------ *
+ * NM_UE: município em 2004-2024, estado em 2026
+ *
+ * O TSE reutiliza a coluna com significados diferentes. No arquivo de 2026
+ * (consulta_cand_2026_PR.csv) SG_UE = "PR" e NM_UE = "PARANÁ": a unidade
+ * eleitoral do cargo federal é o próprio estado. Tratar isso como município
+ * fazia a ficha afirmar que todos os 428 candidatos vinham de uma cidade de
+ * nome "Paraná", que não existe.
+ * ------------------------------------------------------------------ */
+
+function rowFromCells(cells: Record<string, string>): RawCandidateRow {
+  const headers = Object.keys(cells)
+  const index = new Map(headers.map((h, i) => [h.toUpperCase(), i]))
+  const values = headers.map((h) => cells[h])
+  return mapRawRow(index, values)
+}
+
+test('NM_UE igual à UF não vira município', () => {
+  // Linha real de consulta_cand_2026_PR.csv.
+  const row = rowFromCells({
+    SG_UF: 'PR',
+    SG_UE: 'PR',
+    NM_UE: 'PARANÁ',
+    SQ_CANDIDATO: '160002547461',
+    NM_CANDIDATO: 'ANA PAULA SOUZA',
+  })
+  assert.equal(row.city, '')
+})
+
+test('NM_UE com código de município continua sendo município', () => {
+  // Linha real de consulta_cand_2024_PR.csv: SG_UE é o código do município.
+  const row = rowFromCells({
+    SG_UF: 'PR',
+    SG_UE: '76597',
+    NM_UE: 'LARANJEIRAS DO SUL',
+    SQ_CANDIDATO: '12000123456',
+    NM_CANDIDATO: 'ANA PAULA SOUZA',
+  })
+  assert.equal(row.city, 'LARANJEIRAS DO SUL')
+})
+
+test('município em branco quando SG_UE não está no arquivo', () => {
+  const row = rowFromCells({
+    SG_UF: 'PR',
+    NM_UE: 'CURITIBA',
+    SQ_CANDIDATO: '12000123456',
+    NM_CANDIDATO: 'ANA PAULA SOUZA',
+  })
+  assert.equal(row.city, 'CURITIBA')
+})
+
+test('city vazio vira null e não string vazia', () => {
+  const row = rowFromCells({
+    SG_UF: 'PR',
+    SG_UE: 'PR',
+    NM_UE: 'PARANÁ',
+    SQ_CANDIDATO: '160002547461',
+    NM_CANDIDATO: 'ANA PAULA SOUZA',
+  })
+  const candidate = normalizeCandidate(row, {
+    electionYear: 2026,
+    state: 'PR',
+    office: 'DEPUTADO FEDERAL',
+  })
+  assert.equal(candidate.city, null)
+})
+
+/* ------------------------------------------------------------------ *
+ * Rótulo "Município" na ficha
+ *
+ * A guarda de tela existia, mas comparava só com a sigla ("PR") e deixava
+ * passar o nome do estado ("PARANÁ"). Vale para os dois.
+ * ------------------------------------------------------------------ */
+
+test('guarda de município rejeita sigla e nome do estado', () => {
+  assert.equal(municipalityOrNull('PARANÁ', 'PR'), null)
+  assert.equal(municipalityOrNull('Paraná', 'PR'), null)
+  assert.equal(municipalityOrNull('PR', 'PR'), null)
+  assert.equal(municipalityOrNull('  pr  ', 'PR'), null)
+  assert.equal(municipalityOrNull('', 'PR'), null)
+  assert.equal(municipalityOrNull('   ', 'PR'), null)
+  assert.equal(municipalityOrNull(null, 'PR'), null)
+  assert.equal(municipalityOrNull(undefined, 'PR'), null)
+})
+
+test('guarda de município preserva município de verdade', () => {
+  assert.equal(municipalityOrNull('CURITIBA', 'PR'), 'CURITIBA')
+  assert.equal(municipalityOrNull('Pato Branco', 'PR'), 'Pato Branco')
+  // Não confunde município que contém o nome do estado.
+  assert.equal(municipalityOrNull('PARANAVAÍ', 'PR'), 'PARANAVAÍ')
+  assert.equal(municipalityOrNull('COLOMBO', 'PR'), 'COLOMBO')
+})
+
+test('guarda de município funciona para outra UF', () => {
+  assert.equal(municipalityOrNull('SÃO PAULO', 'SP'), null)
+  assert.equal(municipalityOrNull('Santos', 'SP'), 'Santos')
 })

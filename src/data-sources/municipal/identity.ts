@@ -43,6 +43,14 @@ export interface MunicipalIdentitySourcePerson extends MunicipalLegislator {
   sqCandidato: string | null
 }
 
+function dedupeByPerson(people: MunicipalIdentitySourcePerson[]): MunicipalIdentitySourcePerson[] {
+  const byPerson = new Map<string, MunicipalIdentitySourcePerson>()
+  for (const person of people) {
+    if (!byPerson.has(person.sourcePersonId)) byPerson.set(person.sourcePersonId, person)
+  }
+  return [...byPerson.values()]
+}
+
 /** Margem entre ano da eleição e início do mandato (posse em janeiro). */
 const MAX_YEAR_GAP = 1
 
@@ -118,10 +126,16 @@ export function resolveIdentity(
     )
   }
 
-  const named = people.filter(
-    (p) =>
-      normalizeName(p.fullName) === target &&
-      p.municipalityIbgeCode === candidate.municipalityIbgeCode,
+  // Casar nos dois nomes: a Câmara pode publicar só o nome de gabinete (Castro
+  // tem os 32 cadastros com `nome_completo` vazio) ou só o civil. Se um nome
+  // casa com uma pessoa e o outro com outra, são duas pessoas e não dá para
+  // escolher — daí a deduplicação por `sourcePersonId` antes de contar.
+  const named = dedupeByPerson(
+    people.filter(
+      (p) =>
+        p.municipalityIbgeCode === candidate.municipalityIbgeCode &&
+        [p.fullName, p.alternateName].some((nome) => nome !== null && normalizeName(nome) === target),
+    ),
   )
 
   if (named.length === 0) {

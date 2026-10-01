@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
+import { municipalityOrNull } from '../shared/elections.ts'
 import { ageAtElection, formatBRL, formatDate } from '../lib/format.ts'
 import { buildSearchIndex, searchCandidates } from '../lib/search.ts'
 
@@ -151,11 +152,10 @@ export function CandidatesScreen({
                       ? `Natural de ${birthSource}`
                       : null
                 const age = ageAtElection(candidate.birthDate)
-                const city =
-                  candidate.city &&
-                  candidate.city.toUpperCase() !== state.data.election.state
-                    ? candidate.city
-                    : null
+                const city = municipalityOrNull(
+                  candidate.city,
+                  state.data.election.state,
+                )
                 const candidacy = formatCandidacy(candidate)
                 return (
                   <li key={candidate.id}>

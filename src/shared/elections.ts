@@ -1,4 +1,36 @@
 /**
+ * Nome da UF a partir da sigla. Usado para reconhecer quando um campo que
+ * deveria ser município está, na verdade, trazendo o estado: o TSE mudou o
+ * significado de `NM_UE` entre 2004-2024 e 2026 (ver `electoralMunicipality`).
+ */
+const STATE_NAMES: Record<string, string> = {
+  AC: 'ACRE', AL: 'ALAGOAS', AP: 'AMAPÁ', AM: 'AMAZONAS', BA: 'BAHIA',
+  CE: 'CEARÁ', DF: 'DISTRITO FEDERAL', ES: 'ESPÍRITO SANTO', GO: 'GOIÁS',
+  MA: 'MARANHÃO', MT: 'MATO GROSSO', MS: 'MATO GROSSO DO SUL',
+  MG: 'MINAS GERAIS', PA: 'PARÁ', PB: 'PARAÍBA', PR: 'PARANÁ',
+  PE: 'PERNAMBUCO', PI: 'PIAUÍ', RJ: 'RIO DE JANEIRO',
+  RN: 'RIO GRANDE DO NORTE', RS: 'RIO GRANDE DO SUL', RO: 'RONDÔNIA',
+  RR: 'RORAIMA', SC: 'SANTA CATARINA', SP: 'SÃO PAULO', SE: 'SERGIPE',
+  TO: 'TOCANTINS', EX: 'EXTERIOR',
+}
+
+/**
+ * `value` é um município utilizável? `null` quando está vazio ou quando é
+ * apenas a UF (sigla ou nome) — os dois casos não são município e não devem
+ * aparecer sob o rótulo "Município".
+ */
+export function municipalityOrNull(value: string | null | undefined, state: string): string | null {
+  if (value === null || value === undefined) return null
+  const trimmed = value.trim()
+  if (trimmed === '') return null
+  const upper = trimmed.toUpperCase()
+  const uf = state.trim().toUpperCase()
+  if (upper === uf) return null
+  if (STATE_NAMES[uf] !== undefined && upper === STATE_NAMES[uf]) return null
+  return trimmed
+}
+
+/**
  * Configuração de eleições suportadas pelo app.
  *
  * Cada eleição declara os datasets oficiais do TSE usados como fonte.
