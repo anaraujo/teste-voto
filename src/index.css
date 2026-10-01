@@ -68,6 +68,15 @@
   --color-eggshell: #f0ead6;
 
   /*
+   * As duas superfícies do app. `canvas` é o fundo da página — o amarelo atrás
+   * de tudo — e `panel` é o painel onde o Candidate Grid senta. Andam juntos
+   * porque foram escolhidos como par: o azul do painel precisa do amarelo em
+   * volta para se destacar, e vice-versa.
+   */
+  --color-canvas: #fad86a;
+  --color-panel: #5c719c;
+
+  /*
    * A fonte do app. O `--default-font-family` é o que o Tailwind usa no
    * `font-sans`, e é ele que resolve a base do documento — as classes utilitárias
    * (`text-sm`, `font-medium`) passam a sair em Inter sem cada arquivo repetir
