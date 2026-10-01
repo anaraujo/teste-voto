@@ -9,6 +9,16 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 
+- **Seleção de estado** (`/estados`): nova tela com o **mapa do Brasil** em SVG
+  e uma grade com as 27 UFs, que leva aos candidatos. Hoje só o Paraná tem
+  lista, então só ele navega (para `/candidatos`); os demais aparecem como "em
+  breve". A malha é estática, sem biblioteca de mapa em tempo de execução —
+  derivada do IBGE via `@svg-maps/brazil` (CC BY 4.0), com a proveniência no
+  próprio dado (`src/data/brazil-map.ts`) e em `docs/mapa-estados.md`. O SVG não
+  usa `role="img"`, cada UF disponível é um `<a>` de verdade (abre em nova aba
+  com modificador) e as indisponíveis ficam fora da ordem de foco; o mapa some
+  abaixo de 640px e a grade, que funciona em qualquer largura, continua sendo a
+  navegação.
 - **Trilho lateral e navegação gooey na ficha** (`/candidato/:id`): as seis abas
   (Resumo, Mandato e histórico, Posições anteriores, Votações, Posições,
   Fontes) passam a ser uma **navegação gooey** logo abaixo do cabeçalho, e cada
@@ -33,6 +43,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   entra em `matchRoute`, que continua casando só o pathname — por isso as 436
   páginas do build estático não mudam. Trocar de aba usa `replaceState`, para o
   botão voltar continuar sendo "sair da ficha" em vez de desandar aba por aba.
+
+### Corrigido
+
+- **Rolagem ao trocar de rota**: a navegação troca o conteúdo mas mantinha a
+  posição de rolagem da tela anterior, então sair de uma tela longa (a nova
+  seleção de estados, por exemplo) abria a próxima já no meio. Agora o roteador
+  volta ao topo a cada troca de rota, como a ficha já fazia ao trocar de aba.
 
 ### Removido
 

@@ -112,6 +112,13 @@ const FAIRNESS_META: RouteMeta = {
   path: '/imparcialidade',
 }
 
+const STATES_META: RouteMeta = {
+  title: 'Escolha o seu estado — candidatos por UF | Teste de Voto',
+  description:
+    'Mapa do Brasil para escolher o estado e ver os candidatos. O Paraná já está disponível; os demais estados chegam nas próximas rodadas.',
+  path: '/estados',
+}
+
 function sitemapXml(paths: string[]): string {
   const urls = paths
     .map(
@@ -146,6 +153,7 @@ async function main(): Promise<void> {
     [
       { route: { name: 'start' }, meta: homeMeta(list), data: listData },
       { route: { name: 'candidates' }, meta: listMeta(list), data: listData },
+      { route: { name: 'states' }, meta: STATES_META, data: listData },
       { route: { name: 'fairness' }, meta: FAIRNESS_META, data: listData },
       ...questions.map((question, index) => ({
         route: { name: 'question' as const, step: index + 1 },

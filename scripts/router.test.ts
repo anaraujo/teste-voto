@@ -16,6 +16,7 @@ import {
 test('matchRoute reconhece as rotas do app', () => {
   assert.deepEqual(matchRoute('/'), { name: 'start' })
   assert.deepEqual(matchRoute('/candidatos'), { name: 'candidates' })
+  assert.deepEqual(matchRoute('/estados'), { name: 'states' })
   assert.deepEqual(matchRoute('/imparcialidade'), { name: 'fairness' })
   assert.deepEqual(matchRoute('/resultado'), { name: 'result' })
   assert.deepEqual(matchRoute('/candidato/2026-PR-160002'), {
@@ -26,6 +27,7 @@ test('matchRoute reconhece as rotas do app', () => {
 
 test('matchRoute aceita barra final e número de pergunta', () => {
   assert.deepEqual(matchRoute('/candidatos/'), { name: 'candidates' })
+  assert.deepEqual(matchRoute('/estados/'), { name: 'states' })
   assert.deepEqual(matchRoute('/candidato/abc/'), {
     name: 'candidate',
     id: 'abc',
@@ -62,6 +64,7 @@ test('routeToPath é o inverso de matchRoute', () => {
   const routes: Route[] = [
     { name: 'start' },
     { name: 'candidates' },
+    { name: 'states' },
     { name: 'candidate', id: '2026-PR-16 002' },
     { name: 'fairness' },
     { name: 'question', step: 3 },
@@ -76,11 +79,13 @@ test('routeToPath é o inverso de matchRoute', () => {
 
 test('parentPath dá um destino determinístico e a inicial não mostra voltar', () => {
   assert.equal(parentPath({ name: 'candidates' }), '/')
+  assert.equal(parentPath({ name: 'states' }), '/')
   assert.equal(parentPath({ name: 'candidate', id: 'x' }), '/candidatos')
   assert.equal(parentPath({ name: 'fairness' }), '/resultado')
   assert.equal(parentPath({ name: 'result' }), '/')
   assert.equal(parentPath({ name: 'question', step: 1 }), '/')
   assert.equal(showsBackButton({ name: 'start' }), false)
+  assert.equal(showsBackButton({ name: 'states' }), true)
   assert.equal(showsBackButton({ name: 'result' }), true)
 })
 

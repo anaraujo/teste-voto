@@ -27,7 +27,8 @@ O projeto valoriza a leveza acima de tudo:
 src/
 ├── data/
 │   ├── quiz.ts               Tipos + re-exportação das perguntas (contrato)
-│   └── quiz-source.ts        Fonte oficial do quiz: perguntas + resolvedores
+│   ├── quiz-source.ts        Fonte oficial do quiz: perguntas + resolvedores
+│   └── brazil-map.ts         Contornos das 27 UFs (mapa de /estados, IBGE)
 ├── entry-server.tsx         Renderização no servidor (renderToString)
 ├── shared/
 │   ├── elections.ts          Configuração de eleições (2026/PR/DEPUTADO FEDERAL)
@@ -41,6 +42,8 @@ src/
 ├── lib/search.ts             Busca fuzzy de candidatos (índice + ranking)
 ├── components/               Um componente por tela
 │   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
+│   ├── EstadosScreen.tsx     Seleção de estado (mapa do Brasil + grade de UFs)
+│   ├── BrazilMap.tsx         Mapa do Brasil em SVG (uma UF por contorno)
 │   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (busca + grid)
 │   ├── CandidateGrid.tsx     Grid de cards da lista (foto, número, partido, nome)
 │   ├── CandidateDetailScreen.tsx  Ficha do candidato (abas, seções, fontes)
@@ -71,7 +74,7 @@ scripts/                      pré-renderização, ingestão, incumbentes, sincr
 
 ## O build gera as páginas
 
-Não existe backend de render, e renderizar as 436 telas a cada visita seria
+Não existe backend de render, e renderizar as 437 telas a cada visita seria
 lento. O build renderiza cada rota uma vez, com `renderToString`, e escreve
 HTML estático em `dist/`:
 
@@ -90,6 +93,7 @@ o texto real da tela. `dist/` fica com:
 dist/
 ├── index.html                     /  e  app.html (shell vazio)
 ├── candidatos/index.html          lista
+├── estados/index.html             seleção de estado (mapa do Brasil)
 ├── imparcialidade/index.html      auditoria
 ├── quiz/1…5/index.html            as perguntas
 ├── candidato/<id>/index.html      uma ficha por candidato (428)
@@ -144,6 +148,7 @@ dá a rota é o `AppRouter.tsx` no navegador (History API) ou o build estático.
 | ----------------- | ----------------------- | --------------------- |
 | `/`               | `StartScreen`           | lista de candidatos   |
 | `/candidatos`     | `CandidatesScreen`      | lista de candidatos   |
+| `/estados`        | `EstadosScreen`         | malha estática (IBGE) |
 | `/candidato/:id`  | `CandidateDetailScreen` | ficha do candidato    |
 | `/quiz/:n`        | `QuestionStep`          | pergunta (n de 1 a 5) |
 | `/resultado`      | `ResultScreen`          | ranking das respostas |
@@ -157,12 +162,19 @@ testes.
 
 ```
 início ──▶ /candidatos ──▶ /candidato/:id
-   │                             ▲
-   ▼                             │
+   │  ▲
+   │  └── /estados ──▶ /candidatos
+   ▼
  /quiz/1 ──▶ … ──▶ /resultado ──▶ /imparcialidade
    ▲                             │          │
    └──────────── reinício ◀──────┘◀─────────┘
 ```
+
+- `/estados` é a porta de entrada por UF: mostra o **mapa do Brasil** e uma
+  grade com as 27 unidades. Hoje só o Paraná tem lista, então só ele navega; as
+  demais aparecem como "em breve". A malha é **estática**
+  (`src/data/brazil-map.ts`), sem biblioteca de mapa em tempo de execução — o
+  porquê e a proveniência estão em [`docs/mapa-estados.md`](mapa-estados.md).
 
 - As respostas acumulam em um `Record<QuestionId, OptionId>` guardado em
   `sessionStorage` (`useQuizAnswers`), para que `/resultado` sobreviva a um F5 e

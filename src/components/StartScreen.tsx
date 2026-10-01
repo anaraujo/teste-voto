@@ -10,6 +10,7 @@ interface StartScreenProps {
   onRetry: () => void
   onStart: () => void
   onShowCandidates: () => void
+  onShowStates: () => void
 }
 
 export function StartScreen({
@@ -20,6 +21,7 @@ export function StartScreen({
   onRetry,
   onStart,
   onShowCandidates,
+  onShowStates,
 }: StartScreenProps) {
   const canStart = !loading && candidateCount > 0
 
@@ -72,6 +74,14 @@ export function StartScreen({
           onClick={onShowCandidates}
         >
           Ver candidatos
+        </SpecularButton>
+        <SpecularButton
+          variant="tertiary"
+          size="md"
+          radius={12}
+          onClick={onShowStates}
+        >
+          Escolher estado
         </SpecularButton>
       </div>
     </section>

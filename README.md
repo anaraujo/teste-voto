@@ -88,7 +88,7 @@ Todas são opcionais; os padrões vêm comentados em [`.env.example`](.env.examp
 | `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                                                   |
 | `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                                                       |
 | `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                                                       |
-| `npm run build`               | Tipos + bundle do app + build SSR + 436 páginas estáticas em `dist/`                                                                   |
+| `npm run build`               | Tipos + bundle do app + build SSR + 437 páginas estáticas em `dist/`                                                                   |
 | `npm run build:ssr`           | Só o bundle do servidor (`dist-ssr/entry-server.js`), usado pelo passo seguinte                                                        |
 | `npm run build:pages`         | Só as páginas: HTML pré-renderizado por rota, `sitemap.xml` e `robots.txt`                                                             |
 | `npm run preview`             | Visualiza o build de produção na porta 2026                                                                                            |

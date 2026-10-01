@@ -8,6 +8,7 @@
 export type Route =
   | { name: 'start' }
   | { name: 'candidates' }
+  | { name: 'states' }
   | { name: 'candidate'; id: string }
   | { name: 'fairness' }
   | { name: 'question'; step: number }
@@ -16,6 +17,7 @@ export type Route =
 
 export const START_PATH = '/'
 export const CANDIDATES_PATH = '/candidatos'
+export const STATES_PATH = '/estados'
 export const CANDIDATE_PATH = '/candidato'
 export const FAIRNESS_PATH = '/imparcialidade'
 export const QUIZ_PATH = '/quiz'
@@ -42,6 +44,7 @@ export function matchRoute(pathname: string): Route {
 
   if (path === START_PATH) return { name: 'start' }
   if (path === CANDIDATES_PATH) return { name: 'candidates' }
+  if (path === STATES_PATH) return { name: 'states' }
   if (path === FAIRNESS_PATH) return { name: 'fairness' }
   if (path === RESULT_PATH) return { name: 'result' }
   if (path === QUIZ_PATH) return { name: 'question', step: 1 }
@@ -68,6 +71,8 @@ export function routeToPath(route: Route): string {
       return START_PATH
     case 'candidates':
       return CANDIDATES_PATH
+    case 'states':
+      return STATES_PATH
     case 'candidate':
       return `${CANDIDATE_PATH}/${encodeURIComponent(route.id)}`
     case 'fairness':
@@ -132,6 +137,8 @@ export function parseTab(search: string): Tab {
 export function parentPath(route: Route): string {
   switch (route.name) {
     case 'candidates':
+      return START_PATH
+    case 'states':
       return START_PATH
     case 'candidate':
       return CANDIDATES_PATH
