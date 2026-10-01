@@ -23,7 +23,7 @@ npm run check:distribution      # auditoria de imparcialidade (480 combinações
 
 ## Convenções
 
-- Documentação e interface em PT-BR; código e comentários em inglês.
+- Documentação e interface em PT-BR; código em inglês e comentários em PT-BR.
 - Imports relativos com extensão explícita (`.ts`/`.tsx`).
 - O quiz é **data-driven**: conteúdo em `src/data/quiz-source.ts` (resolvedores
   puros sobre dados oficiais do TSE). Nunca escreva perfis à mão.
