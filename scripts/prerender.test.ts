@@ -98,10 +98,13 @@ test('renderPage escapa < no JSON embutido', () => {
 /**
  * A lista de candidatos renderiza todos de uma vez, sem "Mostrar mais".
  *
- * Não há runner de DOM no projeto — `node --test` puro não compila JSX — então
- * um teste não consegue montar o componente e contar os cards. A garantia vem
- * de duas checagens que cobrem ângulos diferentes: o código-fonte, que sempre
- * roda, e o HTML realmente gerado, que roda depois de `npm run build`.
+ * A busca filtra a lista, mas não pagina: com a busca vazia `searchCandidates`
+ * devolve todos os candidatos, e é esse caminho (`filtered`) que o grid
+ * recebe. Não há runner de DOM no projeto — `node --test` puro não compila
+ * JSX — então um teste não consegue montar o componente e contar os cards. A
+ * garantia vem de duas checagens que cobrem ângulos diferentes: o
+ * código-fonte, que sempre roda, e o HTML realmente gerado, que roda depois de
+ * `npm run build`.
  */
 test('a lista de candidatos não volta a paginar', () => {
   const source = readFileSync(
@@ -114,8 +117,12 @@ test('a lista de candidatos não volta a paginar', () => {
   )
   assert.match(
     source,
-    /items=\{candidates\.map\(toCandidateItem\)\}/,
-    'o grid deve receber todos os candidatos, sem slice',
+    /items=\{filtered\.map\(toCandidateItem\)\}/,
+    'o grid deve receber `filtered`, que é a lista inteira quando a busca está vazia',
+  )
+  assert.ok(
+    !source.includes('.slice('),
+    'a lista não deve voltar a paginar com slice',
   )
 })
 

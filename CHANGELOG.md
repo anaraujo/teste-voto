@@ -110,6 +110,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   - Testes novos (`scripts/parliament.test.ts`) para senado/identidade/export —
     58 testes no total; depois `scripts/history.test.ts` (resultado, data,
     casamento, resumo) — **73 testes no total**.
+  - **Busca de candidatos** (`src/lib/search.ts`, `searchCandidates` + campo na
+    tela de candidatos): correspondência fuzzy priorizada por nome (de urna e
+    completo) e número de urna, além de ocupação, município, federação e
+    coligação. Buscar uma sigla ("PT") ou o nome ("Partido dos Trabalhadores")
+    filtra todos os candidatos da agremiação. Índice normalizado memoizado
+    (`buildSearchIndex`) e fuzzy por Levenshtein limitado a tamanhos próximos
+    para manter a digitação fluida; testes em `scripts/search.test.ts`.
 
 ### Alterado
 

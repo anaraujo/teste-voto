@@ -1,7 +1,9 @@
+import { useMemo, useState } from 'react'
 import type { ApiCandidate } from '../shared/api.ts'
 import { candidatePath } from '../shared/router.ts'
 import type { CandidatesLoadState } from '../hooks/useCandidates.ts'
 import { isModifiedClick } from '../lib/links.ts'
+import { buildSearchIndex, searchCandidates } from '../lib/search.ts'
 import { partyColor, readableFill, readableOn } from '../shared/party-colors.ts'
 import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
 // O esqueleto de carregamento usa a classe `.candidate-grid`, e no estado de
@@ -9,6 +11,7 @@ import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
 import './CandidateGrid.css'
 import { Button } from './ui/button.tsx'
 import { Card } from './ui/card.tsx'
+import { Input } from './ui/input.tsx'
 import { Skeleton } from './ui/skeleton.tsx'
 
 interface CandidatesScreenProps {
@@ -63,6 +66,26 @@ export function CandidatesScreen({
   onRetry,
   onShowCandidate,
 }: CandidatesScreenProps) {
+  /*
+   * A busca filtra no submit, não a cada tecla, e o índice normalizado é
+   * memoizado para a digitação não recusturar os 428 nomes. `searchCandidates`
+   * com busca vazia devolve a lista inteira, então o mesmo caminho serve à
+   * lista completa e ao resultado filtrado.
+   */
+  const [query, setQuery] = useState('')
+  const [appliedQuery, setAppliedQuery] = useState('')
+
+  const index = useMemo(
+    () =>
+      state.status === 'ready' ? buildSearchIndex(state.data.candidates) : [],
+    [state],
+  )
+
+  const filtered = useMemo(
+    () => searchCandidates(index, appliedQuery),
+    [index, appliedQuery],
+  )
+
   /*
    * As três telas abaixo — carregando, erro e vazio — são as únicas que ainda
    * não tinham contêiner visual. `aria-live` faz a troca de uma para outra ser
@@ -151,8 +174,6 @@ export function CandidatesScreen({
     )
   }
 
-  const candidates = state.data.candidates
-
   return (
     /*
      * Sem `max-w-*`: o teto de colunas mora no `CandidateGrid.css`, em
@@ -175,13 +196,63 @@ export function CandidatesScreen({
         .
       </p>
 
-      {/* Os 428 candidatos entram de uma vez. Não há paginação na API — o
-        seed já vem inteiro — e as fotos são `loading="lazy"`, então o custo
-        de render fica no navegador, não na rede. */}
-      <CandidateGrid
-        items={candidates.map(toCandidateItem)}
-        onSelect={(_item, index) => onShowCandidate(candidates[index].id)}
-      />
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          setAppliedQuery(query)
+        }}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <label className="text-sm font-medium" htmlFor="candidate-search">
+            Buscar candidato
+          </label>
+          <Input
+            id="candidate-search"
+            type="search"
+            placeholder="Nome, número, partido, ocupação, cidade..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <Button type="submit">Buscar</Button>
+        {appliedQuery !== '' && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setQuery('')
+              setAppliedQuery('')
+            }}
+          >
+            Limpar
+          </Button>
+        )}
+      </form>
+
+      {appliedQuery !== '' && filtered.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {filtered.length === 1
+            ? '1 candidato encontrado'
+            : `${filtered.length} candidatos encontrados`}
+        </p>
+      )}
+
+      {appliedQuery !== '' && filtered.length === 0 ? (
+        <Card>
+          <p className="text-sm text-muted-foreground">
+            Nenhum candidato encontrado para sua busca.
+          </p>
+        </Card>
+      ) : (
+        /* A lista não pagina e as fotos são `loading="lazy"`, então o custo de
+           render fica no navegador, não na rede. É essa lista que a busca
+           filtra. */
+        <CandidateGrid
+          items={filtered.map(toCandidateItem)}
+          onSelect={(_item, index) => onShowCandidate(filtered[index].id)}
+        />
+      )}
     </section>
   )
 }
