@@ -13,6 +13,11 @@ import type { CandidateRecord, Source } from '../shared/domain.ts'
 import { candidateChecksum } from './tse/normalize.ts'
 import type { ParliamentaryData } from './parliament/types.ts'
 import type { PoliticalMandate } from './tse/history.ts'
+import type {
+  MunicipalChamberSource,
+  MunicipalLegislatorIdentity,
+  MunicipalMandate,
+} from './municipal/types.ts'
 
 export type UpsertStatus = 'inserted' | 'updated' | 'unchanged'
 
@@ -228,6 +233,72 @@ function createSchema(db: DatabaseSync): void {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (candidate_id, votacao_id)
     );
+
+    CREATE TABLE IF NOT EXISTS municipal_chambers (
+      municipality_ibge_code TEXT PRIMARY KEY,
+      municipality_name TEXT NOT NULL,
+      state TEXT NOT NULL,
+      chamber_name TEXT NOT NULL,
+      chamber_url TEXT,
+      source_type TEXT NOT NULL,
+      api_base_url TEXT,
+      access TEXT NOT NULL,
+      capabilities_json TEXT NOT NULL,
+      last_verified_at TEXT,
+      note TEXT,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS municipal_legislators (
+      source_id TEXT NOT NULL,
+      source_person_id TEXT NOT NULL,
+      municipality_ibge_code TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      source_raw_json TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (source_id, source_person_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_municipal_legislators_ibge
+      ON municipal_legislators (municipality_ibge_code);
+
+    CREATE TABLE IF NOT EXISTS municipal_identities (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      source_id TEXT NOT NULL,
+      source_person_id TEXT,
+      municipality_ibge_code TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      matching_status TEXT NOT NULL,
+      matching_method TEXT NOT NULL,
+      matching_evidence TEXT,
+      verified_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, source_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_municipal_identities_ibge
+      ON municipal_identities (municipality_ibge_code);
+
+    CREATE TABLE IF NOT EXISTS municipal_mandates (
+      source_id TEXT NOT NULL,
+      source_mandate_id TEXT NOT NULL,
+      source_person_id TEXT,
+      legislature_id TEXT,
+      municipality_ibge_code TEXT NOT NULL,
+      office TEXT NOT NULL,
+      legislature_label TEXT,
+      start_date TEXT,
+      end_date TEXT,
+      titular INTEGER,
+      party TEXT,
+      roles_json TEXT NOT NULL,
+      source_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (source_id, source_mandate_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_municipal_mandates_ibge
+      ON municipal_mandates (municipality_ibge_code);
 
     CREATE TABLE IF NOT EXISTS political_mandates (
       candidate_id TEXT NOT NULL REFERENCES candidates(id),
@@ -998,4 +1069,236 @@ export function listPoliticalMandates(db: DatabaseSync): Map<string, PoliticalMa
     }
   }
   return byCandidate
+}
+/* ------------------------------------------------------------------ *
+ * Camada municipal (§9): registro das Câmaras, cadastros de legislators,
+ * candidato -> vereador e mandatos com período efetivo.
+ *
+ * Ficam em tabelas separadas de `political_mandates` porque são fatos
+ * diferentes: lá, o TSE prova que a pessoa *foi candidata* a vereador; aqui, a
+ * Câmara diz quem *exerceu* e quando. Misturar os dois faria a ficha afirmar
+ * mandato onde houve apenas candidatura.
+ * ------------------------------------------------------------------ */
+
+export interface MunicipalChamberDbRow {
+  municipality_ibge_code: string
+  municipality_name: string
+  state: string
+  chamber_name: string
+  chamber_url: string | null
+  source_type: string
+  api_base_url: string | null
+  access: string
+  capabilities_json: string
+  last_verified_at: string | null
+  note: string | null
+  updated_at: string
+}
+
+export interface MunicipalIdentityDbRow {
+  candidate_id: string
+  source_id: string
+  source_person_id: string | null
+  municipality_ibge_code: string
+  full_name: string
+  matching_status: string
+  matching_method: string
+  matching_evidence: string | null
+  verified_at: string
+  updated_at: string
+}
+
+export interface MunicipalMandateDbRow {
+  source_id: string
+  source_mandate_id: string
+  source_person_id: string | null
+  legislature_id: string | null
+  municipality_ibge_code: string
+  office: string
+  legislature_label: string | null
+  start_date: string | null
+  end_date: string | null
+  titular: number | null
+  party: string | null
+  roles_json: string
+  source_json: string
+  updated_at: string
+}
+
+/** Substitui o registro de Câmaras inteiro, de forma transacional. */
+export function replaceMunicipalChambers(
+  db: DatabaseSync,
+  chambers: readonly MunicipalChamberSource[],
+): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM municipal_chambers`).run()
+    const stmt = db.prepare(
+      `INSERT INTO municipal_chambers (
+        municipality_ibge_code, municipality_name, state, chamber_name,
+        chamber_url, source_type, api_base_url, access, capabilities_json,
+        last_verified_at, note, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const chamber of chambers) {
+      stmt.run(
+        chamber.municipalityIbgeCode,
+        chamber.municipalityName,
+        chamber.state,
+        chamber.chamberName,
+        chamber.chamberUrl,
+        chamber.sourceType,
+        chamber.apiBaseUrl,
+        chamber.access,
+        JSON.stringify(chamber.capabilities),
+        chamber.lastVerifiedAt,
+        chamber.note ?? null,
+        now,
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+export function listMunicipalChambers(db: DatabaseSync): MunicipalChamberDbRow[] {
+  return (
+    db.prepare(`SELECT * FROM municipal_chambers ORDER BY municipality_name`).all() as unknown as MunicipalChamberDbRow[]
+  )
+}
+
+/**
+ * Substitui os vínculos **das fontes presentes na entrada**, por `sourceId`.
+ *
+ * Mesmo motivo de `replaceMunicipalMandates`: uma Câmara que falha não pode
+ * apagar o que se sabia dela na execução anterior.
+ */
+export function replaceMunicipalIdentities(
+  db: DatabaseSync,
+  identities: readonly MunicipalLegislatorIdentity[],
+): void {
+  if (identities.length === 0) return
+  const sourceIds = [...new Set(identities.map((i) => i.sourceId))]
+
+  db.exec('BEGIN')
+  try {
+    const del = db.prepare(`DELETE FROM municipal_identities WHERE source_id = ?`)
+    for (const sourceId of sourceIds) del.run(sourceId)
+    const stmt = db.prepare(
+      `INSERT INTO municipal_identities (
+        candidate_id, source_id, source_person_id, municipality_ibge_code,
+        full_name, matching_status, matching_method, matching_evidence,
+        verified_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const identity of identities) {
+      stmt.run(
+        identity.candidateId,
+        identity.sourceId,
+        identity.sourcePersonId,
+        identity.municipalityIbgeCode,
+        identity.fullName,
+        identity.matchingStatus,
+        identity.matchingMethod,
+        identity.matchingEvidence,
+        identity.verifiedAt,
+        now,
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+export function listMunicipalIdentities(db: DatabaseSync): MunicipalIdentityDbRow[] {
+  return (
+    db.prepare(`SELECT * FROM municipal_identities`).all() as unknown as MunicipalIdentityDbRow[]
+  )
+}
+
+/** Mapa candidateId -> vínculos. Vínculo `unresolved` entra com `sourcePersonId` nulo. */
+export function listMunicipalIdentitiesByCandidate(
+  db: DatabaseSync,
+): Map<string, MunicipalIdentityDbRow[]> {
+  const byCandidate = new Map<string, MunicipalIdentityDbRow[]>()
+  for (const row of listMunicipalIdentities(db)) {
+    const list = byCandidate.get(row.candidate_id)
+    if (list) list.push(row)
+    else byCandidate.set(row.candidate_id, [row])
+  }
+  return byCandidate
+}
+
+/**
+ * Substitui os mandatos **de uma fonte**, deixando as outras intactas.
+ *
+ * O escopo por `sourceId` importa: as Câmaras derrubam conexão com
+ * frequência, e um `DELETE` global perderia os mandatos das câmaras que
+ * funcionaram na última execução.
+ */
+export function replaceMunicipalMandates(
+  db: DatabaseSync,
+  mandates: readonly MunicipalMandate[],
+): void {
+  if (mandates.length === 0) return
+  const sourceIds = [...new Set(mandates.map((m) => m.sourceId))]
+
+  db.exec('BEGIN')
+  try {
+    const del = db.prepare(`DELETE FROM municipal_mandates WHERE source_id = ?`)
+    for (const sourceId of sourceIds) del.run(sourceId)
+    const stmt = db.prepare(
+      `INSERT INTO municipal_mandates (
+        source_id, source_mandate_id, source_person_id, legislature_id,
+        municipality_ibge_code, office, legislature_label, start_date,
+        end_date, titular, party, roles_json, source_json, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const mandate of mandates) {
+      stmt.run(
+        mandate.sourceId,
+        mandate.sourceMandateId,
+        mandate.sourcePersonId,
+        mandate.legislatureId === '' ? null : mandate.legislatureId,
+        mandate.municipalityIbgeCode,
+        mandate.office,
+        mandate.legislatureLabel,
+        mandate.startDate,
+        mandate.endDate,
+        mandate.titular === null ? null : bool(mandate.titular),
+        mandate.party,
+        JSON.stringify(mandate.roles),
+        JSON.stringify(mandate.source),
+        now,
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+export function listMunicipalMandates(db: DatabaseSync): MunicipalMandateDbRow[] {
+  return (
+    db.prepare(`SELECT * FROM municipal_mandates ORDER BY municipality_ibge_code, start_date`).all() as unknown as MunicipalMandateDbRow[]
+  )
+}
+
+export function getMunicipalMandatesByIbge(
+  db: DatabaseSync,
+  ibgeCode: string,
+): MunicipalMandateDbRow[] {
+  return (
+    db.prepare(
+      `SELECT * FROM municipal_mandates WHERE municipality_ibge_code = ? ORDER BY start_date`,
+    ).all(ibgeCode) as unknown as MunicipalMandateDbRow[]
+  )
 }
