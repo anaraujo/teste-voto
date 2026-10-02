@@ -19,7 +19,7 @@ import './GooeyNav.css'
  * 2. **`button` em vez de `a href`.** As abas não são links: são `role="tab"`
  *    dentro de um `tablist`, e um `href="#"` só custaria um salto de página.
  * 3. **Superfície escura.** O original compõe sobre preto, e é isso que faz o
- *    `lighten` funcionar: partícula clara sobre fundo escuro. Sobre o eggshell
+ *    `lighten` funcionar: partícula clara sobre fundo escuro. Sobre o canvas
  *    da ficha elas sumiriam, então a cápsula escura é da própria navegação.
  *    A cor vem do partido, escurecida para o branco da pílula ter contraste.
  * 4. **Partículas em camada própria.** No original elas moram dentro do

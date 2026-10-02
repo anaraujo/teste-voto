@@ -55,6 +55,11 @@ function toCandidateItem(candidate: ApiCandidate): CandidateItem {
           event.preventDefault()
         }}
       >
+        {/* Decorativa: o link já diz "Ver ficha". `aria-hidden` porque repetir
+            a informação no leitor de tela só encarece a navegação de 428 itens. */}
+        <span className="candidate-ficha__arrow" aria-hidden="true">
+          →
+        </span>
         Ver ficha
       </a>
     ),

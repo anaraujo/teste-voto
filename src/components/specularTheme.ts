@@ -107,18 +107,25 @@ const FALLBACK: Record<SpecularVariant, SpecularTheme> = {
     tint: '#F97316',
     tintOpacity: 0.25,
     blur: 11,
-    textColor: '#fb3f13',
-    lineColor: '#fb3f13',
+    textColor: '#fd7e14',
+    lineColor: '#fd7e14',
     baseColor: '#F97316',
     radius: 16,
   },
   tertiary: {
-    tint: '#f59e0b',
+    /*
+     * `tint` acompanha `--color-tertiary-soft` (amarelo da bandeira) e
+     * `textColor` acompanha `--color-tertiary` (âmbar). Estavam trocados aqui:
+     * o fallback pintava o texto com a cor do tint e o tint com a do texto, que
+     * só apareceu quando `--color-secondary` mudou de valor e o cache passou a
+     * comparar as duas pontas.
+     */
+    tint: '#fedd00',
     tintOpacity: 0.25,
     blur: 11,
-    textColor: '#FEDD00',
-    lineColor: '#FEDD00',
-    baseColor: '#f59e0b',
+    textColor: '#f59e0b',
+    lineColor: '#f59e0b',
+    baseColor: '#fedd00',
     radius: 16,
   },
 }

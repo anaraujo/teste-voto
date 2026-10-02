@@ -148,8 +148,8 @@ main > section:has(> .candidate-grid) {
  * A sombra é a do `.sb-link`, que é a única elevação que o app já usa. Fica
  * um pouco abaixo dos 25% dele porque aqui a borda de 30% da tinta já
  * desenha o contorno — nas primárias claras, como o amarelo do PSB, é a
- * sombra que separa o card do fundo `#f0ead6`. Em repouso não há sombra: são
- * 428 cards, e o estado parado fica mais barato e mais quieto sem ela.
+ * sombra que separa o card do fundo `--color-canvas`. Em repouso não há sombra:
+ * são 428 cards, e o estado parado fica mais barato e mais quieto sem ela.
  *
  * O card inteiro é clicável mas não é um tab stop: o link "Ver ficha" no
  * footer leva à mesma página, e um segundo tab stop seria redundante. O
@@ -336,17 +336,29 @@ main > section:has(> .candidate-grid) {
 }
 
 /*
- * A pílula não tem preenchimento: qualquer mistura da tinta sobre a cor do
- * card aproxima os dois e derruba o contraste — a 14% da tinta já reprova em
- * 6 siglas (pior AGIR, 3,80:1). Então ela é só a borda e o texto na tinta
- * cheia, que é o que o `readableOn` mediu.
+ * A pílula tem preenchimento, mas na tinta CONTRÁRIA à do texto (`--card-fill`,
+ * o que `readableFill` devolve) — nunca na própria tinta do texto.
  *
- * O hover inverte as duas cores de uma vez, sem `transition`: um degradê
- * entre a cor do card e a tinta passa pelo meio, onde nenhuma delas tem
- * contraste. Como `readableOn` escolheu a tinta *contra* a cor do card,
- * inverter devolve exatamente a mesma razão, então o hover passa nas 30.
+ * A distinção é o que segura o contraste. Misturar a tinta *do texto* sobre a
+ * cor do card as aproxima e derruba a razão; medido nas 31 entradas, a 14% já
+ * reprova em 15 delas. Misturar a tinta *oposta* afasta o fundo do texto, então
+ * só pode melhorar: a 16% o pior caso é CIDADANIA em 5,90:1, e as 31 passam.
+ *
+ * O hover inverte as duas cores de uma vez e SEM `transition` de cor. Um
+ * degradê entre a cor do card e a tinta passa pelo meio, onde nenhuma das duas
+ * tem contraste com a outra — foi o que motivou a inversão ser instantânea.
+ * Como `readableOn` escolheu a tinta *contra* a cor do card, inverter devolve
+ * exatamente a mesma razão, então o hover passa nas 30.
+ *
+ * A animação fica no que não interfere nessa relação: a seta entra, a borda
+ * clareia e a pílula dá um salto curto. Nenhum dos três mexe no par
+ * fundo/texto, então a garantia do `party-colors.test.ts` continua valendo
+ * durante e depois da transição.
  */
 .candidate-foot .candidate-ficha {
+  /* `relative` para a seta poder ser posicionada sem sair do fluxo: se ela
+     ocupasse espaço, o rótulo deixaria de ficar centrado no card. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -355,46 +367,53 @@ main > section:has(> .candidate-grid) {
   padding: 0 1rem;
   border-radius: 999px;
   text-decoration: none;
+  cursor: pointer;
   font-family: 'Inter', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--card-on, #fff);
-  background: transparent;
-  border: 1px solid var(--card-on, #fff);
-  transition: transform 150ms;
-  /* Listras de 2,5px a cada 5px, num tom de 20% da tinta CONTRÁRIA à do
-     texto: se a listra fosse um tom da própria tinta, o texto sentaria em
-     cima de listras da sua cor e o contraste despencava (19 dos 31 partidos
-     abaixo de 4,5:1, com o pior em 3,28:1). Assim o pior caso é 6,28:1, e no
-     vão entre as listras quem aparece é a cor do card, que já contrastava.
-     O `color-mix` é quem dá o alfa: `var()` não aceita função dentro, e a cor
-     do partido é um hex, então não há como enfiar "20%" nela. Precisa vir
-     depois do `background` acima, que é shorthand e zeraria a imagem. */
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--card-fill, #000) 20%, transparent) 50%,
-    transparent 50%
-  );
-  background-size: 100% 5px;
+  background-color: color-mix(in srgb, var(--card-fill, #fff) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-fill, #fff) 55%, transparent);
+  /*
+   * Só a borda e o transform animam. `background-color` e `color` ficam de fora
+   * de propósito, pelo motivo do comentário acima.
+   */
+  transition:
+    border-color 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-.candidate-foot .candidate-ficha:hover {
-  color: var(--card-fill, #000);
-  border: 1px solid var(--card-fill, #000);
-  /* O texto é a tinta contrária, então o fundo precisa ser a tinta: sem ela o
-     vão entre as listras mostra a cor do partido e o contraste cai para
-     1,67:1 no MISSÃO. Com o fundo sólido são 18,88:1. A listra aqui é um tom
-     da cor do partido sobre a tinta, que é a direção oposta do texto, e o
-     pior caso sobe para 11,99:1. */
-  background: var(--card-on, #fff);
-  background-image: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--card-base, #6b7280) 20%, transparent) 50%,
-    transparent 50%
-  );
-  background-size: 100% 5px;
+/*
+ * A seta é `aria-hidden` e decorativa: o link já diz "Ver ficha" em texto, e
+ * repetir a informação no leitor de tela só encarece a navegação. Fica
+ * posicionada à esquerda e entra no hover, então em repouso não empurra nada.
+ */
+.candidate-ficha__arrow {
+  position: absolute;
+  left: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transform: translateX(-7px);
+  transition:
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.candidate-foot .candidate-ficha:is(:hover, :focus-visible) {
+  color: var(--card-base, #000);
+  border-color: var(--card-on, #fff);
+  background-color: var(--card-on, #fff);
+  transform: scale(1.02);
+}
+
+.candidate-foot
+  .candidate-ficha:is(:hover, :focus-visible)
+  .candidate-ficha__arrow {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .candidate-foot .candidate-ficha:active {

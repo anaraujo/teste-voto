@@ -19,7 +19,7 @@
 }
 
 .brazil-map .uf-forma {
-  stroke: var(--color-eggshell);
+  stroke: var(--color-canvas);
   stroke-width: 2.5;
   stroke-linejoin: round;
 }

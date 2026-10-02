@@ -19,25 +19,69 @@ O projeto usa **Tailwind CSS v4**, integrado como plugin do Vite — não existe
 @import 'tailwindcss';
 
 @theme {
-  /* Verde — variante primary do botão */
-  --color-primary: #009739;
+  /* Paleta de origem: bandeira do Brasil */
+  --color-flag-green: #009739;
+  --color-flag-yellow: #fedd00;
+  --color-flag-blue: #012169;
+  --color-flag-white: #ffffff;
+
+  /* Paleta de origem: TSE (dadosabertos.tse.jus.br) */
+  --color-tse-primary: #206b82;
+  --color-tse-ink-900: #13404e;
+  --color-tse-ink-700: #1a5668;
+  --color-tse-ink-500: #2e759e;
+  --color-tse-ink-200: #90b5c1;
+  --color-tse-mist: #d2e1e6;
+  --color-tse-mist-100: #e9ecef;
+  --color-tse-body: #333333;
+  --color-tse-success: #3a833a;
+  --color-tse-danger: #d43f3a;
+  --color-tse-warning: #fd7e14;
+  --color-tse-info: #0dcaf0;
+
+  /* Paleta de origem: marca do TSE (logo tse.svg) */
+  --color-logo-yellow: #fcc200;
+  --color-logo-slate: #5f7199;
+  --color-logo-sage: #5b6e6e;
+
+  /* Papéis — referenciam as paletas, não repetem hex */
+  --color-primary: var(--color-flag-green);
   --color-primary-soft: #069400;
-
-  /* Laranja — variante secondary do botão */
-  --color-secondary: #fb3f13;
+  --color-secondary: var(--color-tse-warning);
   --color-secondary-soft: #f97316;
-
-  /* Amarelo — variante tertiary do botão */
   --color-tertiary: #f59e0b;
-  --color-tertiary-soft: #fedd00;
-
-  /* Neutros e superfícies */
+  --color-tertiary-soft: var(--color-flag-yellow);
+  --color-canvas: var(--color-tse-mist-100);
+  --color-panel: var(--color-logo-slate);
+  --color-deep: var(--color-flag-blue);
+  --color-link: var(--color-tse-primary);
   --color-gray: #bcb7bc;
-  --color-eggshell: #f0ead6;
-  --color-canvas: #fad86a;
-  --color-panel: #5c719c;
 }
 ```
+
+### As três paletas de origem
+
+O app tem três fontes de cor, e elas não se misturam num gradiente: cada uma
+entra inteira, com o nome da fonte no prefixo do token.
+
+| Prefixo  | Fonte                                             | Uso no app                                     |
+| -------- | ------------------------------------------------- | ---------------------------------------------- |
+| `flag-*` | bandeira do Brasil (flagcolorcodes.com/brazil)    | verde e amarelo dos botões, azul de superfície |
+| `tse-*`  | portal de dados abertos (dadosabertos.tse.jus.br) | neutros de superfície, link, destrutivo        |
+| `logo-*` | logo do TSE (`tse.svg`)                           | o painel do grid                               |
+
+Três coisas que valem registrar:
+
+- **`tse-primary` (`#206b82`) é a cor do portal, não do logo.** O portal é um
+  Bootstrap 4 com a pele trocada: o TSE sobrescreveu `primary`/`blue` com um
+  teal e a escala `success`/`danger`/`warning`/`info`. O resto é cinza de tabela.
+- **O logo tem três preenchimentos e nenhum é o teal do site** — amarelo do
+  losango (`#fcc200`), azul-acinzentado do círculo (`#5f7199`) e
+  verde-acinzentado do triângulo (`#5b6e6e`). O `#5f7199` é o que virou
+  `--color-panel`.
+- **Nenhum papel aponta direto para um hex de paleta.** Todos referenciam pelo
+  nome, o que dá para responder "de onde veio essa cor?" olhando o token, e
+  trocar uma paleta inteira sem caçar hex solto pelo CSS.
 
 Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
@@ -47,26 +91,29 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
 ### Tokens atuais
 
-| Token                    | Hex       | Papel                     | Uso principal                                      |
-| ------------------------ | --------- | ------------------------- | -------------------------------------------------- |
-| `--color-primary`        | `#009739` | Verde principal (escuro)  | texto/linha do botão primary                       |
-| `--color-primary-soft`   | `#069400` | Verde intermediário       | tint/borda do botão primary                        |
-| `--color-secondary`      | `#fb3f13` | Laranja                   | texto/linha do botão secondary                     |
-| `--color-secondary-soft` | `#f97316` | Laranja claro             | tint/borda do botão secondary                      |
-| `--color-tertiary`       | `#f59e0b` | Amarelo                   | texto/linha do botão tertiary                      |
-| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo              | tint/borda do botão tertiary                       |
-| `--color-primary-on`     | `#111111` | Texto sobre `primary`     | conteúdo sobre superfície primary                  |
-| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`   | conteúdo sobre superfície secondary                |
-| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`    | conteúdo sobre superfície tertiary                 |
-| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica  | detalhes de interface                              |
-| `--color-eggshell`       | `#f0ead6` | Creme da camada semântica | superfície base do kit (`--background`, `--card`)  |
-| `--color-canvas`         | `#fad86a` | Fundo do app              | fundo da página (`bg-canvas`)                      |
-| `--color-panel`          | `#5c719c` | Painel do grid            | fundo do grid de candidatos (`var(--color-panel)`) |
+| Token                    | Hex       | Papel                    | Uso principal                                      |
+| ------------------------ | --------- | ------------------------ | -------------------------------------------------- |
+| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary                       |
+| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary                        |
+| `--color-secondary`      | `#fd7e14` | Laranja                  | texto/linha do botão secondary                     |
+| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary                      |
+| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary                      |
+| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary                       |
+| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary                  |
+| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                |
+| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                 |
+| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                              |
+| `--color-canvas`         | `#e9ecef` | Fundo do app             | fundo da página (`bg-canvas`)                      |
+| `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`) |
+| `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                    |
+| `--color-link`           | `#206b82` | Link e fonte de dado     | link para a fonte oficial (ex.: o TSE)             |
 
-Os tokens `-on` existem porque nenhuma das três cores da marca passa em
-WCAG AA com texto branco (3,83:1, 3,61:1 e 2,15:1 contra `#ffffff`); com
-`#111` as três passam (4,93:1, 5,24:1 e 8,79:1). Quem pinta uma superfície
-com a cor cheia pega o `-on` correspondente.
+Os tokens `-on` existem porque as famílias pedem tintas opostas: verde e
+amarelo **só** passam em WCAG AA com `#111` (3,83:1, 2,57:1 e 2,15:1 contra
+`#ffffff`), enquanto o teal e o azul **só** passam com `#ffffff` (6,02:1 e
+14,76:1). Não dá para tratar "TSE + Brasil" como uma família única de cor, e
+por isso cada cor cheia tem o seu `-on`. Quem pinta uma superfície com a cor
+cheia pega o `-on` correspondente em vez de hardcodar branco.
 
 ## A camada semântica (`:root`)
 
@@ -78,15 +125,15 @@ fonte**, `src/index.css` tem um segundo bloco, logo abaixo do `@theme`:
 ```css
 :root {
   --foreground: #111111;
-  --background: var(--color-eggshell);
-  --card: color-mix(in srgb, var(--color-eggshell) 70%, #ffffff);
+  --background: var(--color-canvas);
+  --card: color-mix(in srgb, var(--color-tse-mist-100) 55%, #ffffff);
   --card-foreground: var(--foreground);
   --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
-  --accent: color-mix(in srgb, var(--color-primary-soft) 12%, transparent);
+  --accent: color-mix(in srgb, var(--color-tse-primary) 12%, transparent);
   --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
   --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
   --ring: var(--color-primary);
-  --destructive: var(--color-secondary);
+  --destructive: var(--color-tse-danger);
 }
 
 @theme inline {

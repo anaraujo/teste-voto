@@ -37,44 +37,109 @@
  * Documentação: docs/design-tokens.md
  */
 @theme {
-  /* Verde — variante primary do botão */
-  --color-primary: #009739;
+  /*
+   * Paleta de origem: as cores de referência, com a fonte de cada uma.
+   *
+   * Nenhum papel do app aponta direto para um hex: os papéis (bloco de baixo)
+   * referenciam estas paletas pelo nome. Assim dá para responder "de onde veio
+   * essa cor?" olhando o token, e trocar a referência de uma paleta inteira sem
+   * caçar hex solto pelo CSS.
+   */
+
+  /* Bandeira do Brasil — https://www.flagcolorcodes.com/brazil */
+  --color-flag-green: #009739;
+  --color-flag-yellow: #fedd00;
+  --color-flag-blue: #012169;
+  --color-flag-white: #ffffff;
+
+  /*
+   * TSE — https://dadosabertos.tse.jus.br
+   *
+   * O portal é um Bootstrap 4 com a pele trocada. Comparando com os defaults do
+   * Bootstrap, o TSE sobrescreveu `primary`/`blue` (o teal, que é a marca) e a
+   * escala `success`/`danger`/`warning`/`info`; o resto é cinza de tabela. A
+   * rampa `ink` é o teal escurecido usado no cabeçalho e as `mist` são os
+   * fundos neutros que a marca usa como superfície.
+   */
+  --color-tse-primary: #206b82;
+  --color-tse-ink-900: #13404e;
+  --color-tse-ink-700: #1a5668;
+  --color-tse-ink-500: #2e759e;
+  --color-tse-ink-200: #90b5c1;
+  --color-tse-mist: #d2e1e6;
+  --color-tse-mist-100: #e9ecef;
+  --color-tse-body: #333333;
+  --color-tse-success: #3a833a;
+  --color-tse-danger: #d43f3a;
+  --color-tse-warning: #fd7e14;
+  --color-tse-info: #0dcaf0;
+
+  /*
+   * Marca do TSE — o logo (tse.svg), que não é a paleta do portal.
+   *
+   * O logo tem três preenchimentos e nenhum deles é o teal do site: o amarelo do
+   * losango, o azul-acinzentado do círculo com as estrelas e o verde-acinzentado
+   * do triângulo. O `#5f7199` é o mais útil dos três — fica entre o azul da
+   * bandeira e o teal do portal, e é a cor que a própria marca usa.
+   */
+  --color-logo-yellow: #fcc200;
+  --color-logo-slate: #5f7199;
+  --color-logo-sage: #5b6e6e;
+
+  /* Verde — variante primary do botão (verde da bandeira) */
+  --color-primary: var(--color-flag-green);
   --color-primary-soft: #069400;
 
-  /* Laranja — variante secondary do botão */
-  --color-secondary: #fb3f13;
+  /* Laranja — variante secondary do botão (warning do TSE) */
+  --color-secondary: var(--color-tse-warning);
   --color-secondary-soft: #f97316;
 
   /* Amarelo — variante tertiary do botão */
   --color-tertiary: #f59e0b;
-  --color-tertiary-soft: #fedd00;
+  --color-tertiary-soft: var(--color-flag-yellow);
 
   /*
    * Texto legível sobre cada cor cheia.
    *
-   * Nenhuma das três cores da marca passa em AA com texto branco: 3,83:1
-   * (primary), 3,61:1 (secondary) e 2,15:1 (tertiary) contra #ffffff. Com
-   * #111 as três passam (4,93:1, 5,24:1 e 8,79:1), então é esse o par
-   * declarado aqui. Quem pinta uma superfície com a cor cheia — o card do
-   * Candidate Grid, por exemplo — pega o `-on` correspondente em vez de hardcodar
-   * branco, que sumiria no amarelo.
+   * Nenhuma das três cores de botão passa em AA com texto branco: 3,83:1
+   * (primary), 2,57:1 (secondary) e 2,15:1 (tertiary) contra #ffffff. Com
+   * #111 as três passam (4,93:1, 7,35:1 e 8,79:1), então é esse o par declarado
+   * aqui. Quem pinta uma superfície com a cor cheia — o card do Candidate Grid,
+   * por exemplo — pega o `-on` correspondente em vez de hardcodar branco, que
+   * sumiria no amarelo.
+   *
+   * Vale notar que afamilia é dividida: verde e amarelo só aceitam tinta
+   * escura, enquanto o teal e o azul só aceitam branca. É por isso que cada
+   * cor cheia tem o seu `-on`.
    */
   --color-primary-on: #111111;
   --color-secondary-on: #111111;
   --color-tertiary-on: #111111;
+  --color-panel-on: #ffffff;
+  --color-deep-on: #ffffff;
+  --color-canvas-on: #111111;
 
   /* Cinza - urna eletrônica */
   --color-gray: #bcb7bc;
-  --color-eggshell: #f0ead6;
 
   /*
-   * As duas superfícies do app. `canvas` é o fundo da página — o amarelo atrás
-   * de tudo — e `panel` é o painel onde o Candidate Grid senta. Andam juntos
-   * porque foram escolhidos como par: o azul do painel precisa do amarelo em
-   * volta para se destacar, e vice-versa.
+   * As duas superfícies do app. `canvas` é o fundo da página e `panel` é o
+   * painel onde o Candidate Grid senta.
+   *
+   * As duas são neutras de propósito. O app pinta os cards na cor do partido, e
+   * a cor do partido vem dos dados do TSE — são dezenas de valores arbitrários,
+   * nenhum escolhido para conviver com o fundo. Um fundo saturado competiria
+   * com eles; um neutro deixa a cor do partido ser a única coisa saturada na
+   * tela, que é o que faz o card ser legível.
    */
-  --color-canvas: #fad86a;
-  --color-panel: #5c719c;
+  --color-canvas: var(--color-tse-mist-100);
+  --color-panel: var(--color-logo-slate);
+
+  /* Azul da bandeira — a superfície mais escura do app */
+  --color-deep: var(--color-flag-blue);
+
+  /* Link e dado de origem — o teal, que é o que o TSE usa para apontar a fonte */
+  --color-link: var(--color-tse-primary);
 
   /*
    * A fonte do app. O `--default-font-family` é o que o Tailwind usa no
@@ -100,19 +165,25 @@
  */
 :root {
   --foreground: #111111;
-  --background: var(--color-eggshell);
+  --background: var(--color-canvas);
   /*
-   * Superfície elevada: o creme da página aclarado em direção ao branco, para
+   * Superfície elevada: o neutro do canvas aclarado em direção ao branco, para
    * o card se destacar do fundo sem introduzir uma cor nova na marca.
    */
-  --card: color-mix(in srgb, var(--color-eggshell) 70%, #ffffff);
+  --card: color-mix(in srgb, var(--color-tse-mist-100) 55%, #ffffff);
   --card-foreground: var(--foreground);
   --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
-  --accent: color-mix(in srgb, var(--color-primary-soft) 12%, transparent);
+  --accent: color-mix(in srgb, var(--color-tse-primary) 12%, transparent);
   --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
   --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
+  /*
+   * O anel de foco fica no verde da bandeira, não no teal do TSE: o teal dá
+   * 5,08:1 sobre o canvas, mas só 1,24:1 sobre o painel — o foco precisa
+   * aparecer nas duas superfícies. O verde dá 3,23:1 no canvas, o mínimo de
+   * WCAG para um indicador não textual.
+   */
   --ring: var(--color-primary);
-  --destructive: var(--color-secondary);
+  --destructive: var(--color-tse-danger);
 }
 
 /*
@@ -146,13 +217,23 @@
   --color-destructive: var(--destructive);
 
   /*
-   * `-foreground` = conteúdo sobre a cor cheia. Aponta para os tokens `-on`,
-   * que já garantem contraste AA — o shadcn usaria branco aqui e o texto
-   * sumiria sobre o amarelo (`docs/design-tokens.md`).
+   * Superfícies novas: `canvas`, `panel` e `deep` já são geradas direto pelo
+   * `@theme` acima (por serem `--color-*` lá). O que precisa ser exposto aqui
+   * é o conteúdo sobre elas, para o utilitário existir:
+   *
+   * - `-foreground` = conteúdo sobre a cor cheia. Aponta para os tokens `-on`,
+   *   que já garantem contraste AA — o shadcn usaria branco aqui e o texto
+   *   sumiria sobre o amarelo (`docs/design-tokens.md`).
+   * - `link` é a cor de link e de fonte de dado; vive no `:root` porque é papel,
+   *   não paleta.
    */
   --color-primary-foreground: var(--color-primary-on);
   --color-secondary-foreground: var(--color-secondary-on);
   --color-tertiary-foreground: var(--color-tertiary-on);
+  --color-panel-foreground: var(--color-panel-on);
+  --color-deep-foreground: var(--color-deep-on);
+  --color-canvas-foreground: var(--color-canvas-on);
+  --color-link: var(--color-link);
 
   /*
    * Escala de raio derivada de um único `--radius`, no mesmo espírito dos

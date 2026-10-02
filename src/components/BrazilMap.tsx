@@ -60,7 +60,7 @@ export function BrazilMap({
           patternTransform="rotate(45)"
           patternUnits="userSpaceOnUse"
         >
-          <rect width="7" height="7" fill="var(--color-eggshell)" />
+          <rect width="7" height="7" fill="var(--color-canvas)" />
           <line
             x1="0"
             y1="0"
