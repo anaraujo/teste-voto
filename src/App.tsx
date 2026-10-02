@@ -3,6 +3,7 @@ import { questions } from './data/quiz.ts'
 import type { OptionId } from './data/quiz.ts'
 import { toQuizCandidates } from './data/quiz-source.ts'
 import { rankResults } from './lib/scoring.ts'
+import { cn } from './lib/utils.ts'
 import { useCandidates } from './hooks/useCandidates.ts'
 import { useQuizAnswers } from './hooks/useQuizAnswers.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
@@ -102,8 +103,18 @@ function App({
     onNavigate('/')
   }
 
+  // `/estados` é a única tela que se prende à altura da janela: mapa e grade
+  // dividem a linha e a página para de rolar. As outras seguem crescendo com o
+  // conteúdo, porque uma ficha tem seis abas e o quiz é o que é.
+  const fillsViewport = route.name === 'states'
+
   return (
-    <main className="min-h-screen bg-tse-primary gap-4 px-12 py-8">
+    <main
+      className={cn(
+        'min-h-screen bg-tse-primary px-4 py-8 sm:px-8 lg:px-12',
+        fillsViewport && 'flex flex-col lg:max-h-dvh',
+      )}
+    >
       <AppHeader route={route} onNavigate={onNavigate} />
 
       {route.name === 'start' && (

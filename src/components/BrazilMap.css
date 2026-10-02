@@ -16,8 +16,30 @@
 .brazil-map {
   width: 100%;
   height: auto;
+  /*
+   * No celular o mapa vem primeiro e a página rola: ele ocupa a largura toda e
+   * no máximo 65% da altura da tela. O `max-height` aperta a caixa do `<svg>`,
+   * e é o `preserveAspectRatio` (o padrão, `xMidYMid meet`) que desenha a
+   * malha centralizada dentro dela, sem distorcer — por isso a legenda de
+   * largura numa caixa mais alta não abre espaço morto ao lado.
+   */
+  max-height: 65svh;
   overflow: visible;
   display: block;
+}
+
+/*
+ * De `lg` para cima a tela para de crescer (ver `docs/mapa-estados.md`) e quem
+ * manda é a altura, não a largura: o mapa recebe a caixa que sobrou na linha e
+ * a malha se ajusta nela. O `64rem` é o mesmo `lg` do Tailwind, dito aqui
+ * porque esta é a folha do próprio `<svg>` — utilitário do Tailwind não
+ * vence regra de CSS sem camada, e esta não está em nenhuma.
+ */
+@media (min-width: 64rem) {
+  .brazil-map {
+    height: 100%;
+    max-height: none;
+  }
 }
 
 .brazil-map .uf-forma {

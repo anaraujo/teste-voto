@@ -11,6 +11,40 @@ UFs aparecem com a hachura de "em breve" e ficam fora da ordem de foco. Liberar
 um estado novo é só acrescentar a sigla em `availableStates` — a tela e o mapa
 não mudam.
 
+## A forma da tela: empilhada no celular, lado a lado no desktop
+
+Duas formas, um breakpoint (`lg`, 1024px), e a escolha é de **altura**, não de
+gosto: mapa e 27 cartões juntos não cabem na altura de um celular.
+
+| Largura     | Forma                                                                | Rolagem                     |
+| ----------- | -------------------------------------------------------------------- | --------------------------- |
+| `< 1024px`  | empilhada: mapa primeiro (no máximo `65svh`), grade de siglas depois | sim, a página cresce        |
+| `>= 1024px` | lado a lado: mapa à esquerda, grade à direita                        | não — a tela para na janela |
+
+Em cima de `lg` o `<main>` da rota ganha `max-h-dvh` e vira coluna de flex, a
+seção e a linha dividem o que sobra, e o mapa deixa de ser medido pela
+**largura** para ser medido pela **altura** (`height: 100%` na media query de
+`BrazilMap.css`, com o `preserveAspectRatio` padrão centralizando a malha na caixa).
+Quem encolhe é sempre o mapa: ele é imagem, então se ajusta sem distorcer nem
+perder proporção. A grade mantém altura própria e fica centralizada na coluna.
+
+O cartão tem uma versão compacta a partir de `lg` (`py-1.5`, sigla em
+`text-base`, nome em `0.6875rem`, "Em breve" em `0.5625rem`), e é ela que faz a
+tela caber: sete linhas de 69px dão 529px, então a tela inteira cabe a partir
+de uns **670px de altura de janela**. Abaixo disso a página ganha um pouco de
+rolagem — preferível a esticar os cartões, que criaria caixas com ar por dentro.
+
+No celular o mapa vem **primeiro** e ocupa no máximo `65svh`: em 390px de
+largura ele sai com 373px de altura (44svh), que é a altura que a largura da
+tela pede, e o `max-height` só aperta a caixa quando a largura mandaria num mapa
+maior que isso (tablet em pé). É a faixa em que a malha aparece primeiro e a
+primeira linha da grade já começa dentro da primeira dobra.
+
+A ordem no DOM é mapa e depois grade, então a ordem de teclado também é: quem
+navega por Tab encontra primeiro as UFs do mapa e depois as da grade. A grade
+permanece a navegação em qualquer largura — uma malha de 360px é um retrato do
+país, não um alvo de clique confiável.
+
 ## Por que SVG estático, e não uma biblioteca de mapa
 
 O mapa é um `<svg>` com **um `<path>` por UF**, com a geometria já simplificada
