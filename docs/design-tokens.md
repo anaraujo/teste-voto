@@ -51,10 +51,11 @@ O projeto usa **Tailwind CSS v4**, integrado como plugin do Vite — não existe
   --color-secondary-soft: #f97316;
   --color-tertiary: #f59e0b;
   --color-tertiary-soft: var(--color-flag-yellow);
-  --color-canvas: var(--color-tse-mist-100);
+  --color-canvas: var(--color-tse-ink-200);
   --color-panel: var(--color-logo-slate);
   --color-deep: var(--color-flag-blue);
   --color-link: var(--color-tse-primary);
+  --color-ink: #242424;
   --color-gray: #bcb7bc;
 }
 ```
@@ -91,22 +92,23 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
 ### Tokens atuais
 
-| Token                    | Hex       | Papel                    | Uso principal                                      |
-| ------------------------ | --------- | ------------------------ | -------------------------------------------------- |
-| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary                       |
-| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary                        |
-| `--color-secondary`      | `#fd7e14` | Laranja                  | texto/linha do botão secondary                     |
-| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary                      |
-| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary                      |
-| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary                       |
-| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary                  |
-| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                |
-| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                 |
-| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                              |
-| `--color-canvas`         | `#e9ecef` | Fundo do app             | fundo da página (`bg-canvas`)                      |
-| `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`) |
-| `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                    |
-| `--color-link`           | `#206b82` | Link e fonte de dado     | link para a fonte oficial (ex.: o TSE)             |
+| Token                    | Hex       | Papel                    | Uso principal                                         |
+| ------------------------ | --------- | ------------------------ | ----------------------------------------------------- |
+| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary                          |
+| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary                           |
+| `--color-secondary`      | `#fd7e14` | Laranja                  | texto/linha do botão secondary                        |
+| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary                         |
+| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary                         |
+| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary                          |
+| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary                     |
+| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                   |
+| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                    |
+| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                                 |
+| `--color-canvas`         | `#90b5c1` | Fundo do app             | fundo da página (`bg-canvas`)                         |
+| `--color-ink`            | `#242424` | Tinta do texto           | texto base, herdado por `body`; também o anel de foco |
+| `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`)    |
+| `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                       |
+| `--color-link`           | `#206b82` | Link e fonte de dado     | link para a fonte oficial (ex.: o TSE)                |
 
 Os tokens `-on` existem porque as famílias pedem tintas opostas: verde e
 amarelo **só** passam em WCAG AA com `#111` (3,83:1, 2,57:1 e 2,15:1 contra
@@ -114,6 +116,30 @@ amarelo **só** passam em WCAG AA com `#111` (3,83:1, 2,57:1 e 2,15:1 contra
 14,76:1). Não dá para tratar "TSE + Brasil" como uma família única de cor, e
 por isso cada cor cheia tem o seu `-on`. Quem pinta uma superfície com a cor
 cheia pega o `-on` correspondente em vez de hardcodar branco.
+
+### A tinta e o fundo, medidos
+
+`--color-ink` (o texto base) e `--color-canvas` (o fundo da página) formam o par
+que mais aparece na tela, então vale registrar as razões de contraste:
+
+| Combinação                                  | Razão   | WCAG            |
+| ------------------------------------------- | ------- | --------------- |
+| texto base sobre o canvas                   | 7,07:1  | AA texto normal |
+| texto base sobre o card                     | 14,36:1 | AAA             |
+| texto base sobre o branco                   | 15,52:1 | AAA             |
+| anel de foco sobre o canvas                 | 7,07:1  | passa de 3:1    |
+| anel de foco sobre o card                   | 14,36:1 | passa de 3:1    |
+| anel de foco sobre o painel                 | 3,18:1  | passa de 3:1    |
+| texto secundário (`ink-900`) sobre o canvas | 5,11:1  | AA texto normal |
+
+Duas medidas explicam por que o anel deixou de ser uma cor de marca: o verde da
+bandeira, que era a escolha antes, cai para 1,74:1 sobre o `ink-200` e o teal
+para 2,74:1. Nenhum dos dois chega a 3:1, o mínimo de WCAG para indicador não
+textual, e o anel de teclado é a única pista de foco de quem não usa mouse.
+
+O texto base reprova sobre o painel (3,18:1), como todo texto escuro
+reprovaria sobre um fundo médio-escuro. Por isso `--color-panel-on` continua
+branco (4,87:1) e o painel nunca recebe o texto base.
 
 ## A camada semântica (`:root`)
 
@@ -124,15 +150,16 @@ fonte**, `src/index.css` tem um segundo bloco, logo abaixo do `@theme`:
 
 ```css
 :root {
-  --foreground: #111111;
+  --foreground: var(--color-ink);
   --background: var(--color-canvas);
   --card: color-mix(in srgb, var(--color-tse-mist-100) 55%, #ffffff);
   --card-foreground: var(--foreground);
   --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
+  --muted-foreground: var(--color-tse-ink-900);
   --accent: color-mix(in srgb, var(--color-tse-primary) 12%, transparent);
-  --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
-  --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
-  --ring: var(--color-primary);
+  --border: color-mix(in srgb, var(--color-tse-ink-700) 65%, transparent);
+  --input: color-mix(in srgb, var(--color-tse-ink-700) 85%, transparent);
+  --ring: var(--color-ink);
   --destructive: var(--color-tse-danger);
 }
 
@@ -150,8 +177,9 @@ fonte**, `src/index.css` tem um segundo bloco, logo abaixo do `@theme`:
 Três regras mantêm a "fonte única" de verdade:
 
 1. **A camada `:root` não repete hex da marca.** Cada valor aponta para um
-   token de `@theme`. Os dois hex que aparecem — `#111111` (texto base) e
-   `#ffffff` (misturado no card) — não são cores da marca.
+   token de `@theme`. O único hex que aparece é o `#ffffff` misturado no card,
+   que não é cor da marca. O texto base não aparece mais: é
+   `var(--color-ink)`.
 2. **`primary`, `secondary` e `tertiary` não são redeclarados.** O shadcn usa
    esses nomes com o mesmo sentido que o projeto já usava, então `bg-primary`
    continua resolvendo para `--color-primary`. O `@theme inline` expõe só os

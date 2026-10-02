@@ -123,6 +123,27 @@
   --color-gray: #bcb7bc;
 
   /*
+   * Tinta neutra do texto — o preto do app.
+   *
+   * Fica fora das três paletas de origem porque não vem de nenhuma delas: é um
+   * quase-preto sem croma, escolhido para ser menos duro que o `#000` do
+   * navegador sem clarear o texto. Registrado aqui para que a resposta à
+   * pergunta "de onde vem o texto?" continue sendo um token e não um default
+   * implícito do navegador.
+   *
+   * A escolha não é estética, é medida. Sobre o canvas dá 7,07:1 e sobre o
+   * card 14,36:1, ambos bem acima de AA. O `#111111` que era usado antes
+   * passava também, então trocar por este custa 3,35 pontos de razão no canvas
+   * (8,60:1 → 7,07:1) e ainda sobra folga de sobra.
+   *
+   * Sobre o painel do grid ela reprova (3,18:1), como todo texto escuro
+   * reprovaria — por isso `--color-panel-on` continua branco. Nenhum texto
+   * base escuro sobrevive a um fundo médio-escuro, e o painel é médio-escuro
+   * por escolha de paleta.
+   */
+  --color-ink: #242424;
+
+  /*
    * As duas superfícies do app. `canvas` é o fundo da página e `panel` é o
    * painel onde o Candidate Grid senta.
    *
@@ -131,8 +152,14 @@
    * nenhum escolhido para conviver com o fundo. Um fundo saturado competiria
    * com eles; um neutro deixa a cor do partido ser a única coisa saturada na
    * tela, que é o que faz o card ser legível.
+   *
+   * O canvas é o `ink-200` do TSE, um azul-acinzentado médio. Ele é escuro o
+   * bastante para o texto base (`--color-ink`, 7,07:1) e para o anel de foco
+   * (`--color-ink`, o mesmo 7,07:1) aparecerem sem esforço, e claro o bastante
+   * para o card (`#f5f6f8`) ainda se destacar em 2,03:1 — separação que o
+   * `mist-100` não dava, porque nele o card ficava a 1,10:1, quase colado.
    */
-  --color-canvas: var(--color-tse-mist-100);
+  --color-canvas: var(--color-tse-ink-200);
   --color-panel: var(--color-logo-slate);
 
   /* Azul da bandeira — a superfície mais escura do app */
@@ -164,7 +191,7 @@
  * `@theme inline` abaixo expõe ao Tailwind só os nomes que ainda não existiam.
  */
 :root {
-  --foreground: #111111;
+  --foreground: var(--color-ink);
   --background: var(--color-canvas);
   /*
    * Superfície elevada: o neutro do canvas aclarado em direção ao branco, para
@@ -174,16 +201,49 @@
   --card-foreground: var(--foreground);
   --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
   --accent: color-mix(in srgb, var(--color-tse-primary) 12%, transparent);
-  --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
-  --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
   /*
-   * O anel de foco fica no verde da bandeira, não no teal do TSE: o teal dá
-   * 5,08:1 sobre o canvas, mas só 1,24:1 sobre o painel — o foco precisa
-   * aparecer nas duas superfícies. O verde dá 3,23:1 no canvas, o mínimo de
-   * WCAG para um indicador não textual.
+   * Bordas saíram do cinza da urna para o `ink-700` do TSE.
+   *
+   * O cinza da urna é claro (#bcb7bc) e a borda ainda era misturado com 55% e
+   * 70% de alfa, o que só funcionava sobre o `mist-100`, um fundo quase igual
+   * a ele. Sobre o `ink-200` a mesma mistura compõe #a8b6be, que dá 1,06:1:
+   * a borda some. O `ink-700` a 65% dá 2,26:1 e a 85% dá 3,00:1 — o mínimo de
+   * WCAG para indicador não textual, que é o caso da borda do input, onde ela
+   * é a única coisa que marca o limite do campo.
    */
-  --ring: var(--color-primary);
+  --border: color-mix(in srgb, var(--color-tse-ink-700) 65%, transparent);
+  --input: color-mix(in srgb, var(--color-tse-ink-700) 85%, transparent);
+  /*
+   * O anel de foco é a própria tinta do texto, não uma cor de marca.
+   *
+   * Antes era o verde da bandeira, escolhido por ser a única cor que passava
+   * nas duas superfícies. Com o canvas virando `ink-200` essa escolha quebra:
+   * o verde cai para 1,74:1 e o teal para 2,74:1 — os dois reprovam, e o anel
+   * de teclado, que é a única pista de foco para quem não usa mouse, deixaria
+   * de existir.
+   *
+   * A tinta (`#242424`) passa nas três: 7,07:1 no canvas, 14,36:1 no card e
+   * 3,18:1 no painel. E tem uma vantagem que as alternativas não tinham: é a
+   * mesma cor do texto, então o anel marca o limite sem introduzir uma cor
+   * nova na tela — coerente com a regra de que a cor do partido é a única
+   * coisa saturada.
+   */
+  --ring: var(--color-ink);
   --destructive: var(--color-tse-danger);
+  /*
+   * Texto secundário: o `ink-900` do TSE.
+   *
+   * Esta peça faltava. `text-muted-foreground` aparece em 14 lugares do código
+   * mas nunca houve `--color-muted-foreground`, então o Tailwind não gerava a
+   * classe e o texto secundário saía na mesma tinta do texto base — sem
+   * hierarquia nenhuma, sem erro visível, porque "cinza" e "preto" são
+   * plausíveis a olho nu.
+   *
+   * O `ink-900` (#13404e) passa AA nas três superfícies claras do app: 5,11:1
+   * no canvas, 10,38:1 no card e 11,22:1 no branco. O `ink-700`, um degrau mais
+   * claro, reprova no canvas (3,71:1) — por isso o 900 e não o 700.
+   */
+  --muted-foreground: var(--color-tse-ink-900);
 }
 
 /*
@@ -201,6 +261,15 @@
 
   body {
     font-family: inherit;
+    /*
+     * A tinta do texto vem do token, não do default do navegador.
+     *
+     * `--foreground` já existia e gerava a utilitária `text-foreground`, mas
+     * nada aplicava a cor no documento: o texto herdava o preto do navegador
+     * (`#000`) e o token era usado só em dois lugares isolados. Aqui ele
+     * governa o texto base, que é o que "default text color" quer dizer.
+     */
+    color: var(--foreground);
   }
 
   /*
@@ -267,6 +336,7 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-border: var(--border);
   --color-input: var(--input);
