@@ -103,16 +103,7 @@ function App({
   }
 
   return (
-    <main
-      className={
-        // A ficha é a única tela alta o bastante para passar da dobra. Com
-        // `items-center` o topo de um conteúdo mais longo que a tela some
-        // atrás do topo do documento; as demais telas continuam centralizadas.
-        route.name === 'candidate'
-          ? 'min-h-screen bg-canvas flex items-start justify-center'
-          : 'min-h-screen bg-canvas flex items-center justify-center'
-      }
-    >
+    <main className="min-h-screen bg-tse-primary gap-4 px-8 py-8">
       <AppHeader route={route} onNavigate={onNavigate} />
 
       {route.name === 'start' && (

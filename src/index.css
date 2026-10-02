@@ -153,11 +153,11 @@
    * com eles; um neutro deixa a cor do partido ser a única coisa saturada na
    * tela, que é o que faz o card ser legível.
    *
-   * O canvas é o `ink-200` do TSE, um azul-acinzentado médio. Ele é escuro o
-   * bastante para o texto base (`--color-ink`, 7,07:1) e para o anel de foco
-   * (`--color-ink`, o mesmo 7,07:1) aparecerem sem esforço, e claro o bastante
-   * para o card (`#f5f6f8`) ainda se destacar em 2,03:1 — separação que o
-   * `mist-100` não dava, porque nele o card ficava a 1,10:1, quase colado.
+   * O canvas é o `ink-200` do TSE, um azul-acinzentado médio. Ele não é mais o
+   * fundo do app — esse passou a ser `--color-tse-primary` (ver o `<main>` em
+   * `src/App.tsx`) — e sim a superfície sobre a qual o card se destaca, o que a
+   * escolha do `ink-200` ainda resolve: contra o `mist-100` o card colaria a
+   * 1,10:1, aqui ele se separa em 2,03:1.
    */
   --color-canvas: var(--color-tse-ink-200);
   --color-panel: var(--color-logo-slate);
@@ -264,12 +264,12 @@
     /*
      * A tinta do texto vem do token, não do default do navegador.
      *
-     * `--foreground` já existia e gerava a utilitária `text-foreground`, mas
-     * nada aplicava a cor no documento: o texto herdava o preto do navegador
-     * (`#000`) e o token era usado só em dois lugares isolados. Aqui ele
-     * governa o texto base, que é o que "default text color" quer dizer.
+     * Antes o texto herdava o preto do navegador (`#000`), que era legível só
+     * sobre o canvas claro. O fundo do app passou a ser `--color-tse-primary`,
+     * e o preto nele dá 3,49:1 — abaixo de AA para texto normal. A tinta agora
+     * é o `--color-tse-mist-100`, que dá 5,08:1 sobre esse teal.
      */
-    color: var(--foreground);
+    color: var(--color-tse-mist-100);
   }
 
   /*

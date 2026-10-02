@@ -59,13 +59,18 @@ aparece na tela (linha de legenda) e neste documento.
 - O anel de foco é um `stroke` grosso desenhado na forma (não um `outline` reto
   encostado na caixa), e por isso o SVG usa `overflow: visible`.
 - UFs indisponíveis ficam com hachura e sem foco; a grade repete a informação
-  com o rótulo "Em breve".
+  com o rótulo "Em breve". A hachura é o mesmo verde da UF disponível
+  (`--color-tse-success`, `#3a833a`) com as linhas no teal escuro
+  (`--color-tse-ink-700`, `#1a5668`), que é o que faz a textura aparecer sobre
+  ele (1,74:1).
 - A UF disponível é `--color-tse-success` (`#3a833a`), o verde de "sucesso" do
-  portal do TSE. Contra o canvas ele dá 2,13:1 — abaixo do mínimo de 3:1 da WCAG
-  para contraste não textual, e o verde da bandeira (`--color-primary`, hoje
-  usado na grade de estados) daria menos, 1,74:1. **A diferença entre disponível
-  e indisponível não é comunicada pela cor**: quem a carrega é o preenchimento
-  sólido contra a hachura. Se a hachura sair, a informação passa a depender de
-  uma cor que não tem contraste.
+  portal do TSE. O contorno é o `--color-tse-ink-700` nas duas situações, e é
+  ele que separa a forma do fundo do app: o fundo deixou de ser o canvas e
+  passou a ser `--color-tse-primary` (`#206b82`), contra o qual o verde
+  disponível dá só 1,29:1 e o próprio contorno 1,35:1 — ambos abaixo do
+  mínimo de 3:1 da WCAG para contraste não textual. **A diferença entre
+  disponível e indisponível não é comunicada pela cor**: quem a carrega é o
+  preenchimento sólido contra a hachura. Se a hachura sair, a informação passa a
+  depender de uma cor que não tem contraste.
 - Há suporte a `prefers-reduced-motion` (a transição de preenchimento só existe
   quando a pessoa aceita movimento) e a `forced-colors` (alto contraste).

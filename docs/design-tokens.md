@@ -104,7 +104,7 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 | `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                   |
 | `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                    |
 | `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                                 |
-| `--color-canvas`         | `#90b5c1` | Fundo do app             | fundo da página (`bg-canvas`)                         |
+| `--color-canvas`         | `#90b5c1` | Superfície média        | superfície sobre a qual o card se destaca              |
 | `--color-ink`            | `#242424` | Tinta do texto           | texto base, herdado por `body`; também o anel de foco |
 | `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`)    |
 | `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                       |
@@ -119,27 +119,39 @@ cheia pega o `-on` correspondente em vez de hardcodar branco.
 
 ### A tinta e o fundo, medidos
 
-`--color-ink` (o texto base) e `--color-canvas` (o fundo da página) formam o par
-que mais aparece na tela, então vale registrar as razões de contraste:
+O fundo da página é `--color-tse-primary` (`#206b82`, o teal do portal) e a
+tinta do texto base é o `--color-tse-mist-100` (`#e9ecef`). São o par que mais
+aparece na tela, então vale registrar as razões de contraste:
 
 | Combinação                                  | Razão   | WCAG            |
 | ------------------------------------------- | ------- | --------------- |
-| texto base sobre o canvas                   | 7,07:1  | AA texto normal |
-| texto base sobre o card                     | 14,36:1 | AAA             |
-| texto base sobre o branco                   | 15,52:1 | AAA             |
-| anel de foco sobre o canvas                 | 7,07:1  | passa de 3:1    |
-| anel de foco sobre o card                   | 14,36:1 | passa de 3:1    |
-| anel de foco sobre o painel                 | 3,18:1  | passa de 3:1    |
-| texto secundário (`ink-900`) sobre o canvas | 5,11:1  | AA texto normal |
+| texto base sobre o fundo teal               | 5,08:1  | AA texto normal |
+| texto base sobre o painel                   | 4,11:1  | AA texto normal |
+| texto base sobre o card                     | 1,08:1  | reprova         |
+| texto base sobre o branco                   | 1,19:1  | reprova         |
+| texto secundário (`muted-foreground`)       | 1,86:1  | reprova         |
+| borda (`border`) sobre o fundo teal         | 1,55:1  | reprova         |
+| anel de foco sobre o card                   | 4,46:1  | passa de 3:1    |
+| anel de foco sobre o fundo teal             | 1,24:1  | reprova         |
+
+A tinta é clara porque o fundo é escuro: trocar o fundo para um teal médio
+inverteu a direção do par e deixou o texto base reprovando sobre o card, que é
+claro. Por isso `--color-panel-on` continua branco e o card precisa de tinta
+própria — ele não pode herdar a base.
+
+O que **não** acompanhou a inversão foram os tokens que ainda são escuros: o
+`--muted-foreground` (`ink-900`) e o `--border` (`ink-700`) continuam apontando
+para o teal quase-preto do TSE, e os dois se desfazem sobre o fundo teal. Vale
+registrar porque a correção é do fundo, não dos textos: ou o fundo volta a ser
+claro, ou esses dois tokens ganham uma variante clara.
 
 Duas medidas explicam por que o anel deixou de ser uma cor de marca: o verde da
-bandeira, que era a escolha antes, cai para 1,74:1 sobre o `ink-200` e o teal
-para 2,74:1. Nenhum dos dois chega a 3:1, o mínimo de WCAG para indicador não
-textual, e o anel de teclado é a única pista de foco de quem não usa mouse.
-
-O texto base reprova sobre o painel (3,18:1), como todo texto escuro
-reprovaria sobre um fundo médio-escuro. Por isso `--color-panel-on` continua
-branco (4,87:1) e o painel nunca recebe o texto base.
+bandeira, que era a escolha antes, e o `--color-tse-primary` não chegam a 3:1
+sobre a superfície onde o anel aparece, o mínimo de WCAG para indicador não
+textual, e o anel de teclado é a única pista de foco de quem não usa mouse. O
+`--color-panel` foi o que sobrava com contraste suficiente no card — mas é
+justamente por ele não funcionar sobre o fundo teal que os elementos focáveis
+que vivem direto na página não podem usar `outline-panel`.
 
 ## A camada semântica (`:root`)
 

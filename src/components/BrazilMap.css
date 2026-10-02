@@ -6,9 +6,11 @@
  * `overflow: visible` existe porque o anel de foco é um `stroke` grosso, e sem
  * ele o traço seria cortado nas bordas do viewBox.
  *
- * As UFs sem lista trocam o preenchimento por uma hachura. O `url()` do padrão
- * vem por variável (`--map-hatch`, definida no componente), porque o id do
- * `<pattern>` é único por instância e não dá para fixá-lo aqui no CSS.
+ * As UFs sem lista trocam o preenchimento por uma hachura: o mesmo verde de
+ * "sucesso" da UF disponível, com as linhas no teal escuro
+ * (`--color-tse-ink-700`) para que a textura apareça sobre ele. O `url()` do
+ * padrão vem por variável (`--map-hatch`, definida no componente), porque o id
+ * do `<pattern>` é único por instância e não dá para fixá-lo aqui no CSS.
  */
 
 .brazil-map {
@@ -19,25 +21,27 @@
 }
 
 .brazil-map .uf-forma {
-  stroke: var(--color-canvas);
+  stroke: var(--color-tse-ink-700);
   stroke-width: 2.5;
   stroke-linejoin: round;
 }
 
 /*
  * A UF disponível é `--color-tse-success`, o verde que o portal do TSE usa
- * para "sucesso". Ele serve melhor que `--color-primary` (o verde da bandeira)
- * aqui porque a forma é uma superfície grande, não um botão: contra o canvas
- * ele dá 2,13:1 contra 1,74:1 do verde da bandeira, e contra o card 4,33:1
- * contra 3,54:1.
+ * para "sucesso".
  *
- * Nenhum dos dois chega a 3:1 contra o canvas, então a diferença entre
- * disponível e indisponível não é comunicada só pela cor: é o preenchimento
- * sólido contra a hachura que a carrega. É por isso que a hachura existe, e
- * por isso que ela não pode sair.
+ * O contorno é `--color-tse-ink-700` (teal escuro) para as duas situações: ele
+ * separa a forma tanto do fundo `--color-tse-primary` (1,35:1) quanto do
+ * próprio preenchimento verde (1,74:1), então a linha carrega o desenho do mapa
+ * onde a cor sozinha não dá conta.
  *
- * O hover continua no laranja (`--color-secondary`), o mesmo que a lista de
- * estados usa, para que os doisRepresentem o mesmo estado com a mesma cor.
+ * Nenhuma cor do mapa chega a 3:1 contra o fundo teal (o verde disponível dá
+ * 1,29:1), então a diferença entre disponível e indisponível não é comunicada
+ * pela cor: é o preenchimento sólido contra a hachura que a carrega. É por isso
+ * que a hachura existe, e por isso que ela não pode sair.
+ *
+ * O hover é o amarelo do logo (`--color-logo-yellow`), o mesmo que a lista de
+ * estados usa, para que os dois representem o mesmo estado com a mesma cor.
  */
 .brazil-map .uf--available .uf-forma {
   fill: var(--color-tse-success);
@@ -45,12 +49,12 @@
 
 .brazil-map .uf--soon .uf-forma {
   fill: var(--map-hatch);
-  stroke: var(--color-panel);
+  stroke: var(--color-tse-ink-700);
 }
 
 .brazil-map .uf--available:hover .uf-forma,
 .brazil-map .uf--available:focus-visible .uf-forma {
-  fill: var(--color-secondary);
+  fill: var(--color-logo-yellow);
 }
 
 .brazil-map .uf--available:focus-visible {

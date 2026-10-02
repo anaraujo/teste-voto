@@ -102,7 +102,7 @@ export function CandidatesScreen({
       <section
         aria-live="polite"
         aria-busy="true"
-        className="mx-auto flex w-full flex-col gap-3 px-4"
+        className="mx-auto flex w-full flex-col gap-3"
       >
         <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
         <span className="sr-only">Carregando candidatos...</span>
@@ -185,7 +185,7 @@ export function CandidatesScreen({
      * `--max-columns`, e a section só cede a largura que sobra. Ver o
      * comentário do `.candidate-grid`.
      */
-    <section className="mx-auto flex w-full flex-col gap-3 px-4">
+    <section className="mx-auto flex w-full flex-col gap-3">
       <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
       <p className="text-sm text-muted-foreground">
         {state.data.total} candidatos a {state.data.election.office} em{' '}

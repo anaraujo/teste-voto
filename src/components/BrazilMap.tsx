@@ -60,13 +60,13 @@ export function BrazilMap({
           patternTransform="rotate(45)"
           patternUnits="userSpaceOnUse"
         >
-          <rect width="7" height="7" fill="var(--color-canvas)" />
+          <rect width="7" height="7" fill="var(--color-tse-success)" />
           <line
             x1="0"
             y1="0"
             x2="0"
             y2="7"
-            stroke="var(--color-panel)"
+            stroke="var(--color-tse-ink-700)"
             strokeWidth="2.5"
           />
         </pattern>
