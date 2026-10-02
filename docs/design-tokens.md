@@ -104,7 +104,7 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 | `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                   |
 | `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                    |
 | `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                                 |
-| `--color-canvas`         | `#90b5c1` | Superfície média        | superfície sobre a qual o card se destaca              |
+| `--color-canvas`         | `#90b5c1` | Superfície média         | superfície sobre a qual o card se destaca             |
 | `--color-ink`            | `#242424` | Tinta do texto           | texto base, herdado por `body`; também o anel de foco |
 | `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`)    |
 | `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                       |
@@ -123,16 +123,16 @@ O fundo da página é `--color-tse-primary` (`#206b82`, o teal do portal) e a
 tinta do texto base é o `--color-tse-mist-100` (`#e9ecef`). São o par que mais
 aparece na tela, então vale registrar as razões de contraste:
 
-| Combinação                                  | Razão   | WCAG            |
-| ------------------------------------------- | ------- | --------------- |
-| texto base sobre o fundo teal               | 5,08:1  | AA texto normal |
-| texto base sobre o painel                   | 4,11:1  | AA texto normal |
-| texto base sobre o card                     | 1,08:1  | reprova         |
-| texto base sobre o branco                   | 1,19:1  | reprova         |
-| texto secundário (`muted-foreground`)       | 1,86:1  | reprova         |
-| borda (`border`) sobre o fundo teal         | 1,55:1  | reprova         |
-| anel de foco sobre o card                   | 4,46:1  | passa de 3:1    |
-| anel de foco sobre o fundo teal             | 1,24:1  | reprova         |
+| Combinação                            | Razão  | WCAG            |
+| ------------------------------------- | ------ | --------------- |
+| texto base sobre o fundo teal         | 5,08:1 | AA texto normal |
+| texto base sobre o painel             | 4,11:1 | AA texto normal |
+| texto base sobre o card               | 1,08:1 | reprova         |
+| texto base sobre o branco             | 1,19:1 | reprova         |
+| texto secundário (`muted-foreground`) | 1,86:1 | reprova         |
+| borda (`border`) sobre o fundo teal   | 1,55:1 | reprova         |
+| anel de foco sobre o card             | 4,46:1 | passa de 3:1    |
+| anel de foco sobre o fundo teal       | 1,24:1 | reprova         |
 
 A tinta é clara porque o fundo é escuro: trocar o fundo para um teal médio
 inverteu a direção do par e deixou o texto base reprovando sobre o card, que é
