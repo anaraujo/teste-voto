@@ -17,7 +17,12 @@ import {
 } from '../src/data/quiz-source.ts'
 
 function apiCandidate(
-  overrides: Partial<Pick<ApiCandidate, 'occupation' | 'birthDate' | 'candidacyType' | 'birthState'>> = {},
+  overrides: Partial<
+    Pick<
+      ApiCandidate,
+      'occupation' | 'birthDate' | 'candidacyType' | 'birthState'
+    >
+  > = {},
 ): ApiCandidate {
   return {
     id: '2026-PR-1',
@@ -68,13 +73,22 @@ test('resolveSector classifica ocupações por setor', () => {
   assert.equal(resolveSector('PSICÓLOGO'), 'saude')
   assert.equal(resolveSector('ENFERMEIRO'), 'saude')
   assert.equal(resolveSector('FONOAUDIÓLOGO'), 'saude')
-  assert.equal(resolveSector('TÉCNICO DE ENFERMAGEM E ASSEMELHADOS (EXCETO ENFERMEIRO)'), 'saude')
+  assert.equal(
+    resolveSector('TÉCNICO DE ENFERMAGEM E ASSEMELHADOS (EXCETO ENFERMEIRO)'),
+    'saude',
+  )
   assert.equal(resolveSector('ESTETICISTA'), 'saude')
   assert.equal(resolveSector('VETERINÁRIO'), 'saude')
   assert.equal(resolveSector('PROFESSOR DE ENSINO MÉDIO'), 'educacao')
-  assert.equal(resolveSector('DIRETOR DE ESTABELECIMENTO DE ENSINO'), 'educacao')
+  assert.equal(
+    resolveSector('DIRETOR DE ESTABELECIMENTO DE ENSINO'),
+    'educacao',
+  )
   assert.equal(resolveSector('EMPRESÁRIO'), 'economia')
-  assert.equal(resolveSector('AUXILIAR DE ESCRITÓRIO E ASSEMELHADOS'), 'economia')
+  assert.equal(
+    resolveSector('AUXILIAR DE ESCRITÓRIO E ASSEMELHADOS'),
+    'economia',
+  )
   assert.equal(resolveSector('POLICIAL MILITAR'), 'seguranca')
   assert.equal(resolveSector('MEMBRO DAS FORÇAS ARMADAS'), 'seguranca')
   assert.equal(resolveSector('PRODUTOR AGROPECUÁRIO'), 'agro')
@@ -176,7 +190,9 @@ test('questionProvenance devolve a fonte de cada dimensão', () => {
 })
 
 test('toQuizCandidate espelha nome, foto e perfil da API', () => {
-  const candidate: Candidate = toQuizCandidate(apiCandidate({ occupation: 'PEDAGOGO' }))
+  const candidate: Candidate = toQuizCandidate(
+    apiCandidate({ occupation: 'PEDAGOGO' }),
+  )
   assert.equal(candidate.id, '2026-PR-1')
   assert.equal(candidate.name, 'FULANO DE TAL')
   assert.equal(candidate.photo, '/photos/1.jpg')

@@ -15,7 +15,12 @@
  */
 
 import { join } from 'node:path'
-import { openRepository, listCandidates, listIncumbents, replaceParliamentary } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+  listIncumbents,
+  replaceParliamentary,
+} from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import {
   fetchDeputadosPorLegislatura,
@@ -56,7 +61,10 @@ const filter = {
 }
 
 function normalizeVoto(voto: string): VotoValor | null {
-  const value = voto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+  const value = voto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
   if (value === 'P-NRV' || value === '' || value === 'NRV') return null
   if (value === 'SIM') return 'Sim'
   if (value === 'NAO') return 'Não'
@@ -95,7 +103,13 @@ try {
   }
 
   // Deputados únicos (cruzando legislaturas), com partido/uf por legislatura.
-  interface CamaraDep { id: number; nome: string; partidos: Record<number, string>; ufs: Record<number, string>; legs: number[] }
+  interface CamaraDep {
+    id: number
+    nome: string
+    partidos: Record<number, string>
+    ufs: Record<number, string>
+    legs: number[]
+  }
   const camaraByDep = new Map<number, CamaraDep>()
   for (const leg of LEGISLATURAS) {
     for (const item of deputiesByLeg.get(leg.id) ?? []) {
@@ -117,14 +131,21 @@ try {
     camaraToCandidate.set(camaraId, candidateId)
   }
 
-  const unbound = [...camaraByDep.values()].filter((dep) => !incumbentByCamara.has(dep.id))
+  const unbound = [...camaraByDep.values()].filter(
+    (dep) => !incumbentByCamara.has(dep.id),
+  )
   const people = await Promise.all(
     unbound.map(async (dep) => {
       const detail = await fetchDeputadoDetalhe(dep.id)
-      return { id: dep.id, nome: dep.nome, dataNascimento: detail?.dataNascimento ?? null }
+      return {
+        id: dep.id,
+        nome: dep.nome,
+        dataNascimento: detail?.dataNascimento ?? null,
+      }
     }),
   )
-  const { matched: matchedCamara, unmatched: unmatchedCamara } = matchHistoryPeople(candidates, people)
+  const { matched: matchedCamara, unmatched: unmatchedCamara } =
+    matchHistoryPeople(candidates, people)
   for (const [camaraId, candidateId] of matchedCamara) {
     camaraToCandidate.set(camaraId, candidateId)
   }
@@ -161,7 +182,9 @@ try {
         }
       }
     } catch (error) {
-      erros.push(`proposicoes: ${error instanceof Error ? error.message : String(error)}`)
+      erros.push(
+        `proposicoes: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     try {
@@ -170,9 +193,14 @@ try {
         .filter((o) => o.siglaOrgao && o.siglaOrgao !== 'PLEN')
         .sort((a, b) => (b.dataInicio ?? '').localeCompare(a.dataInicio ?? ''))
         .slice(0, 10)
-        .map((o) => ({ sigla: o.siglaOrgao, nome: o.nomeOrgao || o.siglaOrgao }))
+        .map((o) => ({
+          sigla: o.siglaOrgao,
+          nome: o.nomeOrgao || o.siglaOrgao,
+        }))
     } catch (error) {
-      erros.push(`orgaos: ${error instanceof Error ? error.message : String(error)}`)
+      erros.push(
+        `orgaos: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     try {
@@ -185,7 +213,9 @@ try {
         }
       }
     } catch (error) {
-      erros.push(`despesas: ${error instanceof Error ? error.message : String(error)}`)
+      erros.push(
+        `despesas: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
 
     if (erros.length > 0) {
@@ -207,19 +237,33 @@ try {
       })
     }
 
-    records.push({ candidateId, casa: 'camara', proposicoesPorAno, comissoes, despesasPorAno })
+    records.push({
+      candidateId,
+      casa: 'camara',
+      proposicoesPorAno,
+      comissoes,
+      despesasPorAno,
+    })
   }
   console.log(
     `[camara] records: ${records.length} (mandatos: ${mandates.length})`,
   )
 
-// ---------- Senado: mandatos por legislatura ----------
+  // ---------- Senado: mandatos por legislatura ----------
   const senadoresByCodigo = new Map<
     number,
     {
       nome: string
       partido: string | null
-      mandatos: Map<number, { uf: string; partido: string | null; dataInicio: string; dataFim: string }>
+      mandatos: Map<
+        number,
+        {
+          uf: string
+          partido: string | null
+          dataInicio: string
+          dataFim: string
+        }
+      >
     }
   >()
 
@@ -237,7 +281,11 @@ try {
     for (const senador of senadores) {
       let entry = senadoresByCodigo.get(senador.codigo)
       if (!entry) {
-        entry = { nome: senador.nomeCompleto || senador.nome, partido: null, mandatos: new Map() }
+        entry = {
+          nome: senador.nomeCompleto || senador.nome,
+          partido: null,
+          mandatos: new Map(),
+        }
         senadoresByCodigo.set(senador.codigo, entry)
       }
       const mando = senador.mandatos.find((m) => m.legislatura === leg.id)
@@ -251,12 +299,17 @@ try {
   }
   console.log(`[senado] ${senadoresByCodigo.size} senadores únicos (2015-2026)`)
 
-  const senadoPeople = [...senadoresByCodigo.entries()].map(([codigo, senador]) => ({
-    id: codigo,
-    nome: senador.nome,
-    dataNascimento: null,
-  }))
-  const { matched: matchedSenado } = matchHistoryPeople(candidates, senadoPeople)
+  const senadoPeople = [...senadoresByCodigo.entries()].map(
+    ([codigo, senador]) => ({
+      id: codigo,
+      nome: senador.nome,
+      dataNascimento: null,
+    }),
+  )
+  const { matched: matchedSenado } = matchHistoryPeople(
+    candidates,
+    senadoPeople,
+  )
 
   let senadoMatched = 0
   for (const [codigo, candidateId] of matchedSenado) {
@@ -275,7 +328,13 @@ try {
         dataFim: period.dataFim,
       })
     }
-    records.push({ candidateId, casa: 'senado', proposicoesPorAno: {}, comissoes: [], despesasPorAno: {} })
+    records.push({
+      candidateId,
+      casa: 'senado',
+      proposicoesPorAno: {},
+      comissoes: [],
+      despesasPorAno: {},
+    })
     senadoMatched += 1
   }
   console.log(`[senado] casamentos: ${senadoMatched}`)
@@ -304,7 +363,9 @@ try {
 
     // Votação simbólica/sem registro nominal: não gera dados por candidato.
     if (votos.length === 0) {
-      console.log(`[votos] ${pauta.tema}: sem registro nominal de votos, pulada`)
+      console.log(
+        `[votos] ${pauta.tema}: sem registro nominal de votos, pulada`,
+      )
       continue
     }
 

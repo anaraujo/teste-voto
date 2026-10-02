@@ -58,14 +58,18 @@ export function ResultScreen({
                     loading="lazy"
                   />
                 )}
-                <strong>{candidate.name}</strong> — {matches} de {totalQuestions}
+                <strong>{candidate.name}</strong> — {matches} de{' '}
+                {totalQuestions}
                 {index === 0 && <mark>Melhor compatibilidade</mark>}
               </summary>
               <p>
                 <small>{candidate.description}</small>
               </p>
               <p>
-                <button type="button" onClick={() => onShowCandidate(candidate.id)}>
+                <button
+                  type="button"
+                  onClick={() => onShowCandidate(candidate.id)}
+                >
                   Ver ficha do candidato
                 </button>
               </p>

@@ -33,7 +33,12 @@ export async function downloadToFile(
     try {
       const meta = await stat(filePath)
       if (meta.isFile() && meta.size > 0) {
-        return { filePath, validator: null, bytes: meta.size, downloaded: false }
+        return {
+          filePath,
+          validator: null,
+          bytes: meta.size,
+          downloaded: false,
+        }
       }
     } catch {
       // arquivo ausente — segue para o download
@@ -42,10 +47,13 @@ export async function downloadToFile(
 
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`download falhou (${response.status} ${response.statusText}): ${url}`)
+    throw new Error(
+      `download falhou (${response.status} ${response.statusText}): ${url}`,
+    )
   }
 
-  const validator = response.headers.get('etag') ?? response.headers.get('last-modified')
+  const validator =
+    response.headers.get('etag') ?? response.headers.get('last-modified')
   const buffer = Buffer.from(await response.arrayBuffer())
 
   await mkdir(dirname(filePath), { recursive: true })
@@ -80,7 +88,10 @@ export function listZipEntries(zipPath: string): ZipEntry[] {
 }
 
 /** Extrai todo o ZIP em um diretório de destino (sobrescreve). */
-export async function extractZip(zipPath: string, destination: string): Promise<void> {
+export async function extractZip(
+  zipPath: string,
+  destination: string,
+): Promise<void> {
   await mkdir(destination, { recursive: true })
   const spawned = spawnSync('unzip', ['-o', '-q', zipPath, '-d', destination], {
     encoding: 'utf8',
@@ -101,7 +112,9 @@ export function findEntry(entries: ZipEntry[], match: string): ZipEntry | null {
   const normalized = match.toLowerCase()
   return (
     entries.find((entry) => entry.name.toLowerCase().includes(normalized)) ??
-    entries.find((entry) => basename(entry.name).toLowerCase().includes(normalized)) ??
+    entries.find((entry) =>
+      basename(entry.name).toLowerCase().includes(normalized),
+    ) ??
     null
   )
 }

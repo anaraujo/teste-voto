@@ -38,7 +38,10 @@ test('parseCsv lê latin1 e remove BOM utf8', () => {
   assert.deepEqual(latin.rows, [['José', 'PR']])
 
   const utf8 = parseCsv(
-    Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('N;N2\n3;4\n', 'utf8')]),
+    Buffer.concat([
+      Buffer.from([0xef, 0xbb, 0xbf]),
+      Buffer.from('N;N2\n3;4\n', 'utf8'),
+    ]),
   )
   assert.equal(utf8.encoding, 'utf8')
   assert.equal(utf8.headers[0], 'N')

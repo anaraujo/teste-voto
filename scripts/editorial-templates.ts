@@ -11,7 +11,10 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { openRepository, listCandidates } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+} from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { EDITORIAL_DIR } from '../src/data-sources/parliament/editorial.ts'
 import { emptyEditorialFicha } from '../src/shared/ficha.ts'

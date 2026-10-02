@@ -13,7 +13,11 @@
  */
 
 import { join } from 'node:path'
-import { openRepository, listCandidates, replacePoliticalMandates } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+  replacePoliticalMandates,
+} from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import {
   HISTORIC_ELECTIONS,
@@ -40,7 +44,10 @@ try {
   let totalRows = 0
 
   for (const election of HISTORIC_ELECTIONS) {
-    const { rows, erro } = await fetchHistoricCandidaturas(election.ano, DATA_DIR)
+    const { rows, erro } = await fetchHistoricCandidaturas(
+      election.ano,
+      DATA_DIR,
+    )
     if (erro) {
       console.log(`[historico] ${election.ano}: ignorado (${erro})`)
       continue

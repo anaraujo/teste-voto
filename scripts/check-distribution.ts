@@ -119,7 +119,9 @@ function main(): void {
 
   console.log(`Perfis completos distintos: ${profiles.size}`)
 
-  const sortedBySize = [...profiles.values()].sort((a, b) => b.length - a.length)
+  const sortedBySize = [...profiles.values()].sort(
+    (a, b) => b.length - a.length,
+  )
   const topProfile = sortedBySize[0]
   if (topProfile) {
     console.log(
@@ -142,7 +144,9 @@ function main(): void {
   console.log('\nAuditoria de combinações de resposta:')
   console.log(`  Combinações possíveis: ${totalCombinations}`)
   console.log(`  Candidatos avaliados: ${entries.length}`)
-  console.log(`  Vitórias por candidato: min ${min} · média ${mean.toFixed(2)} · máx ${max}`)
+  console.log(
+    `  Vitórias por candidato: min ${min} · média ${mean.toFixed(2)} · máx ${max}`,
+  )
   console.log('\n  Top vencedores:')
   for (const entry of entries.slice(0, 8)) {
     console.log(
@@ -159,7 +163,9 @@ function main(): void {
   for (const [sector, n] of [...sectorCounts.entries()].sort(
     (a, b) => b[1] - a[1],
   )) {
-    console.log(`    ${sector.padEnd(20)} ${String(n).padStart(3)} ${percent(n / rows.length)}`)
+    console.log(
+      `    ${sector.padEnd(20)} ${String(n).padStart(3)} ${percent(n / rows.length)}`,
+    )
   }
 }
 

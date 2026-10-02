@@ -55,14 +55,11 @@ export interface VotoVotacao {
 const BASE = 'https://dadosabertos.camara.leg.br/api/v2'
 const PAGE_SIZE = 100
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 /** GET JSON com retry em 429/5xx/tempo limite e atraso entre chamadas. */
-async function getJson<T>(
-  url: string,
-  retries = 4,
-  delayMs = 150,
-): Promise<T> {
+async function getJson<T>(url: string, retries = 4, delayMs = 150): Promise<T> {
   let lastError: unknown = null
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     try {
@@ -124,7 +121,9 @@ export async function fetchDeputadosPorLegislatura(
 }
 
 /** Detalhe do deputado (data de nascimento) para confirmação de identidade. */
-export async function fetchDeputadoDetalhe(id: number): Promise<DeputadoDetalhe | null> {
+export async function fetchDeputadoDetalhe(
+  id: number,
+): Promise<DeputadoDetalhe | null> {
   try {
     const body = await getJson<{
       dados?: { id?: number; dataNascimento?: string | null }
@@ -145,7 +144,8 @@ export async function fetchProposicoesPorAutor(
 ): Promise<ProposicaoAutor[]> {
   const items: ProposicaoAutor[] = []
   const params = new URLSearchParams({ idDeputadoAutor: String(idDeputado) })
-  if (options.dataInicio) params.set('dataApresentacaoInicio', options.dataInicio)
+  if (options.dataInicio)
+    params.set('dataApresentacaoInicio', options.dataInicio)
   if (options.dataFim) params.set('dataApresentacaoFim', options.dataFim)
   params.set('itens', String(PAGE_SIZE))
 
@@ -170,7 +170,9 @@ export async function fetchDespesas(
 
   while (href) {
     const body: ApiCasaRest<DespesaItemBase> = await getJson(href)
-    items.push(...(Array.isArray(body.dados) ? normalizeDespesa(body.dados) : []))
+    items.push(
+      ...(Array.isArray(body.dados) ? normalizeDespesa(body.dados) : []),
+    )
     href = nextHref(body)
   }
   return items
@@ -197,7 +199,9 @@ function normalizeDespesa(items: DespesaItemBase[]): DespesaItem[] {
 }
 
 /** Comissões/órgãos do deputado. */
-export async function fetchOrgaos(idDeputado: number): Promise<OrgaoDeputado[]> {
+export async function fetchOrgaos(
+  idDeputado: number,
+): Promise<OrgaoDeputado[]> {
   const body = await getJson<{
     dados?: Array<{
       siglaOrgao?: string
@@ -218,7 +222,9 @@ export async function fetchOrgaos(idDeputado: number): Promise<OrgaoDeputado[]> 
 }
 
 /** Todos os votos (por deputado) de uma votação nominal. */
-export async function fetchVotosVotacao(votacaoId: string): Promise<VotoVotacao[]> {
+export async function fetchVotosVotacao(
+  votacaoId: string,
+): Promise<VotoVotacao[]> {
   const body = await getJson<{
     dados?: Array<{
       tipoVoto?: string

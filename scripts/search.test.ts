@@ -230,7 +230,10 @@ test('múltiplos matches ordenados por relevância', () => {
   const result = searchCandidates(INDEX, 'ANA')
   // ANA PARTICIPANTE deve vir antes de JOÃO DA PADARIA (substring match)
   const names = result.map((candidate) => candidate.ballotName)
-  assert.ok(names.indexOf('ANA PARTICIPANTE') < names.indexOf('JOÃO DA PADARIA') || !names.includes('JOÃO DA PADARIA'))
+  assert.ok(
+    names.indexOf('ANA PARTICIPANTE') < names.indexOf('JOÃO DA PADARIA') ||
+      !names.includes('JOÃO DA PADARIA'),
+  )
 })
 
 test('nome de urna tem mais peso que outros campos', () => {

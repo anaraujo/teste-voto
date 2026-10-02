@@ -1,9 +1,9 @@
 ---
 name: Pedido de funcionalidade
 about: Sugira uma ideia para este projeto
-title: ""
+title: ''
 labels: enhancement
-assignees: ""
+assignees: ''
 ---
 
 **O pedido está relacionado a um problema?**

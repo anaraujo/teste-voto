@@ -16,7 +16,7 @@ Um aplicativo web no espírito de um quiz clássico: poucas perguntas curtas,
 respostas curtas e um resultado no final. Ele responde a uma pergunta para o
 prédio inteiro: **"Em quem eu voto?"**
 
-Cada candidato é descrito por um *perfil* — as respostas que ele daria a cada
+Cada candidato é descrito por um _perfil_ — as respostas que ele daria a cada
 pergunta. Você responde o quiz e recebe um **ranking de todos os candidatos**,
 da melhor compatibilidade para a pior.
 
@@ -68,20 +68,20 @@ npm run ingest -- --inspect   # gera/atualiza docs/tse-schema.md
 
 ### Scripts
 
-| Comando                        | O que faz                                                     |
-| ------------------------------ | ------------------------------------------------------------- |
-| `npm run dev`                  | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027  |
-| `npm start`                    | Inicia somente o app (Vite) na porta 2026                     |
-| `npm run api`                  | Inicia somente a API HTTP na porta 2027                       |
-| `npm run ingest`               | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes) |
-| `npm run ingest -- --inspect`  | Documenta o schema observado em `docs/tse-schema.md`          |
-| `npm run ingest -- --force`    | Rebaixa os arquivos do TSE mesmo se já existirem              |
-| `npm run sync:incumbents`      | Casa os deputados PR em exercício com os candidatos (API Câmara) |
-| `npm run build`                | Checa os tipos e gera o build de produção em `dist/`          |
-| `npm run preview`              | Visualiza o build de produção na porta 2026                   |
-| `npm run lint`                 | Executa o lint com Oxlint                                     |
-| `npm run test`                 | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz e pontuação |
-| `npm run check:distribution`   | Audita a imparcialidade em todas as 480 combinações           |
+| Comando                       | O que faz                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                           |
+| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                              |
+| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                |
+| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                    |
+| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                   |
+| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                       |
+| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                       |
+| `npm run build`               | Checa os tipos e gera o build de produção em `dist/`                                                   |
+| `npm run preview`             | Visualiza o build de produção na porta 2026                                                            |
+| `npm run lint`                | Executa o lint com Oxlint                                                                              |
+| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz e pontuação |
+| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                    |
 
 ## Dados oficiais do TSE
 

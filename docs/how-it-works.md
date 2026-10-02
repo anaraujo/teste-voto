@@ -60,7 +60,7 @@ scripts/                      ingestão, incumbentes, sincronização parlamenta
 O conteúdo do quiz em `src/data/quiz-source.ts` é **derivado dos dados
 oficiais**, não um array de candidatos escrito à mão:
 
-- Cada **pergunta** declara texto, opções e um *resolvedor* puro: dado o
+- Cada **pergunta** declara texto, opções e um _resolvedor_ puro: dado o
   candidato do TSE, qual opção ele "escolheria".
 - Cada **candidato** participa com o perfil montado por esses resolvedores
   (`buildProfile` → opção por pergunta) e a proveniência de cada resposta.
@@ -232,23 +232,23 @@ reeleição/incumbência aparecem como `<mark>`.
 
 ## As decisões de projeto definitivas
 
-| Decisão | Por quê |
-| ------- | ------- |
-| Quiz 100% data-driven | Nada de opinião: perfis derivados de arquivos oficiais com proveniência. |
-| Escopo 428 candidatos (PR, Deputado Federal) | Combinado: foco em uma eleição/cargo no primeiro momento. |
-| Ignorar resultado do pleito nesta rodada | O produto serve para formar intenção de voto antes da eleição. |
-| Dataset `complementar` corrigido | Substitui o "histórico" do rascunho pelo arquivo real do TSE. |
-| Compatibilidade de perfil como pontuação | Simples de explicar ("você concordou em 4 de 5 perguntas"). |
-| Desempate: pontos → raridade → nome | Determinístico e reduz a vantagem de perfis muito comuns. |
-| Regex por prefixo no setor | `\b` do JS é ASCII e ignora acentos; prefixo evita faltar "MÉDICO". |
-| Formato: complementar `parseDecimalDot`, bens `parseMoney` | Os arquivos TSE usam decimais diferentes; cada um no lugar certo. |
-| `ST_REELEICAO` não usado (100% `#NE`) | Sem campo confiável; incumbente vem da API da Câmara. |
-| Incumbente por nome + data de nascimento | Nome de urna ≠ nome civil; data desambigua homônimos. |
-| Porta 2027 (API) | Definida uma vez; app na 2026 via Vite. |
-| TSE como fonte única de verdade | Tudo carrega URL, dataset, arquivo e data de obtenção. |
-| Backend só com o padrão do Node | `node:sqlite`, `node:http`, `node:test`; zero dependências. |
-| Ingestão incremental + `sync_log` | Novos/alterados/removidos sem sobrescrever às cegas; auditorável. |
-| Tabela `incumbents` separada | Dado derivado (Câmara) não contamina o registro TSE/checksum. |
+| Decisão                                                    | Por quê                                                                  |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Quiz 100% data-driven                                      | Nada de opinião: perfis derivados de arquivos oficiais com proveniência. |
+| Escopo 428 candidatos (PR, Deputado Federal)               | Combinado: foco em uma eleição/cargo no primeiro momento.                |
+| Ignorar resultado do pleito nesta rodada                   | O produto serve para formar intenção de voto antes da eleição.           |
+| Dataset `complementar` corrigido                           | Substitui o "histórico" do rascunho pelo arquivo real do TSE.            |
+| Compatibilidade de perfil como pontuação                   | Simples de explicar ("você concordou em 4 de 5 perguntas").              |
+| Desempate: pontos → raridade → nome                        | Determinístico e reduz a vantagem de perfis muito comuns.                |
+| Regex por prefixo no setor                                 | `\b` do JS é ASCII e ignora acentos; prefixo evita faltar "MÉDICO".      |
+| Formato: complementar `parseDecimalDot`, bens `parseMoney` | Os arquivos TSE usam decimais diferentes; cada um no lugar certo.        |
+| `ST_REELEICAO` não usado (100% `#NE`)                      | Sem campo confiável; incumbente vem da API da Câmara.                    |
+| Incumbente por nome + data de nascimento                   | Nome de urna ≠ nome civil; data desambigua homônimos.                    |
+| Porta 2027 (API)                                           | Definida uma vez; app na 2026 via Vite.                                  |
+| TSE como fonte única de verdade                            | Tudo carrega URL, dataset, arquivo e data de obtenção.                   |
+| Backend só com o padrão do Node                            | `node:sqlite`, `node:http`, `node:test`; zero dependências.              |
+| Ingestão incremental + `sync_log`                          | Novos/alterados/removidos sem sobrescrever às cegas; auditorável.        |
+| Tabela `incumbents` separada                               | Dado derivado (Câmara) não contamina o registro TSE/checksum.            |
 
 ## Convenções
 

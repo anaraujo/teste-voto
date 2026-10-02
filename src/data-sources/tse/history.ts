@@ -115,10 +115,15 @@ function readAlias(
 }
 
 /** Baixa o ZIP do ano para disco usando stream (arquivos podem ser grandes). */
-export async function downloadZip(url: string, filePath: string): Promise<void> {
+export async function downloadZip(
+  url: string,
+  filePath: string,
+): Promise<void> {
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`download falhou (${response.status} ${response.statusText}): ${url}`)
+    throw new Error(
+      `download falhou (${response.status} ${response.statusText}): ${url}`,
+    )
   }
   const reader = response.body?.getReader()
   if (!reader) throw new Error(`resposta sem corpo: ${url}`)
@@ -156,7 +161,10 @@ export async function fetchHistoricCandidaturas(
       await downloadZip(consultaCandUrl(ano), zipPath)
     }
   } catch (error) {
-    return { rows: [], erro: `download (${error instanceof Error ? error.message : String(error)})` }
+    return {
+      rows: [],
+      erro: `download (${error instanceof Error ? error.message : String(error)})`,
+    }
   }
 
   const entries = listZipEntries(zipPath)
@@ -164,7 +172,10 @@ export async function fetchHistoricCandidaturas(
   if (!entry) {
     return {
       rows: [],
-      erro: `arquivo do PR ausente no ZIP (entradas: ${entries.map((e) => e.name).slice(0, 8).join(', ')}...)`,
+      erro: `arquivo do PR ausente no ZIP (entradas: ${entries
+        .map((e) => e.name)
+        .slice(0, 8)
+        .join(', ')}...)`,
     }
   }
 
@@ -224,7 +235,12 @@ export function normalizeResultado(resultado: string): string {
 export function toIsoDate(value: string | null): string | null {
   if (!value) return null
   const trimmed = value.trim()
-  if (!trimmed || trimmed === '0000-00-00' || trimmed === '#NULO' || trimmed === '#NE') {
+  if (
+    !trimmed ||
+    trimmed === '0000-00-00' ||
+    trimmed === '#NULO' ||
+    trimmed === '#NE'
+  ) {
     return null
   }
   const slash = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed)
@@ -244,7 +260,9 @@ export function toIsoDate(value: string | null): string | null {
  * Classifica o resultado de uma candidatura em mandato exercido (eleito) ou
  * suplente. "NÃO ELEITO", renúncias etc. retornam null (não são mandato).
  */
-export function classifyMandateResult(resultado: string | null): MandateStatus | null {
+export function classifyMandateResult(
+  resultado: string | null,
+): MandateStatus | null {
   if (!resultado) return null
   const value = normalizeResultado(resultado)
   if (/NAO ELEITO|NAO ELEIT|RENUNCI/.test(value)) return null
@@ -305,7 +323,11 @@ export function matchHistoricToCandidates(
   return mandates
 }
 
-function pushToIndex(index: Map<string, CandidateRecord[]>, key: string, value: CandidateRecord): void {
+function pushToIndex(
+  index: Map<string, CandidateRecord[]>,
+  key: string,
+  value: CandidateRecord,
+): void {
   if (key === '') return
   const list = index.get(key)
   if (list) {
@@ -336,8 +358,10 @@ function matchesCandidate(
   if (rowBirth && candidateBirth) {
     if (rowBirth !== candidateBirth) return false
     // data de nascimento igual basta quando o nome bate (full ou urna).
-    return normalizedName === normalizeName(candidate.fullName) ||
+    return (
+      normalizedName === normalizeName(candidate.fullName) ||
       normalizedName === normalizeName(candidate.ballotName)
+    )
   }
   if (rowBirth && !candidateBirth) {
     return normalizedName === normalizeName(candidate.fullName)
@@ -359,14 +383,14 @@ async function fileExists(filePath: string): Promise<boolean> {
 export function formatCargoLabel(cargo: string): string {
   const lower = cargo.toLowerCase()
   const map: Record<string, string> = {
-    'vereador': 'Vereador',
-    'prefeito': 'Prefeito',
+    vereador: 'Vereador',
+    prefeito: 'Prefeito',
     'vice-prefeito': 'Vice-prefeito',
     'deputado estadual': 'Deputado estadual',
     'deputado distrital': 'Deputado distrital',
     'deputado federal': 'Deputado federal',
-    'senador': 'Senador',
-    'governador': 'Governador',
+    senador: 'Senador',
+    governador: 'Governador',
     'vice-governador': 'Vice-governador',
     '1º suplente de senador': '1º suplente de senador',
     '2º suplente de senador': '2º suplente de senador',
@@ -379,13 +403,17 @@ export function formatMandateSummary(mandate: PoliticalMandate): string {
   const cargo = formatCargoLabel(mandate.cargo)
   const lugar = mandate.municipio
     ? `${mandate.municipio}/${mandate.uf ?? ''}`
-    : mandate.uf ?? ''
+    : (mandate.uf ?? '')
   const partido = mandate.partidoSigla ? ` (${mandate.partidoSigla})` : ''
   const sufixo = mandate.status === 'eleito' ? 'eleito' : 'suplente'
   return `${mandate.ano} ${cargo}${lugar ? ` em ${lugar}` : ''}${partido} · ${sufixo}`
 }
 
 /** Ordena mandatos de um candidato por ano e cargo. */
-export function sortMandates(mandates: readonly PoliticalMandate[]): PoliticalMandate[] {
-  return [...mandates].sort((a, b) => a.ano - b.ano || a.cargo.localeCompare(b.cargo))
+export function sortMandates(
+  mandates: readonly PoliticalMandate[],
+): PoliticalMandate[] {
+  return [...mandates].sort(
+    (a, b) => a.ano - b.ano || a.cargo.localeCompare(b.cargo),
+  )
 }

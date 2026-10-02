@@ -11,7 +11,9 @@ export function useCandidateDetail(candidateId: string): {
   state: CandidateDetailState
   retry: () => void
 } {
-  const [state, setState] = useState<CandidateDetailState>({ status: 'loading' })
+  const [state, setState] = useState<CandidateDetailState>({
+    status: 'loading',
+  })
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -20,7 +22,9 @@ export function useCandidateDetail(candidateId: string): {
     async function load() {
       setState({ status: 'loading' })
       try {
-        const response = await fetch(`/api/candidates/${encodeURIComponent(candidateId)}`)
+        const response = await fetch(
+          `/api/candidates/${encodeURIComponent(candidateId)}`,
+        )
         if (!response.ok) {
           throw new Error(`erro ao carregar a ficha (${response.status})`)
         }

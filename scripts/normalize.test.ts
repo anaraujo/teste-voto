@@ -118,11 +118,14 @@ test('normalizeCandidate converte sentinelas em null', () => {
 })
 
 test('normalizeCandidate sem nomes usa fallback', () => {
-  const candidate = normalizeCandidate(sampleRow({ ballotName: '', fullName: '' }), {
-    electionYear: 2026,
-    state: 'PR',
-    office: 'DEPUTADO FEDERAL',
-  })
+  const candidate = normalizeCandidate(
+    sampleRow({ ballotName: '', fullName: '' }),
+    {
+      electionYear: 2026,
+      state: 'PR',
+      office: 'DEPUTADO FEDERAL',
+    },
+  )
   assert.equal(candidate.ballotName, 'Sem nome de urna')
   assert.equal(candidate.fullName, 'Sem nome completo')
 })
@@ -149,8 +152,5 @@ test('candidateChecksum muda quando o conteúdo muda', () => {
       office: 'DEPUTADO FEDERAL',
     },
   )
-  assert.notEqual(
-    candidateChecksum(base),
-    candidateChecksum(federationChanged),
-  )
+  assert.notEqual(candidateChecksum(base), candidateChecksum(federationChanged))
 })

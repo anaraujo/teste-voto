@@ -10,7 +10,11 @@
  */
 
 import { join } from 'node:path'
-import { openRepository, listCandidates, replaceIncumbents } from '../src/data-sources/repository.ts'
+import {
+  openRepository,
+  listCandidates,
+  replaceIncumbents,
+} from '../src/data-sources/repository.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { fetchCamaraDeputados } from '../src/data-sources/camara/deputados.ts'
 import { matchIncumbents } from '../src/data-sources/camara/identity.ts'
@@ -29,7 +33,10 @@ const db = await openRepository(join(DATA_DIR, 'tse.db'))
 
 try {
   const candidates = listCandidates(db, filter)
-  const { items: deputies, fromCache } = await fetchCamaraDeputados({ dataDir: DATA_DIR, force })
+  const { items: deputies, fromCache } = await fetchCamaraDeputados({
+    dataDir: DATA_DIR,
+    force,
+  })
   const result = matchIncumbents(candidates, deputies)
 
   replaceIncumbents(

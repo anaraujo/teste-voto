@@ -48,11 +48,17 @@ function parseDecimalDot(value: string): number | null {
 }
 
 /** Sentinelas de DS_ETNIA_INDIGENA para "sem etnia informada". */
-const INDIGENOUS_SENTINELS = new Set(['NÃO INFORMADA', 'NÃO INFORMADO', '#NE', '#NULO'])
+const INDIGENOUS_SENTINELS = new Set([
+  'NÃO INFORMADA',
+  'NÃO INFORMADO',
+  '#NE',
+  '#NULO',
+])
 
 function cleanIndigenous(value: string): string | null {
   const trimmed = value.trim()
-  if (trimmed === '' || INDIGENOUS_SENTINELS.has(trimmed.toUpperCase())) return null
+  if (trimmed === '' || INDIGENOUS_SENTINELS.has(trimmed.toUpperCase()))
+    return null
   return clean(trimmed)
 }
 
@@ -70,7 +76,9 @@ export function mapComplementaryCsv(csv: ParsedCsv): ComplementarySummary[] {
       tseSequence: sequence,
       birthMunicipality: clean(readCell(index, row, 'NM_MUNICIPIO_NASCIMENTO')),
       quilombola: toBoolean(readCell(index, row, 'ST_QUILOMBOLA')),
-      indigenousEthnicity: cleanIndigenous(readCell(index, row, 'DS_ETNIA_INDIGENA')),
+      indigenousEthnicity: cleanIndigenous(
+        readCell(index, row, 'DS_ETNIA_INDIGENA'),
+      ),
       inBallot: toBoolean(readCell(index, row, 'ST_CANDIDATO_INSERIDO_URNA')),
       substituted: toBoolean(readCell(index, row, 'ST_SUBSTITUIDO')),
       accountsDeclared: toBoolean(readCell(index, row, 'ST_PREST_CONTAS')),
@@ -94,7 +102,9 @@ export async function fetchComplementary(
 
   const missing = REQUIRED_COMPLEMENTAR_HEADERS.filter((h) => !index.has(h))
   if (missing.length > 0) {
-    throw new Error(`colunas obrigatórias ausentes no complementar: ${missing.join(', ')}`)
+    throw new Error(
+      `colunas obrigatórias ausentes no complementar: ${missing.join(', ')}`,
+    )
   }
 
   return {
@@ -114,6 +124,9 @@ async function readCsv(
   election: ElectionConfig,
   options: { dataDir?: string; force?: boolean },
 ): Promise<{ csv: ParsedCsv; sourceFile: string; retrieved: string }> {
-  const { csv, sourceFile } = await loadDescriptorCsv(election.datasets.complementar, options)
+  const { csv, sourceFile } = await loadDescriptorCsv(
+    election.datasets.complementar,
+    options,
+  )
   return { csv, sourceFile, retrieved: new Date().toISOString() }
 }

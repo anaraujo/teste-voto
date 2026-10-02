@@ -14,7 +14,10 @@ import { join } from 'node:path'
 import type { CandidateRecord } from '../src/shared/domain.ts'
 import { candidateId } from '../src/shared/domain.ts'
 import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
-import { fetchCandidates, type FetchOptions } from '../src/data-sources/tse/candidates.ts'
+import {
+  fetchCandidates,
+  type FetchOptions,
+} from '../src/data-sources/tse/candidates.ts'
 import { fetchComplementary } from '../src/data-sources/tse/complementar.ts'
 import { fetchCandidateAssets } from '../src/data-sources/tse/assets.ts'
 import { fetchCandidateSocialLinks } from '../src/data-sources/tse/social.ts'
@@ -78,12 +81,16 @@ function log(message: string): void {
 }
 
 function logError(error: unknown): void {
-  console.error(`[ingest] ${error instanceof Error ? error.message : String(error)}`)
+  console.error(
+    `[ingest] ${error instanceof Error ? error.message : String(error)}`,
+  )
 }
 
 async function runInspect(options: FetchOptions): Promise<void> {
   const election = CURRENT_ELECTION
-  log(`inspecionando arquivo de candidatos (${election.year}/${election.state}/${election.office})`)
+  log(
+    `inspecionando arquivo de candidatos (${election.year}/${election.state}/${election.office})`,
+  )
 
   const { csv, sourceFile } = await fetchCandidates(election, options)
   const report = inspectCsv(csv.headers, csv.rows, csv.separator, csv.encoding)
@@ -102,7 +109,10 @@ async function runInspect(options: FetchOptions): Promise<void> {
 }
 
 function buildCandidate(
-  normalized: Omit<CandidateRecord, 'id' | 'source' | 'importedAt' | 'updatedAt'>,
+  normalized: Omit<
+    CandidateRecord,
+    'id' | 'source' | 'importedAt' | 'updatedAt'
+  >,
   retrievedAt: string,
 ): CandidateRecord {
   const now = new Date().toISOString()
@@ -116,7 +126,10 @@ function buildCandidate(
   }
 
   return {
-    id: candidateId({ electionYear: normalized.electionYear, state: normalized.state }, normalized.tseSequence),
+    id: candidateId(
+      { electionYear: normalized.electionYear, state: normalized.state },
+      normalized.tseSequence,
+    ),
     ...normalized,
     source,
     importedAt: now,
@@ -130,7 +143,9 @@ async function runIngest(options: FetchOptions): Promise<void> {
   const dataDir = options.dataDir ?? 'data'
   const dbPath = join(dataDir, 'tse.db')
 
-  log(`sincronizando candidatos ${election.year} ${election.state} - ${election.office}`)
+  log(
+    `sincronizando candidatos ${election.year} ${election.state} - ${election.office}`,
+  )
 
   const db = await openRepository(dbPath)
 
@@ -176,10 +191,16 @@ async function runIngest(options: FetchOptions): Promise<void> {
 
     const removed = deactivateMissing(
       db,
-      { electionYear: election.year, state: election.state, office: election.office },
+      {
+        electionYear: election.year,
+        state: election.state,
+        office: election.office,
+      },
       activeIds,
     )
-    log(`candidatos: ${inserted} novos, ${updated} alterados, ${unchanged} iguais, ${removed} removidos`)
+    log(
+      `candidatos: ${inserted} novos, ${updated} alterados, ${unchanged} iguais, ${removed} removidos`,
+    )
   } catch (error) {
     logError(error)
     writeSyncLog(db, {
@@ -236,7 +257,9 @@ async function syncComplementary(
   election: typeof CURRENT_ELECTION,
   options: FetchOptions,
 ): Promise<void> {
-  log(`sincronizando dados complementares do TSE (${election.datasets.complementar.dataset})`)
+  log(
+    `sincronizando dados complementares do TSE (${election.datasets.complementar.dataset})`,
+  )
   try {
     const { items, source } = await fetchComplementary(election, {
       dataDir: options.dataDir,
@@ -269,7 +292,9 @@ async function syncComplementary(
       upsertCandidate(db, updated)
       if (summary) matched++
     }
-    log(`complementar: ${matched} candidatos enriquecidos (fonte ${source.dataset})`)
+    log(
+      `complementar: ${matched} candidatos enriquecidos (fonte ${source.dataset})`,
+    )
   } catch (error) {
     logError(error)
   }
@@ -297,7 +322,10 @@ async function syncAssets(
     let matched = 0
     for (const candidate of candidates) {
       const summary = bySequence.get(candidate.tseSequence)
-      const updated = { ...applyAssets(candidate, summary?.totalAssets ?? null), source }
+      const updated = {
+        ...applyAssets(candidate, summary?.totalAssets ?? null),
+        source,
+      }
       upsertCandidate(db, updated)
       if (summary) matched++
     }
@@ -329,7 +357,10 @@ async function syncSocial(
     let matched = 0
     for (const candidate of candidates) {
       const summary = bySequence.get(candidate.tseSequence)
-      const updated = { ...applySocialLinks(candidate, summary?.socialLinks ?? []), source }
+      const updated = {
+        ...applySocialLinks(candidate, summary?.socialLinks ?? []),
+        source,
+      }
       upsertCandidate(db, updated)
       if (summary) matched++
     }
@@ -346,7 +377,10 @@ async function syncPhotos(
 ): Promise<void> {
   log('baixando fotos de candidatos (dataset opcional)')
   try {
-    const photos = await fetchCandidatePhotos(election, { dataDir: options.dataDir, force: options.force })
+    const photos = await fetchCandidatePhotos(election, {
+      dataDir: options.dataDir,
+      force: options.force,
+    })
 
     const candidates = listCandidates(db, {
       electionYear: election.year,
