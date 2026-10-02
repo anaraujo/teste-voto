@@ -75,6 +75,10 @@ function navigate(to: string, options?: NavigateOptions): void {
     window.history.pushState(null, '', path)
   }
   notify()
+  // Trocar de rota troca o conteúdo inteiro, então a rolagem volta ao topo:
+  // sem isto a tela nova começa na posição da anterior (a seleção de estados,
+  // que é longa, deixava a lista de candidatos aberta no meio).
+  window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 /** Lê os dados embutidos no HTML pré-renderizado, se existirem. */

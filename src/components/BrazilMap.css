@@ -1,0 +1,73 @@
+/*
+ * Mapa do Brasil por UF.
+ *
+ * Toda a aparência mora no `<path>` (`.uf-forma`), não no link que o envolve:
+ * assim o `<a>` continua sendo um link comum e o foco/hover pinta a forma. O
+ * `overflow: visible` existe porque o anel de foco é um `stroke` grosso, e sem
+ * ele o traço seria cortado nas bordas do viewBox.
+ *
+ * As UFs sem lista trocam o preenchimento por uma hachura. O `url()` do padrão
+ * vem por variável (`--map-hatch`, definida no componente), porque o id do
+ * `<pattern>` é único por instância e não dá para fixá-lo aqui no CSS.
+ */
+
+.brazil-map {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  display: block;
+}
+
+.brazil-map .uf-forma {
+  stroke: var(--color-eggshell);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.brazil-map .uf--available .uf-forma {
+  fill: var(--color-primary);
+}
+
+.brazil-map .uf--soon .uf-forma {
+  fill: var(--map-hatch);
+  stroke: var(--color-panel);
+}
+
+.brazil-map .uf--available:hover .uf-forma,
+.brazil-map .uf--available:focus-visible .uf-forma {
+  fill: var(--color-secondary);
+}
+
+.brazil-map .uf--available:focus-visible {
+  outline: none;
+}
+
+.brazil-map .uf--available:focus-visible .uf-forma {
+  stroke: var(--color-panel);
+  stroke-width: 8;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .brazil-map .uf-forma {
+    transition:
+      fill 0.14s ease-out,
+      stroke 0.14s ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .brazil-map .uf-forma {
+    forced-color-adjust: none;
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .brazil-map .uf--soon .uf-forma {
+    stroke-dasharray: 4 3;
+  }
+
+  .brazil-map .uf--available:hover .uf-forma,
+  .brazil-map .uf--available:focus-visible .uf-forma {
+    fill: Highlight;
+  }
+}

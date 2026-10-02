@@ -13,9 +13,11 @@ import {
   type Route,
   type Tab,
 } from './shared/router.ts'
+import { CURRENT_ELECTION } from './shared/elections.ts'
 import { AppHeader } from './components/AppHeader.tsx'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { CandidateDetailScreen } from './components/CandidateDetailScreen.tsx'
+import { EstadosScreen } from './components/EstadosScreen.tsx'
 import { FairnessScreen } from './components/FairnessScreen.tsx'
 import { NotFoundScreen } from './components/NotFoundScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
@@ -107,8 +109,8 @@ function App({
         // `items-center` o topo de um conteúdo mais longo que a tela some
         // atrás do topo do documento; as demais telas continuam centralizadas.
         route.name === 'candidate'
-          ? 'min-h-screen bg-canvas flex items-start justify-center'
-          : 'min-h-screen bg-canvas flex items-center justify-center'
+          ? 'min-h-screen bg-eggshell flex items-start justify-center'
+          : 'min-h-screen bg-eggshell flex items-center justify-center'
       }
     >
       <AppHeader route={route} onNavigate={onNavigate} />
@@ -124,6 +126,14 @@ function App({
           onRetry={retryCandidates}
           onStart={handleStart}
           onShowCandidates={() => onNavigate('/candidatos')}
+          onShowStates={() => onNavigate('/estados')}
+        />
+      )}
+
+      {route.name === 'states' && (
+        <EstadosScreen
+          availableStates={[CURRENT_ELECTION.state]}
+          onSelectState={() => onNavigate('/candidatos')}
         />
       )}
 

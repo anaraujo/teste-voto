@@ -93,9 +93,8 @@ main > section:has(> .candidate-grid) {
   padding: var(--pad);
   box-sizing: border-box;
   /*
-   * O app é amarelo (`bg-canvas`) e o grid é o painel azul por cima dele. O
-   * raio é o mesmo dos cards, para o painel e os cards lerem como a mesma
-   * família de superfície.
+   * O grid é o painel azul por cima do fundo do app. O raio é o mesmo dos
+   * cards, para o painel e os cards lerem como a mesma família de superfície.
    */
   border-radius: 24px;
   background: var(--color-panel);
