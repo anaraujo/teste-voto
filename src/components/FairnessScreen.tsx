@@ -5,14 +5,9 @@ import { computeDistribution } from '../lib/distribution.ts'
 interface FairnessScreenProps {
   questions: readonly Question[]
   candidates: readonly Candidate[]
-  onBack: () => void
 }
 
-export function FairnessScreen({
-  questions,
-  candidates,
-  onBack,
-}: FairnessScreenProps) {
+export function FairnessScreen({ questions, candidates }: FairnessScreenProps) {
   const distribution = useMemo(
     () => computeDistribution(questions, candidates),
     [questions, candidates],
@@ -56,10 +51,6 @@ export function FairnessScreen({
           ))}
         </tbody>
       </table>
-
-      <button type="button" onClick={onBack}>
-        Voltar
-      </button>
     </section>
   )
 }

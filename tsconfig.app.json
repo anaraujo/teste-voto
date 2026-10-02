@@ -11,6 +11,14 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+
+    /*
+     * Atalho `@/*` para `src/*`, para os componentes em `src/components/ui/`
+     * (padrão shadcn). O resto do código continua usando imports relativos com
+     * extensão explícita — ver AGENTS.md. Sem `baseUrl`: a opção está
+     * deprecada no TypeScript 6 e `paths` resolve a partir deste arquivo.
+     */
+    "paths": { "@/*": ["./src/*"] },
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,

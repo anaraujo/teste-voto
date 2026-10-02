@@ -13,11 +13,39 @@ trabalhar com o código e como mantê-lo assim.
   primeiro. O mantenedor quer opinar.
 - **Contribuições pequenas e focadas.** Um pull request que faz bem uma coisa é
   mais fácil de revisar, mesclar e aprender com ele.
-- **Estilos padrão, sempre.** O projeto usa deliberadamente elementos HTML
-  nativos com o estilo padrão. A passada de estilização está planejada; não
-  adicione CSS específico durante o trabalho de funcionalidades.
+- **Siga o design system.** As cores do app vêm dos tokens em
+  `src/index.css` (Tailwind v4 `@theme`), não de hexes soltos no código. Cores
+  novas vão primeiro para a página de tokens — veja
+  `docs/design-tokens.md`. Existem dois botões com fronteiras explícitas:
+  `SpecularButton` para CTA de destaque (WebGL) e `Button` para o resto.
+- **Componha a partir do kit.** `src/components/ui/` tem os componentes
+  básicos (button, card, badge, input, label, skeleton, progress, radio-group,
+  sheet, tooltip, sonner). Antes de escrever um componente do zero, veja se o
+  kit já resolve — e siga o formato dele ao adicionar.
 - **Zero dependências desnecessárias.** Antes de adicionar uma biblioteca,
   pergunte: dá para fazer com o que já temos? Normalmente dá.
+
+### Sobre o shadcn/ui
+
+O kit segue o **formato** do shadcn/ui, com uma diferença que importa: os
+componentes são **código deste repositório**, não um pacote. `npx shadcn@latest
+add <nome>` copia o arquivo para `src/components/ui/` e a partir daí ele é seu —
+editar o `button.tsx` é um commit normal aqui.
+
+Isso é o que autoriza o kit dentro da regra de zero dependências: não há
+dependência nova para justificar, só código que o time mantém.
+
+Dois pontos de atenção:
+
+- **Nunca rode `shadcn init`.** Ele reescreve o bloco `@theme` de
+  `src/index.css`, que é a fonte única das cores. O `components.json` da raiz já
+  está configurado — use apenas `add`.
+- **Depois do `add`, revise as cores.** As classes precisam apontar para os
+  tokens do projeto (`primary`, `secondary`, `tertiary`, `muted`, `border`,
+  `ring`, `card`) e nunca para hex solto nem para a paleta neutra padrão do
+  shadcn.
+
+Detalhes em `docs/design-tokens.md`.
 
 ## Configuração
 
@@ -33,18 +61,22 @@ npm run dev      # http://localhost:2026 (app) + API na 2027
 
 ```sh
 npm run lint
+npm run format:check
 npm run test      # parser CSV, normalização e repositório (node:test)
 npm run build
 npm run check:distribution
 ```
 
-2. Confirme que sua mudança mantém a distribuição justa. Se você tocou em
+2. Rode `npm run format` antes de enviar para manter o padrão de aspas simples
+   e sem ponto-e-vírgula (configurado no `.prettierrc.json`).
+
+3. Confirme que sua mudança mantém a distribuição justa. Se você tocou em
    conteúdo ou em pontuação, a auditoria deve continuar mostrando cada
    candidato com vitórias aproximadamente iguais.
-3. Se você mexeu no pipeline de dados, confirme que `npm run ingest` conclui e
+4. Se você mexeu no pipeline de dados, confirme que `npm run ingest` conclui e
    que `npm test` continua passando. O schema do TSE muda entre eleições —
    valide com `npm run ingest -- --inspect` quando o arquivo oficial mudar.
-4. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
+5. Mantenha a interface e a documentação em português (PT-BR). Código e nomes
    de identificadores permanecem em inglês.
 
 ## Enviando um pull request

@@ -1,0 +1,205 @@
+/**
+ * Payload da API, montado a partir do SQLite.
+ *
+ * Fonte única do formato: o mesmo módulo alimenta a API HTTP
+ * (`server/index.ts`) e o build estático (`scripts/prerender.ts`), então a
+ * ficha pré-renderizada e a que a API devolve são idênticas — é o que garante
+ * que a hidratação do React não encontre markup diferente.
+ */
+
+import type { DatabaseSync } from 'node:sqlite'
+import {
+  getActiveCandidate,
+  getParliamentary,
+  getPoliticalMandates,
+  listCandidates,
+  listIncumbents,
+  type ElectionFilter,
+  type IncumbentRow,
+} from './repository.ts'
+import { readEditorialFicha } from './parliament/editorial.ts'
+import { CURRENT_ELECTION } from '../shared/elections.ts'
+import type {
+  ApiCandidate,
+  ApiCandidateDetail,
+  ApiCandidatesResponse,
+  ApiEditorialField,
+  ApiMandate,
+  ApiParliamentary,
+  ApiParliamentaryRecord,
+  ApiPoliticalMandate,
+  ApiVote,
+} from '../shared/api.ts'
+import type { CandidateRecord } from '../shared/domain.ts'
+
+export const CURRENT_ELECTION_FILTER: ElectionFilter = {
+  electionYear: CURRENT_ELECTION.year,
+  state: CURRENT_ELECTION.state,
+  office: CURRENT_ELECTION.office,
+}
+
+export function toApiCandidate(
+  candidate: CandidateRecord,
+  incumbent: IncumbentRow | undefined,
+): ApiCandidate {
+  return {
+    id: candidate.id,
+    tseSequence: candidate.tseSequence,
+    ballotName: candidate.ballotName,
+    fullName: candidate.fullName,
+    ballotNumber: candidate.ballotNumber,
+    party: candidate.party,
+    partyAcronym: candidate.partyAcronym,
+    coalition: candidate.coalition,
+    candidacyType: candidate.candidacyType,
+    federation: candidate.federation,
+    occupation: candidate.occupation,
+    education: candidate.education,
+    maritalStatus: candidate.maritalStatus,
+    birthDate: candidate.birthDate,
+    birthState: candidate.birthState,
+    gender: candidate.gender,
+    race: candidate.race,
+    status: candidate.status,
+    city: candidate.city,
+    photoUrl: candidate.photoUrl,
+    birthMunicipality: candidate.birthMunicipality,
+    isReelection: candidate.isReelection,
+    totalAssets: candidate.totalAssets,
+    assetsDeclared: candidate.assetsDeclared,
+    socialLinks: candidate.socialLinks,
+    quilombola: candidate.quilombola,
+    indigenousEthnicity: candidate.indigenousEthnicity,
+    accountsDeclared: candidate.accountsDeclared,
+    isIncumbent: incumbent !== undefined,
+    camaraPartyAcronym: incumbent?.camaraPartyAcronym ?? null,
+    source: candidate.source,
+  }
+}
+
+function toApiMandate(
+  mandate: ReturnType<typeof getParliamentary>['mandates'][number],
+): ApiMandate {
+  return {
+    casa: mandate.casa,
+    legislatura: mandate.legislatura,
+    idParlamentar: mandate.idParlamentar,
+    nomeParlamentar: mandate.nomeParlamentar,
+    partido: mandate.partido,
+    uf: mandate.uf,
+    dataInicio: mandate.dataInicio,
+    dataFim: mandate.dataFim,
+  }
+}
+
+function toApiPoliticalMandate(
+  mandate: ReturnType<typeof getPoliticalMandates>[number],
+): ApiPoliticalMandate {
+  return {
+    ano: mandate.ano,
+    cargo: mandate.cargo,
+    uf: mandate.uf,
+    municipio: mandate.municipio,
+    partidoSigla: mandate.partidoSigla,
+    status: mandate.status,
+    turno: mandate.turno,
+  }
+}
+
+function toApiRecord(
+  record: ReturnType<typeof getParliamentary>['records'][number],
+): ApiParliamentaryRecord {
+  return {
+    casa: record.casa,
+    proposicoesPorAno: record.proposicoesPorAno,
+    comissoes: record.comissoes.map((comissao) => ({
+      sigla: comissao.sigla,
+      nome: comissao.nome,
+    })),
+    despesasPorAno: record.despesasPorAno,
+  }
+}
+
+function toApiVote(
+  vote: ReturnType<typeof getParliamentary>['votes'][number],
+): ApiVote {
+  return {
+    votacaoId: vote.votacaoId,
+    tema: vote.tema,
+    rotulo: vote.rotulo,
+    proposicao: vote.proposicao,
+    data: vote.data,
+    casa: vote.casa,
+    voto: vote.voto,
+  }
+}
+
+function toApiEditorial(
+  editorial: Awaited<ReturnType<typeof readEditorialFicha>>,
+): Record<string, ApiEditorialField> {
+  const result: Record<string, ApiEditorialField> = {}
+  for (const [tema, campo] of Object.entries(editorial?.campos ?? {})) {
+    if (!campo) continue
+    result[tema] = { valor: campo.valor, tipo: campo.tipo, fonte: campo.fonte }
+  }
+  return result
+}
+
+/** Lista da eleição configurada, com a incumbência da Câmara. */
+export function buildCandidatesPayload(
+  db: DatabaseSync,
+  filter: ElectionFilter = CURRENT_ELECTION_FILTER,
+): ApiCandidatesResponse {
+  const incumbents = listIncumbents(db)
+  const candidates = listCandidates(db, filter).map((candidate) =>
+    toApiCandidate(candidate, incumbents.get(candidate.id)),
+  )
+  return {
+    election: {
+      year: filter.electionYear,
+      state: filter.state,
+      office: filter.office,
+    },
+    total: candidates.length,
+    candidates,
+  }
+}
+
+/** Ficha completa de um candidato, ou `null` se ele não está na eleição. */
+export async function buildCandidateDetailPayload(
+  db: DatabaseSync,
+  id: string,
+  filter: ElectionFilter = CURRENT_ELECTION_FILTER,
+): Promise<ApiCandidateDetail | null> {
+  const candidate = getActiveCandidate(db, id, filter)
+  if (!candidate) return null
+
+  const incumbent = listIncumbents(db).get(id)
+  const { mandates, records, votes } = getParliamentary(db, id)
+  const politicalMandates = getPoliticalMandates(db, id)
+  const editorial = await readEditorialFicha(id)
+
+  const parliamentary: ApiParliamentary | null =
+    mandates.length === 0 && records.length === 0 && votes.length === 0
+      ? null
+      : {
+          mandates: mandates.map(toApiMandate),
+          records: records.map(toApiRecord),
+          votes: votes.map(toApiVote),
+        }
+
+  return {
+    ...toApiCandidate(candidate, incumbent),
+    campaignStatus: candidate.campaignStatus,
+    nationality: candidate.nationality,
+    email: candidate.email,
+    inBallot: candidate.inBallot,
+    substituted: candidate.substituted,
+    campaignSpendingCap: candidate.campaignSpendingCap,
+    importedAt: candidate.importedAt,
+    updatedAt: candidate.updatedAt,
+    parliamentary,
+    editorial: editorial ? toApiEditorial(editorial) : null,
+    politicalMandates: politicalMandates.map(toApiPoliticalMandate),
+  }
+}
