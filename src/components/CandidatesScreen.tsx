@@ -104,7 +104,9 @@ export function CandidatesScreen({
         aria-busy="true"
         className="mx-auto flex w-full flex-col gap-3"
       >
-        <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+        <h2 className="font-titulo text-2xl font-semibold tracking-tight">
+          Candidatos
+        </h2>
         <span className="sr-only">Carregando candidatos...</span>
         {/*
          * O esqueleto usa a classe do grid de verdade em vez de contar
@@ -186,7 +188,9 @@ export function CandidatesScreen({
      * comentário do `.candidate-grid`.
      */
     <section className="mx-auto flex w-full flex-col gap-3">
-      <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+      <h2 className="font-titulo text-2xl font-semibold tracking-tight">
+        Candidatos
+      </h2>
       <p className="text-sm text-muted-foreground">
         {state.data.total} candidatos a {state.data.election.office} em{' '}
         {state.data.election.state} ({state.data.election.year}). Fonte:{' '}

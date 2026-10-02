@@ -27,7 +27,7 @@ export function StartScreen({
 
   return (
     <section className="flex flex-col items-center justify-center gap-4">
-      <h1>Teste de Voto</h1>
+      <h1 className="font-titulo text-4xl">Teste de Voto</h1>
       <p>
         Descubra qual dos {candidateCount} candidatos a deputado federal combina
         melhor com as suas prioridades respondendo {questionCount} perguntas

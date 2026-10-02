@@ -37,7 +37,9 @@ export function EstadosScreen({
   return (
     <section className="mx-auto flex w-full flex-col gap-8 lg:min-h-0 lg:flex-1 lg:gap-5">
       <header className="flex shrink-0 flex-col gap-2 text-center">
-        <h1 className="text-2xl font-semibold">Selecione seu estado</h1>
+        <h1 className="font-titulo text-3xl font-semibold">
+          Selecione seu estado
+        </h1>
       </header>
 
       <div className="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-6">

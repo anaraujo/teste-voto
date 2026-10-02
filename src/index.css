@@ -27,6 +27,54 @@
 }
 
 /*
+ * Fraunces, self-hospedada. É a fonte dos títulos de página.
+ *
+ * Variável (`wght`, 400–700, mais o eixo óptico `opsz`), 67KB no subconjunto
+ * latin. O `opsz` é o que dá a ela o desenho de display nos títulos grandes e o
+ * de texto nos pequenos sem trocar de arquivo — e o navegador ajusta sozinho,
+ * porque `font-optical-sizing` é `auto` por padrão.
+ *
+ * Fica em `public/fonts/` pelo mesmo motivo da Inter: nenhum terceiro para
+ * quem navega, e o app inteiro continua funcionando sem a fonte cair.
+ */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/fraunces-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * Instrument Serif, self-hospedada. É a fonte do texto da pergunta do quiz.
+ *
+ * Tem um peso só (400) e pesa 15KB — a mais leve das três. Não é variável
+ * porque a família não tem o que varia: quem quiser peso mais forte ali está
+ * fazendo faux-bold, e aí é melhor escolher outra família.
+ *
+ * A escolha é por acasalamento: título serifado de verdade (Fraunces) com a
+ * pergunta em serifado de contraste alto e só um peso. Duas serifadas juntas,
+ * mas em registros diferentes — a do título tem eixo e formas de display, a da
+ * pergunta é fina e de leitura. A alternativa seria pergunta na Inter, que
+ * deixa o título sozinho demais.
+ */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-400.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+/*
  * Design tokens — fonte das cores do projeto (Tailwind v4).
  *
  * Cada token vira uma variável CSS em `:root` (ex.: var(--color-primary)) e
@@ -176,6 +224,22 @@
    */
   --default-font-family: 'Inter', sans-serif;
   --font-sans: 'Inter', sans-serif;
+
+  /*
+   * As duas fontes de papel, que não substituem a Inter em lugar nenhum: ela
+   * continua sendo o corpo do app e o `font-sans` dos dados.
+   *
+   * `font-titulo` é o h1/h2 de página ("Selecione seu estado", "Candidatos",
+   * "Resultado") e `font-pergunta` é a frase da pergunta do quiz. São tokens
+   * `@theme` como o resto, então viram utilitários e podem ser trocados em um
+   * lugar só — inclusive no tema, para provar uma direção antes de decidir.
+   *
+   * A fonte genérica no fim de cada uma é o fallback (`sans-serif` no título,
+   * `serif` na pergunta): se o arquivo faltar, o texto sai na fonte do
+   * sistema em vez de sumir.
+   */
+  --font-titulo: 'Fraunces', 'Inter', sans-serif;
+  --font-pergunta: 'Instrument Serif', 'Inter', serif;
 }
 
 /*

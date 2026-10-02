@@ -1,7 +1,8 @@
 # Design tokens e o sistema visual
 
 Este documento é a página única onde o sistema visual do app é decidido: quais
-cores existem, onde vivem e como o código deve usá-las.
+cores existem, onde vivem e como o código deve usá-las, e qual fonte serve a
+título, a pergunta e o dado.
 
 ## Como o Tailwind está configurado
 
@@ -231,6 +232,68 @@ background: var(--color-primary);
 
 Regra prática: se a cor fica em HTML/componente, use utilitária; se precisa
 calcular/compor com `color-mix` em runtime, use a variável CSS.
+
+## Tipografia: três famílias, três papéis
+
+O app tem três fontes, todas self-hosted em `public/fonts/` — nenhuma chamada de
+terceiro, para que o app não dependa da rede de ninguém e o layout não mude se
+ela não responder.
+
+| Papel            | Família              | Token `@theme`    | Onde aparece                                                          | Arquivo                         | Tamanho |
+| ---------------- | -------------------- | ----------------- | --------------------------------------------------------------------- | ------------------------------- | ------- |
+| Corpo e dado     | **Inter**            | `--font-sans`     | tudo que não é título: parágrafo, opção do quiz, card, dado           | `inter-latin-variable.woff2`    | 48 KB   |
+| Título de página | **Fraunces**         | `--font-titulo`   | `h1`/`h2` de tela: "Selecione seu estado", "Candidatos", nome de urna | `fraunces-latin-variable.woff2` | 67 KB   |
+| Pergunta do quiz | **Instrument Serif** | `--font-pergunta` | a frase da pergunta (`QuestionStep`)                                  | `instrument-serif-400.woff2`    | 15 KB   |
+
+Os três são variáveis de subconjunto `latin` (o mesmo `unicode-range` do
+Inter), o que cobre os acentos do português — `ã`, `ç`, `õ`, `é`, `ê` — sem
+baixar os arquivos `latin-ext`. O `Fraunces` tem `wght` (400–700) e eixo óptico
+`opsz`; o navegador ajusta o óptico sozinho (`font-optical-sizing: auto`), então
+o desenho de display vem nos títulos grandes sem trocar de arquivo. A
+Instrument Serif tem **um peso só**: por isso a pergunta não pede
+`font-semibold`, que nela seria faux-bold.
+
+### Por que duas serifadas
+
+Não é escolha de gosto, é função: são dois registros diferentes, e a diferença
+entre eles é o que segura o ar do app.
+
+- A **pergunta** é a única frase do app que é fala da pessoa, e não dado. Ela é
+  longa (a mais longa das cinco tem 66 caracteres) e é lida uma vez, com atenção.
+  A Instrument Serif é de alto contraste e um peso só: é feita para isso.
+- O **título** orienta. A Fraunces tem eixo óptico e formas de display, o que
+  dá autoridade sem engrossar, e aceita `tracking-tight` onde a Inter não
+  precisa.
+- O **corpo** continua Inter, porque é onde mora o dado: número de urna, sigla,
+  valor, fonte oficial. Uma serifada no meio de dado prejudica quem precisa
+  comparar número com número.
+
+### Como usar no código
+
+```tsx
+<h1 className="font-titulo text-3xl">Selecione seu estado</h1>
+<h2 className="font-pergunta text-3xl text-balance">{question.title}</h2>
+<p>corpo em Inter, sem classe nenhuma</p>
+```
+
+Em CSS ou estilo dinâmico, use a variável:
+
+```css
+font-family: var(--font-titulo);
+```
+
+**Título novo?** Receba `font-titulo`. **Pergunta nova?** `font-pergunta`. Se
+cabe num terceiro papel, provavelmente não cabe: são três e cada uma tem um
+motivo.
+
+### Tamanho
+
+Os três arquivos somam 130 KB, mas o navegador só baixa a família que a página
+usa: a home e a ficha puxam Inter e Fraunces (115 KB), o quiz puxa as três
+(130 KB), e nenhuma tela puxa uma fonte que não tem texto naquela fonte. Se
+algum dia der para cortar, o caminho é trocar a variável do Fraunces por duas ou
+três instâncias estáticas do peso que o app usa — 67 KB é o preço do eixo `opsz`
+que ninguém pediu para remover.
 
 ## Os dois botões: `SpecularButton` e `Button`
 

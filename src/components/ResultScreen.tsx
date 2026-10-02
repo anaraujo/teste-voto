@@ -34,7 +34,7 @@ export function ResultScreen({
 
   return (
     <section>
-      <h2>Resultado</h2>
+      <h2 className="font-titulo text-3xl">Resultado</h2>
       <p>
         Você concordou em {first.matches} de {totalQuestions} questões com o
         candidato mais alinhado.

@@ -826,7 +826,17 @@ function FichaStructure({
           />
         )}
         <div>
-          <h2>{candidate.ballotName}</h2>
+          {/*
+           * O nome de urna é o título da ficha, então vai em `font-titulo` como
+           * o resto dos títulos de página. É também o texto mais difícil que a
+           * família recebe aqui: são 29 caracteres em caixa alta, e há nome que
+           * traz apelido com bordão ("FLÁVIO FERRARI - FACA NA BOTA"). O
+           * `text-balance` segura a quebra em duas linhas, e o nome não encolhe
+           * como o do card do grid — aqui ele é o assunto da página.
+           */}
+          <h2 className="font-titulo text-3xl text-balance">
+            {candidate.ballotName}
+          </h2>
           <p>
             {candidate.ballotNumber && (
               <span>Nº {candidate.ballotNumber} · </span>
