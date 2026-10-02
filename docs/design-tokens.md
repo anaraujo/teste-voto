@@ -268,6 +268,47 @@ entre eles é o que segura o ar do app.
   valor, fonte oficial. Uma serifada no meio de dado prejudica quem precisa
   comparar número com número.
 
+### O banco de teste: as 10 famílias
+
+Enquanto a fonte do título não está decidida, `src/index.css` carrega **dez**
+famílias e `public/fonts/` guarda os dez arquivos. Sete são só candidatas e não
+têm utilidade nenhuma fora do teste:
+
+| Família             | Token                  | Arquivo                              | Peso  | Eixos                   |
+| ------------------- | ---------------------- | ------------------------------------ | ----- | ----------------------- |
+| Inter               | `--font-sans`          | `inter-latin-variable.woff2`         | 48 KB | `wght` 100–900          |
+| Fraunces            | `--font-titulo`        | `fraunces-latin-variable.woff2`      | 67 KB | `wght` 400–700 + `opsz` |
+| Instrument Serif    | `--font-pergunta`      | `instrument-serif-400.woff2`         | 15 KB | — (peso único)          |
+| Sora                | `--font-sora`          | `sora-latin-variable.woff2`          | 25 KB | `wght` 400–800          |
+| Manrope             | `--font-manrope`       | `manrope-latin-variable.woff2`       | 25 KB | `wght` 400–800          |
+| Bricolage Grotesque | `--font-bricolage`     | `bricolage-latin-variable.woff2`     | 75 KB | `wght` 400–800 + `opsz` |
+| Oswald              | `--font-oswald`        | `oswald-latin-variable.woff2`        | 28 KB | `wght` 200–700          |
+| Archivo             | `--font-archivo`       | `archivo-latin-variable.woff2`       | 88 KB | `wght` 100–900 + `wdth` |
+| Space Grotesk       | `--font-space-grotesk` | `space-grotesk-latin-variable.woff2` | 22 KB | `wght` 300–700          |
+| Figtree             | `--font-figtree`       | `figtree-latin-variable.woff2`       | 20 KB | `wght` 300–900          |
+
+Declarar uma família não custa nada: o `@font-face` só é baixado quando algum
+texto da página pede aquela família. Uma tela só com título em Fraunces baixa
+Inter e Fraunces (115 KB) e nunca toca nos outros 288 KB do banco.
+
+**Para provar uma família no app inteiro, muda-se uma linha** em `src/index.css`:
+
+```css
+--font-titulo: var(--font-oswald); /* era var(--font-fraunces) */
+```
+
+Os sete títulos mudam juntos, porque nenhum componente guarda o nome da
+família — todos usam `font-titulo`. Para mexer num texto só, use o utilitário
+da família direto (`className="font-sora"`); ele nasce no build seguinte, porque
+o Tailwind só gera a classe que o código usa.
+
+O `Archivo` é a única com eixo de largura, então é a única que aceita
+`font-stretch-expanded` (125%) — o "Expandido" sem trocar de arquivo.
+
+**Para sair do teste:** apagar o bloco "Banco de fontes" do `src/index.css`, os
+`--font-*` das sete candidatas, e os sete arquivos correspondentes em
+`public/fonts/`.
+
 ### Como usar no código
 
 ```tsx

@@ -75,6 +75,115 @@
 }
 
 /*
+ * ---------------------------------------------------------------------------
+ * Banco de fontes — teste de direção. Temporário.
+ * ---------------------------------------------------------------------------
+ *
+ * Estas sete famílias estão aqui para provar título no app de verdade, e não
+ * para viver nele. As duas de papel (Fraunces no título, Instrument Serif na
+ * pergunta) estão acima, com os comentários delas; estas são só candidatas.
+ *
+ * O queelas custam enquanto não são usadas: **nada**. Um `@font-face` só é
+ * baixado quando algum texto da página pede aquela família, então declarar dez
+ * famílias e usar uma não baixa as outras nove. O custo aparece na hora de
+ * escolher: 288KB no total do banco, contra 130KB das três que o app usa.
+ *
+ * Todas são variáveis de subconjunto `latin`, com o mesmo `unicode-range` da
+ * Inter. Para sair do teste: apague o bloco inteiro, os `--font-*` do `@theme`
+ * e os arquivos de `public/fonts/` que não forem os das três que ficam.
+ */
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/sora-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/manrope-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 200 700;
+  font-display: swap;
+  src: url('/fonts/oswald-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * A única do banco com eixo de largura (`wdth`, 62%–125%), e por isso a única
+ * que declara `font-stretch`: é o que permite `font-stretch` utilitário, e é o
+ * que faz o "Expandido" existir sem trocar de arquivo.
+ */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/space-grotesk-latin-variable.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/fonts/figtree-latin-variable.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+/*
  * Design tokens — fonte das cores do projeto (Tailwind v4).
  *
  * Cada token vira uma variável CSS em `:root` (ex.: var(--color-primary)) e
@@ -226,20 +335,35 @@
   --font-sans: 'Inter', sans-serif;
 
   /*
-   * As duas fontes de papel, que não substituem a Inter em lugar nenhum: ela
-   * continua sendo o corpo do app e o `font-sans` dos dados.
-   *
-   * `font-titulo` é o h1/h2 de página ("Selecione seu estado", "Candidatos",
-   * "Resultado") e `font-pergunta` é a frase da pergunta do quiz. São tokens
-   * `@theme` como o resto, então viram utilitários e podem ser trocados em um
-   * lugar só — inclusive no tema, para provar uma direção antes de decidir.
-   *
-   * A fonte genérica no fim de cada uma é o fallback (`sans-serif` no título,
-   * `serif` na pergunta): se o arquivo faltar, o texto sai na fonte do
-   * sistema em vez de sumir.
+   * Uma entrada por família do banco de teste, então cada uma tem o seu
+   * utilitário: `font-sora`, `font-oswald`, `font-archivo`, e assim por diante.
+   * Todas caem na Inter antes do fallback genérico, então um arquivo que falhe
+   * de carregar degrada para a fonte do corpo em vez de sumir.
    */
-  --font-titulo: 'Fraunces', 'Inter', sans-serif;
-  --font-pergunta: 'Instrument Serif', 'Inter', serif;
+  --font-fraunces: 'Fraunces', 'Inter', sans-serif;
+  --font-instrument-serif: 'Instrument Serif', 'Inter', serif;
+  --font-sora: 'Sora', 'Inter', sans-serif;
+  --font-manrope: 'Manrope', 'Inter', sans-serif;
+  --font-bricolage: 'Bricolage Grotesque', 'Inter', sans-serif;
+  --font-oswald: 'Oswald', 'Inter', sans-serif;
+  --font-archivo: 'Archivo', 'Inter', sans-serif;
+  --font-space-grotesk: 'Space Grotesk', 'Inter', sans-serif;
+  --font-figtree: 'Figtree', 'Inter', sans-serif;
+
+  /*
+   * Os dois papéis do app, e a única coisa que se mexe para provar uma direção:
+   * `font-titulo` é o h1/h2 de tela ("Selecione seu estado", "Candidatos",
+   * nome de urna) e `font-pergunta` é a frase da pergunta do quiz.
+   *
+   * Eles apontam para o token da família em vez de repetir o nome, então trocar
+   * o título de família é uma linha:
+   *
+   *     --font-titulo: var(--font-oswald);
+   *
+   * e os sete títulos do app mudam juntos. É assim que o banco de fontes se usa.
+   */
+  --font-titulo: var(--font-fraunces);
+  --font-pergunta: var(--font-instrument-serif);
 }
 
 /*
