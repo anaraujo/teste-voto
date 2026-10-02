@@ -68,14 +68,14 @@ main > section:has(> .candidate-grid) {
   --pad: var(--gap);
 
   position: relative;
-  width: fit-content;
-  max-width: min(
+  width: 100%;
+  /* max-width: min(
     100%,
     calc(
       var(--max-columns) * var(--card-width) + (var(--max-columns) - 1) *
         var(--gap) + 2 * var(--pad)
     )
-  );
+  ); */
   display: grid;
   /*
    * `auto-fit` resolve o número de colunas contra a largura disponível — a
@@ -367,7 +367,6 @@ main > section:has(> .candidate-grid) {
   padding: 0 1rem;
   border-radius: 999px;
   text-decoration: none;
-  cursor: pointer;
   font-family: 'Inter', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;

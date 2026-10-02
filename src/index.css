@@ -202,6 +202,63 @@
   body {
     font-family: inherit;
   }
+
+  /*
+   * Cursor de mão em tudo que é clicável, na camada base.
+   *
+   * A alternativa era repetir `cursor: pointer` em cada folha de componente,
+   * e era o que acontecia: quatro cópias em GooeyNav, LineSidebar,
+   * CandidateGrid e `.sb-link` aqui. Além de duplicar a regra, o padrão falha
+   * silenciosamente — um `<button>` novo nasce com a seta padrão do navegador
+   * e nada denuncia isso. Aqui ele nasce certo.
+   *
+   * Três exclusões deliberadas:
+   *
+   * - `:not(:disabled)`: botão desabilitado não aceita clique, então a mão
+   *   seria mentira. O `disabled:not-allowed` abaixo cobre o caso comum; o
+   *   `ui/button.tsx` usa `disabled:pointer-events-none`, que deixa o cursor
+   *   passar direto e depende da regra seguinte.
+   * - `a[href]`: `<a>` sem `href` é placeholder de layout, não link (usado
+   *   assim em `CandidateDetailScreen`), e a mão não deve aparecer.
+   * - `label:has(> input)`: só o rótulo que realmente controla algo recebe a
+   *   mão. Um `<label>` solto não é alvo de clique.
+   *
+   * Note que `cursor` é herdada, por isso a regra espelha logo abaixo: sem
+   * isso o ponteiro passaria para o texto dentro do alvo, e ler um parágrafo
+   * de fonte em `CandidateDetailScreen` viraria um bloco inteiro de mão.
+   */
+  button:not(:disabled),
+  a[href],
+  summary,
+  [role='button']:not([aria-disabled='true']),
+  /*
+   * O `label` do quiz embrulha um `button[role="radio"]` do Radix, não um
+   * `<input>` — por isso o `:has()` olha também por `role`, senão o rótulo
+   * inteiro ficaria sem mão e só o radio de 20px responderia.
+   */
+  label:has(> input),
+  label:has(> [role]),
+  input[type='checkbox'],
+  input[type='radio'],
+  select {
+    cursor: pointer;
+  }
+
+  /*
+   * Para o `pointer-events: none` do botão desabilitado, o cursor visível é o
+   * do elemento pai. `not-allowed` deixa explícito que o clique não vai
+   * acontecer, em vez de fingir que está disponível.
+   */
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  /* O texto selecionável dentro de um alvo de clique não deve virar mão. */
+  button *,
+  a[href] * {
+    cursor: inherit;
+  }
 }
 
 @theme inline {
@@ -271,7 +328,6 @@
     line-height: 1;
     letter-spacing: 0.01em;
     text-decoration: none;
-    cursor: pointer;
     color: var(--color-tertiary);
     background: color-mix(in srgb, var(--color-tertiary-soft) 25%, transparent);
     box-shadow:
