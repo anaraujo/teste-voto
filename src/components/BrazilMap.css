@@ -24,8 +24,23 @@
   stroke-linejoin: round;
 }
 
+/*
+ * A UF disponível é `--color-tse-success`, o verde que o portal do TSE usa
+ * para "sucesso". Ele serve melhor que `--color-primary` (o verde da bandeira)
+ * aqui porque a forma é uma superfície grande, não um botão: contra o canvas
+ * ele dá 2,13:1 contra 1,74:1 do verde da bandeira, e contra o card 4,33:1
+ * contra 3,54:1.
+ *
+ * Nenhum dos dois chega a 3:1 contra o canvas, então a diferença entre
+ * disponível e indisponível não é comunicada só pela cor: é o preenchimento
+ * sólido contra a hachura que a carrega. É por isso que a hachura existe, e
+ * por isso que ela não pode sair.
+ *
+ * O hover continua no laranja (`--color-secondary`), o mesmo que a lista de
+ * estados usa, para que os doisRepresentem o mesmo estado com a mesma cor.
+ */
 .brazil-map .uf--available .uf-forma {
-  fill: var(--color-primary);
+  fill: var(--color-tse-success);
 }
 
 .brazil-map .uf--soon .uf-forma {
