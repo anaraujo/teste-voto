@@ -6,31 +6,35 @@ export type CandidatesLoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; data: ApiCandidatesResponse }
 
-/** Carrega a lista oficial de candidatos da API local (/api/candidates). */
-export function useCandidates(): {
+/**
+ * Carrega a lista oficial de candidatos da API local (/api/candidates).
+ *
+ * `seed` são os dados embutidos no HTML pré-renderizado: quando vêm, a tela já
+ * aparece pronta na primeira pintura e nenhuma requisição é feita.
+ */
+export function useCandidates(seed?: ApiCandidatesResponse): {
   state: CandidatesLoadState
   retry: () => void
 } {
-  const [state, setState] = useState<CandidatesLoadState>({
-    status: 'loading',
-  })
+  const [fetched, setFetched] = useState<CandidatesLoadState | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    if (seed) return
+
     let cancelled = false
 
     async function load() {
-      setState({ status: 'loading' })
       try {
         const response = await fetch('/api/candidates')
         if (!response.ok) {
           throw new Error(`erro ao carregar candidatos (${response.status})`)
         }
         const data = (await response.json()) as ApiCandidatesResponse
-        if (!cancelled) setState({ status: 'ready', data })
+        if (!cancelled) setFetched({ status: 'ready', data })
       } catch (error) {
         if (!cancelled) {
-          setState({
+          setFetched({
             status: 'error',
             message: error instanceof Error ? error.message : String(error),
           })
@@ -42,9 +46,16 @@ export function useCandidates(): {
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, seed])
 
-  const retry = useCallback(() => setAttempt((value) => value + 1), [])
+  const state: CandidatesLoadState = seed
+    ? { status: 'ready', data: seed }
+    : (fetched ?? { status: 'loading' })
+
+  const retry = useCallback(() => {
+    setFetched(null)
+    setAttempt((value) => value + 1)
+  }, [])
 
   return { state, retry }
 }

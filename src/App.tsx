@@ -1,29 +1,65 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { questions } from './data/quiz.ts'
-import type { OptionId, QuestionId } from './data/quiz.ts'
+import type { OptionId } from './data/quiz.ts'
 import { toQuizCandidates } from './data/quiz-source.ts'
 import { rankResults } from './lib/scoring.ts'
 import { useCandidates } from './hooks/useCandidates.ts'
+import { useQuizAnswers } from './hooks/useQuizAnswers.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
+import type { PrerenderData } from './shared/prerender.ts'
+import {
+  candidatePath,
+  DEFAULT_TAB,
+  type Route,
+  type Tab,
+} from './shared/router.ts'
+import { AppHeader } from './components/AppHeader.tsx'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { CandidateDetailScreen } from './components/CandidateDetailScreen.tsx'
 import { FairnessScreen } from './components/FairnessScreen.tsx'
+import { NotFoundScreen } from './components/NotFoundScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
 import { ResultScreen } from './components/ResultScreen.tsx'
 import { StartScreen } from './components/StartScreen.tsx'
+import { Button } from './components/ui/button.tsx'
+import { Card } from './components/ui/card.tsx'
 
-type Screen =
-  | { name: 'start' }
-  | { name: 'candidates' }
-  | { name: 'candidate'; id: string }
-  | { name: 'question'; index: number }
-  | { name: 'result' }
-  | { name: 'fairness' }
+export interface NavigateOptions {
+  replace?: boolean
+}
 
-function App() {
-  const [screen, setScreen] = useState<Screen>({ name: 'start' })
-  const [answers, setAnswers] = useState<Record<QuestionId, OptionId>>({})
-  const { state: candidatesState, retry: retryCandidates } = useCandidates()
+export interface AppProps {
+  route: Route
+  onNavigate: (to: string, options?: NavigateOptions) => void
+  /** Aba viva da ficha; o build estático usa sempre a padrão. */
+  tab?: Tab
+  onTabChange?: (tab: Tab) => void
+  /** Dados embutidos no HTML pré-renderizado da rota atual. */
+  data?: PrerenderData
+}
+
+/** Índice da pergunta (0-based) a partir do passo da URL, preso aos limites. */
+function questionIndex(step: number): number {
+  return Math.min(Math.max(step - 1, 0), questions.length - 1)
+}
+
+/** No build estático não há URL para trocar: a aba padrão fica onde está. */
+function noopTabChange(): void {}
+
+function App({
+  route,
+  onNavigate,
+  tab = DEFAULT_TAB,
+  onTabChange,
+  data,
+}: AppProps) {
+  const { answers, answer, reset } = useQuizAnswers()
+
+  const seedCandidates = data?.kind === 'candidates' ? data.payload : undefined
+  const seedDetail = data?.kind === 'candidate' ? data.payload : undefined
+
+  const { state: candidatesState, retry: retryCandidates } =
+    useCandidates(seedCandidates)
 
   const apiCandidates = useMemo(
     () =>
@@ -40,37 +76,44 @@ function App() {
     [answers, candidates],
   )
 
-  const handleStart = () => setScreen({ name: 'question', index: 0 })
+  const goHome = useCallback(() => onNavigate('/'), [onNavigate])
 
-  const showCandidate = (id: string) => setScreen({ name: 'candidate', id })
-  const backFromCandidate = () =>
-    setScreen(
-      screen.name === 'candidate' ? { name: 'candidates' } : { name: 'start' },
-    )
+  const handleStart = () => onNavigate('/quiz/1')
+
+  const showCandidate = useCallback(
+    (id: string) => onNavigate(candidatePath(id)),
+    [onNavigate],
+  )
 
   const handleAnswer = (optionId: OptionId) => {
-    if (screen.name !== 'question') return
+    if (route.name !== 'question') return
 
-    const { index } = screen
-    const question = questions[index]
-    const nextAnswers = { ...answers, [question.id]: optionId }
-
-    setAnswers(nextAnswers)
-    setScreen(
-      index === questions.length - 1
-        ? { name: 'result' }
-        : { name: 'question', index: index + 1 },
+    const index = questionIndex(route.step)
+    answer(questions[index].id, optionId)
+    onNavigate(
+      index === questions.length - 1 ? '/resultado' : `/quiz/${index + 2}`,
     )
   }
 
   const handleRestart = () => {
-    setAnswers({})
-    setScreen({ name: 'start' })
+    reset()
+    onNavigate('/')
   }
 
   return (
-    <main>
-      {screen.name === 'start' && (
+    <main
+      className={
+        // A ficha é a única tela alta o bastante para passar da dobra. Com
+        // `items-center` o topo de um conteúdo mais longo que a tela some
+        // atrás do topo do documento; as demais telas continuam centralizadas.
+        route.name === 'candidate'
+          ? 'min-h-screen bg-canvas flex items-start justify-center'
+          : 'min-h-screen bg-canvas flex items-center justify-center'
+      }
+    >
+      <AppHeader route={route} onNavigate={onNavigate} />
+
+      {route.name === 'start' && (
         <StartScreen
           questionCount={questions.length}
           candidateCount={candidates.length}
@@ -80,36 +123,37 @@ function App() {
           }
           onRetry={retryCandidates}
           onStart={handleStart}
-          onShowCandidates={() => setScreen({ name: 'candidates' })}
+          onShowCandidates={() => onNavigate('/candidatos')}
         />
       )}
 
-      {screen.name === 'candidates' && (
+      {route.name === 'candidates' && (
         <CandidatesScreen
           state={candidatesState as CandidatesLoadState}
           onRetry={retryCandidates}
-          onBack={() => setScreen({ name: 'start' })}
           onShowCandidate={showCandidate}
         />
       )}
 
-      {screen.name === 'candidate' && (
+      {route.name === 'candidate' && (
         <CandidateDetailScreen
-          candidateId={screen.id}
-          onBack={backFromCandidate}
+          candidateId={route.id}
+          initialData={seedDetail}
+          tab={tab}
+          onTabChange={onTabChange ?? noopTabChange}
         />
       )}
 
-      {screen.name === 'question' && (
+      {route.name === 'question' && (
         <QuestionStep
-          question={questions[screen.index]}
-          index={screen.index}
+          question={questions[questionIndex(route.step)]}
+          index={questionIndex(route.step)}
           total={questions.length}
           onAnswer={handleAnswer}
         />
       )}
 
-      {screen.name === 'result' &&
+      {route.name === 'result' &&
         (ranked.length > 0 ? (
           <ResultScreen
             ranked={ranked}
@@ -117,25 +161,31 @@ function App() {
             answers={answers}
             questions={questions}
             onRestart={handleRestart}
-            onShowFairness={() => setScreen({ name: 'fairness' })}
+            onShowFairness={() => onNavigate('/imparcialidade')}
             onShowCandidate={showCandidate}
           />
         ) : (
-          <section>
-            <h2>Não foi possível calcular o resultado</h2>
-            <p>Recarregue a página e tente novamente.</p>
-            <button type="button" onClick={() => window.location.reload()}>
-              Tentar novamente
-            </button>
+          <section className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4">
+            <Card>
+              <h2 className="text-base font-semibold">
+                Não foi possível calcular o resultado
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Responda as perguntas para ver o ranking dos candidatos.
+              </p>
+              <div>
+                <Button onClick={handleStart}>Responder o quiz</Button>
+              </div>
+            </Card>
           </section>
         ))}
 
-      {screen.name === 'fairness' && (
-        <FairnessScreen
-          questions={questions}
-          candidates={candidates}
-          onBack={() => setScreen({ name: 'result' })}
-        />
+      {route.name === 'fairness' && (
+        <FairnessScreen questions={questions} candidates={candidates} />
+      )}
+
+      {route.name === 'not-found' && (
+        <NotFoundScreen path={route.path} onHome={goHome} />
       )}
     </main>
   )

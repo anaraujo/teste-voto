@@ -47,14 +47,6 @@ export interface CandidateCsvConfig {
   office: string
 }
 
-export function collectAllHeaders(): string[] {
-  const values: string[] = []
-  for (const names of Object.values(TSE_COLUMNS)) {
-    for (const name of names) values.push(name)
-  }
-  return values
-}
-
 /** Verifica se uma linha pertence à eleição configurada. */
 export function isElectionRow(
   index: Map<string, number>,

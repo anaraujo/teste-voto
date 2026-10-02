@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import type { OptionId, Question, QuestionId } from '../data/quiz.ts'
 import { questionProvenance } from '../data/quiz-source.ts'
+import { isModifiedClick } from '../lib/links.ts'
 import { questionMatches } from '../lib/scoring.ts'
 import type { RankedEntry } from '../lib/scoring.ts'
+import { candidatePath } from '../shared/router.ts'
+import { SpecularButton } from './SpecularButton.tsx'
 
 interface ResultScreenProps {
   ranked: readonly RankedEntry[]
@@ -66,12 +69,25 @@ export function ResultScreen({
                 <small>{candidate.description}</small>
               </p>
               <p>
-                <button
-                  type="button"
-                  onClick={() => onShowCandidate(candidate.id)}
+                {/*
+                 * `.sb-link`, e não um `SpecularButton`: "mostrar todos" pode
+                 * render os 428 candidatos de uma vez, e cada `SpecularButton`
+                 * abriria um contexto WebGL próprio (o navegador aceita
+                 * poucos) — além de um rAF e um listener de `pointermove` por
+                 * botão. É o mesmo motivo que levou a lista de candidatos a
+                 * usar um `<a>` de verdade: ver `src/index.css`.
+                 */}
+                <a
+                  className="sb-link"
+                  href={candidatePath(candidate.id)}
+                  onClick={(event) => {
+                    if (isModifiedClick(event)) return
+                    event.preventDefault()
+                    onShowCandidate(candidate.id)
+                  }}
                 >
                   Ver ficha do candidato
-                </button>
+                </a>
               </p>
               <ul>
                 {questionMatches(answers, questions, candidate).map(
@@ -112,12 +128,12 @@ export function ResultScreen({
         </button>
       )}
 
-      <button type="button" onClick={onShowFairness}>
+      <SpecularButton variant="primary" size="md" onClick={onShowFairness}>
         Verificar imparcialidade
-      </button>
-      <button type="button" onClick={onRestart}>
+      </SpecularButton>
+      <SpecularButton variant="primary" size="md" onClick={onRestart}>
         Recomeçar
-      </button>
+      </SpecularButton>
     </section>
   )
 }
