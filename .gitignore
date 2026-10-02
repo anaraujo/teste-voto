@@ -33,3 +33,7 @@ dist-ssr
 # Dados ingeridos do TSE (zips, banco local e fotos)
 # Ancorado na raiz para não ignorar src/data/
 /data/
+
+# Capturas e artefatos do OpenChamber (painel de browser do agente)
+# Ancorado na raiz pelo mesmo motivo de /data/ acima
+/.openchamber/
