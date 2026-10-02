@@ -1,0 +1,403 @@
+/*
+ * Candidate Grid — experimental, em avaliação visual.
+ *
+ * Card de candidato: header com o número de urna, foto com moldura, corpo com
+ * o nome e a sigla, e footer com a pílula da ficha. O fundo é a cor primária
+ * do partido e a tinta é a que o `readableOn` escolheu para ela.
+ *
+ * Não há efeito de disco aqui. O componente nasceu como uma porta do
+ * ChromaGrid do reactbits (open source, DavidHDev/react-bits — public/r/
+ * ChromaGrid-TS-CSS.json), que revelava a cor num `backdrop-filter` seguindo
+ * o mouse; o efeito saiu porque o filtro levava a cor do partido a um cinza
+ * médio onde nenhuma das duas tintas candidatas tem contraste. O que restou do
+ * original foi o card quebrado em header, corpo e footer.
+ *
+ * Só o grid usa isto: o resto do app segue o index.css.
+ */
+
+/*
+ * O `main` da tela é um flex em linha: o header (38px) fica ao lado da
+ * `section` que contém o grid, e é dela que a largura sobra. Sem `min-width:
+ * 0` a section não encolhe abaixo do seu min-content, que num grid de colunas
+ * fixas do tamanho do card é a soma delas, e o grid transborda horizontalmente.
+ * O `:has()` vale aqui porque o grid é filho direto da section; onde não há
+ * suporte a regra simplesmente não casa e o grid volta ao comportamento
+ * anterior.
+ */
+main > section:has(> .candidate-grid) {
+  min-width: 0;
+}
+
+/*
+ * Geometria do grid, num lugar só.
+ *
+ * O card não tem largura própria: ele é a foto mais `--card-pad` de cada lado.
+ * Como a foto são 161px fixos — o tamanho que o TSE manda, sem upscale, ver o
+ * `.candidate-img-wrapper` — o card sai 161 + 2×20 = 201px. Não existe mais um
+ * `--card-width` com um número solto para discordar da foto: mexer em
+ * `--card-pad` move o card inteiro.
+ *
+ * `--gap` e `--pad` apontam para o mesmo valor de propósito: o vão entre dois
+ * cards é igual ao vão entre o card e a borda do painel. Sendo uma variável só,
+ * os dois não podem divergir.
+ *
+ * O `width: fit-content` é o que faz o espaçamento fechar. O `auto-fit` decide
+ * quantas colunas cabem na largura disponível e o `fit-content` encolhe o
+ * painel até exatamente essas colunas. Sem sobra, a borda do painel fica a
+ * `--pad` do primeiro card — igual ao `--gap`. Com `width: 100%` sobra espaço
+ * (o `justify-content: center` reparte a sobra entre os dois lados) e o vão da
+ * borda fica maior que o vão entre cards; medido, dava 85px de borda contra 20
+ * de gap num viewport de 1600px.
+ *
+ * O `max-width: min(100%, …)` é o teto de `--max-columns`: o nono card não
+ * entra por maior que seja a tela, e o `100%` impede o painel de passar da
+ * largura da section quando a viewport encolhe.
+ */
+.candidate-grid {
+  --photo-width: 161px;
+  /*
+   * O recuo horizontal do conteúdo do card — header, foto, nome e pílula. É
+   * uma variável só porque são as quatro peças que precisam cair na mesma
+   * linha vertical: sem ela, mudar o padding do texto deixaria a foto fora de
+   * esquadro sem ninguém notar. É ela, também, que soma a largura do card.
+   */
+  --card-pad: 20px;
+  --card-width: calc(var(--photo-width) + 2 * var(--card-pad));
+  --max-columns: 8;
+  --gap: 20px;
+  --pad: var(--gap);
+
+  position: relative;
+  width: fit-content;
+  max-width: min(
+    100%,
+    calc(
+      var(--max-columns) * var(--card-width) + (var(--max-columns) - 1) *
+        var(--gap) + 2 * var(--pad)
+    )
+  );
+  display: grid;
+  /*
+   * `auto-fit` resolve o número de colunas contra a largura disponível — a
+   * largura da section, já que o painel é `fit-content` — e as colunas são do
+   * tamanho exato do card, sem esticar.
+   */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(var(--card-width), var(--card-width))
+  );
+  grid-auto-rows: auto;
+  justify-content: center;
+  gap: var(--gap);
+  margin: 0 auto;
+  padding: var(--pad);
+  box-sizing: border-box;
+  /*
+   * O app é amarelo (`bg-canvas`) e o grid é o painel azul por cima dele. O
+   * raio é o mesmo dos cards, para o painel e os cards lerem como a mesma
+   * família de superfície.
+   */
+  border-radius: 24px;
+  background: var(--color-panel);
+}
+
+/*
+ * Abaixo de 480px sobra uma coluna só. O gap encolhe, e o padding acompanha
+ * porque `--pad` aponta para `--gap` — os dois continuam iguais.
+ */
+@media (max-width: 480px) {
+  .candidate-grid {
+    --gap: 0.75rem;
+  }
+}
+
+/*
+ * O card é a superfície colorida: fundo na cor do partido e texto na tinta que
+ * o `readableOn` escolheu para ela.
+ *
+ * A largura não é um número aqui: é `--photo-width` mais `--card-pad` de cada
+ * lado, calculado no `.candidate-grid`. A foto e o texto têm o mesmo recuo, e
+ * é isso que põe a borda esquerda dos dois na mesma linha vertical.
+ *
+ * O `box-sizing: border-box` é o que amarra a conta: sem ele o `width` é a
+ * caixa de conteúdo, o card mediria 203px contra uma coluna de 201px e o grid
+ * transbordaria em 2px por coluna.
+ */
+.candidate-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--card-width);
+  height: auto;
+  box-sizing: border-box;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--card-base, #6b7280);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+/*
+ * O único efeito do card.
+ *
+ * A borda usa a cor do texto, não a cor do card: o fundo já é a cor cheia,
+ * então uma borda na mesma cor seria invisível. Quem escreve é o
+ * `--card-on`, que o item declara.
+ *
+ * A sombra é a do `.sb-link`, que é a única elevação que o app já usa. Fica
+ * um pouco abaixo dos 25% dele porque aqui a borda de 30% da tinta já
+ * desenha o contorno — nas primárias claras, como o amarelo do PSB, é a
+ * sombra que separa o card do fundo `#f0ead6`. Em repouso não há sombra: são
+ * 428 cards, e o estado parado fica mais barato e mais quieto sem ela.
+ *
+ * O card inteiro é clicável mas não é um tab stop: o link "Ver ficha" no
+ * footer leva à mesma página, e um segundo tab stop seria redundante. O
+ * `:focus-within` dá ao teclado o mesmo feedback que o `:hover` dá ao
+ * ponteiro.
+ */
+.candidate-card:hover,
+.candidate-card:focus-within {
+  border-color: var(--card-on, #fff);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+}
+
+/*
+ * Header: o número de urna em monoespaçada e, ao lado, a sigla do partido.
+ *
+ * O número é o identificador que a pessoa procura, e por isso fica em
+ * peso cheio. A sigla é contexto: fica menor e com o espaçamento longo, o
+ * mesmo de antes, quando morava no corpo do card.
+ *
+ * O `border-bottom` é o fio que separa o header do corpo. Nenhuma das seções
+ * repete o fundo do card: quem pinta a cor é o `.candidate-card`, e elas são
+ * transparentes.
+ */
+.candidate-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem var(--card-pad) 0.4rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--card-on, #fff) 28%, transparent);
+  color: var(--card-on, #fff);
+  font-family: 'Inter', sans-serif;
+  /*
+   * O tamanho daqui é o da sigla, que é a peça de contexto. O número tem o
+   * tamanho dele na regra própria, logo abaixo.
+   */
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+
+/*
+ * O número de urna é o identificador que a pessoa procura, então é a peça
+ * grande do header: 0.95rem contra 0.62rem da sigla, 1.5x.
+ *
+ * O `align-items: baseline` do pai é o que segura a hierarquia visual: as duas
+ * peças sentam na mesma linha de base, e a diferença de altura não abre uma
+ * linha de base para a sigla, que ficaria pendurada embaixo do número.
+ *
+ * Monoespaçada porque o número é lido dígito a dígito, e porque é o que
+ * distingue o número de um número de telefone ou de um ano — nenhum dos dois
+ * aparece aqui, mas a largura fixa mantém a coluna de cabeçalhos alinhada
+ * entre cards de nomes com 4 e 5 dígitos.
+ */
+.candidate-head .head-value {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * A sigla mora no header desde que o cabeçalho deixou de repetir o rótulo
+ * "Nº". O tamanho e o peso saem da própria regra daqui, não do header: sem
+ * isto a sigla herdaria o tamanho do número e as duas peças competiriam.
+ *
+ * Sem `opacity`: a hierarquia aqui é o tamanho e o peso, não o alpha, que só
+ * derrubaria o contraste que o `readableOn` garante.
+ */
+.candidate-head .party {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/*
+ * A foto no tamanho de origem, centralizada no card.
+ *
+ * A caixa tem a proporção 161/225 da foto do TSE e mede `--photo-width` — o
+ * que o TSE manda, sem upscale. Antes ela ocupava a largura inteira do card
+ * (`width: 100%` com `aspect-ratio`), o que forçava o navegador a inventar
+ * pixel: 198px contra 161px de origem, 23% acima, e a imagem saía borrada.
+ *
+ * O `margin` usa a mesma `--card-pad` do header, do nome e da pílula, dos dois
+ * lados. Como o card é exatamente a foto mais esses dois recuos, a foto cai
+ * centralizada e as quatro peças ficam na mesma linha vertical. Não sobra vão
+ * lateral nenhum: o card não é mais largo que a foto mais o padding.
+ *
+ * O `margin-top` é 12px, e não `--card-pad`, porque o header tem o respiro
+ * próprio embaixo; é a única margem que não é o recuo horizontal.
+ *
+ * O raio de 20px é o mesmo do card. Antes o vinco vinha do `overflow: hidden`
+ * do card, porque a foto encostava nas bordas; agora ela é um elemento
+ * arredondado dentro do card, e o raio precisa ser dela própria. Sem ele o
+ * `overflow: hidden` do card continuaria cortando o canto em quadrado, que é
+ * exatamente o que o raio do card devia evitar.
+ *
+ * A foto entra sem filtro, em cor cheia.
+ */
+.candidate-img-wrapper {
+  flex: none;
+  width: var(--photo-width);
+  margin: 12px var(--card-pad) 0;
+  aspect-ratio: 161 / 225;
+  border-radius: 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.candidate-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/*
+ * Sem foto no TSE: bloco cinza com o número de urna, na mesma caixa.
+ *
+ * A tinta é cheia e não diluída porque o número é a única coisa que identifica
+ * a pessoa quando não há retrato. O número repetido no header é reforço, não
+ * a fonte principal.
+ */
+.candidate-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--color-gray);
+  color: #111111;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/*
+ * Corpo: só o nome de urna, desde que a sigla subiu para o header.
+ *
+ * Uma coluna só. A grade de duas colunas do original existia porque o número
+ * e a cidade iam para a direita; com o número no header e a cidade fora do
+ * card, não sobra nada para a coluna da direita.
+ */
+.candidate-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem var(--card-pad) 0.8rem;
+  color: var(--card-on, #fff);
+  font-family: 'Inter', sans-serif;
+}
+
+/*
+ * O nome tenta caber em uma linha, encolhendo.
+ *
+ * `fitName` (em CandidateGrid.tsx) mede o nome renderizado e escreve aqui o
+ * `--name-size`, entre 0.95rem e 0.78rem. A medida é por elemento e não por
+ * contagem de caracteres: o mesmo número de letras dá larguras diferentes
+ * conforme as letras, e `overflow-wrap: anywhere` mostra que a métrica do
+ * navegador é a que vale.
+ *
+ * O piso de 0.78rem é o que segura a hierarquia: abaixo dele o nome ficaria
+ * do tamanho da sigla e menor que isso já é ruído. O que não couber no piso
+ * volta a quebrar em duas linhas — é por isso que `overflow-wrap` continua
+ * aqui — e o card não cresce, porque a caixa da foto é a altura que domina.
+ *
+ * O `0.05em` de espaçamento sobrevive ao encolhimento porque é relativo ao
+ * `font-size`: a linha encolhe inteira, tracking incluído.
+ */
+.candidate-info .name {
+  margin: 0;
+  font-size: var(--name-size, 0.95rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* Footer: só a pílula da ficha. Sem fio no topo. */
+.candidate-foot {
+  padding: 0.5rem var(--card-pad) 0.75rem;
+}
+
+/*
+ * A pílula não tem preenchimento: qualquer mistura da tinta sobre a cor do
+ * card aproxima os dois e derruba o contraste — a 14% da tinta já reprova em
+ * 6 siglas (pior AGIR, 3,80:1). Então ela é só a borda e o texto na tinta
+ * cheia, que é o que o `readableOn` mediu.
+ *
+ * O hover inverte as duas cores de uma vez, sem `transition`: um degradê
+ * entre a cor do card e a tinta passa pelo meio, onde nenhuma delas tem
+ * contraste. Como `readableOn` escolheu a tinta *contra* a cor do card,
+ * inverter devolve exatamente a mesma razão, então o hover passa nas 30.
+ */
+.candidate-foot .candidate-ficha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  width: 100%;
+  padding: 0 1rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--card-on, #fff);
+  background: transparent;
+  border: 1px solid var(--card-on, #fff);
+  transition: transform 150ms;
+  /* Listras de 2,5px a cada 5px, num tom de 20% da tinta CONTRÁRIA à do
+     texto: se a listra fosse um tom da própria tinta, o texto sentaria em
+     cima de listras da sua cor e o contraste despencava (19 dos 31 partidos
+     abaixo de 4,5:1, com o pior em 3,28:1). Assim o pior caso é 6,28:1, e no
+     vão entre as listras quem aparece é a cor do card, que já contrastava.
+     O `color-mix` é quem dá o alfa: `var()` não aceita função dentro, e a cor
+     do partido é um hex, então não há como enfiar "20%" nela. Precisa vir
+     depois do `background` acima, que é shorthand e zeraria a imagem. */
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--card-fill, #000) 20%, transparent) 50%,
+    transparent 50%
+  );
+  background-size: 100% 5px;
+}
+
+.candidate-foot .candidate-ficha:hover {
+  color: var(--card-fill, #000);
+  border: 1px solid var(--card-fill, #000);
+  /* O texto é a tinta contrária, então o fundo precisa ser a tinta: sem ela o
+     vão entre as listras mostra a cor do partido e o contraste cai para
+     1,67:1 no MISSÃO. Com o fundo sólido são 18,88:1. A listra aqui é um tom
+     da cor do partido sobre a tinta, que é a direção oposta do texto, e o
+     pior caso sobe para 11,99:1. */
+  background: var(--card-on, #fff);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--card-base, #6b7280) 20%, transparent) 50%,
+    transparent 50%
+  );
+  background-size: 100% 5px;
+}
+
+.candidate-foot .candidate-ficha:active {
+  transform: scale(0.97);
+}
