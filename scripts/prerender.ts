@@ -113,7 +113,7 @@ const FAIRNESS_META: RouteMeta = {
 }
 
 const STATES_META: RouteMeta = {
-  title: 'Escolha o seu estado — candidatos por UF | Teste de Voto',
+  title: 'Selecione seu estado — candidatos por UF | Teste de Voto',
   description:
     'Mapa do Brasil para escolher o estado e ver os candidatos. O Paraná já está disponível; os demais estados chegam nas próximas rodadas.',
   path: '/estados',
