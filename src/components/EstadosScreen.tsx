@@ -26,7 +26,7 @@ export function EstadosScreen({
   const available = new Set(availableStates)
 
   return (
-    <section className="mx-auto flex w-full flex-col gap-6 px-4 py-8">
+    <section className="mx-auto flex w-full flex-col gap-8">
       <header className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-semibold">Escolha o seu estado</h1>
       </header>
@@ -43,7 +43,7 @@ export function EstadosScreen({
           </figcaption>
         </figure>
 
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-3 md:grid-cols-4">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-2 lg:grid-cols-4 content-center">
           {BRAZIL_STATES.map((state) => {
             const isAvailable = available.has(state.code)
 
@@ -51,7 +51,7 @@ export function EstadosScreen({
               <li key={state.code}>
                 {isAvailable ? (
                   <a
-                    className="flex h-full flex-col gap-0.5 rounded-lg bg-primary px-3 py-2 text-primary-foreground no-underline transition-colors hover:bg-logo-yellow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-panel"
+                    className="flex flex-col h-full gap-0.5 rounded-lg bg-tse-mist px-3 py-2 text-muted-foreground no-underline transition-colors hover:bg-muted-foreground hover:text-tse-mist focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-panel"
                     href={CANDIDATES_PATH}
                     onClick={(event) => {
                       if (isModifiedClick(event)) return
@@ -65,10 +65,14 @@ export function EstadosScreen({
                 ) : (
                   <div
                     aria-disabled="true"
-                    className="flex h-full flex-col gap-0.5 rounded-lg border border-dashed border-border px-3 py-2 text-muted-foreground"
+                    className="flex flex-col gap-1.5 rounded-lg border border-dashed border-canvas px-3 py-2 text-deep-foreground"
                   >
-                    <span className="text-lg font-semibold">{state.code}</span>
-                    <span className="text-xs">{state.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-lg font-semibold">
+                        {state.code}
+                      </span>
+                      <span className="text-xs">{state.name}</span>
+                    </div>
                     <span className="text-[0.625rem] uppercase tracking-wide">
                       Em breve
                     </span>

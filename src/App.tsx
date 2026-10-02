@@ -103,7 +103,7 @@ function App({
   }
 
   return (
-    <main className="min-h-screen bg-tse-primary gap-4 px-8 py-8">
+    <main className="min-h-screen bg-tse-primary gap-4 px-12 py-8">
       <AppHeader route={route} onNavigate={onNavigate} />
 
       {route.name === 'start' && (
