@@ -1,0 +1,164 @@
+/*
+ * Ficha do candidato (`/candidato/:id`).
+ *
+ * A ordem é cabeçalho → navegação das abas → duas colunas (trilho de seções à
+ * esquerda, conteúdo da aba à direita). A navegação fica no fluxo, logo abaixo
+ * do cabeçalho, então não há rodapé reservado para ela.
+ */
+
+.ficha {
+  width: 100%;
+  max-width: 1040px;
+  padding: 1.5rem 1.25rem 3rem;
+  margin: 0 auto;
+}
+
+.ficha__cabecalho {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, #000 10%, transparent);
+}
+
+.ficha__cabecalho img {
+  border-radius: 8px;
+  object-fit: cover;
+  background: color-mix(in srgb, #000 6%, transparent);
+}
+
+.ficha__cabecalho h2 {
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+}
+
+.ficha__cabecalho p {
+  margin: 0.15rem 0;
+}
+
+.ficha__nav {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1.75rem;
+}
+
+.ficha__corpo {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.ficha__trilho {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.ficha__conteudo {
+  min-width: 0;
+}
+
+.ficha__conteudo:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.ficha-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.ficha-section {
+  /* Compensa o topo fixo do trilho ao saltar por âncora. */
+  scroll-margin-top: 2rem;
+}
+
+.ficha-section:focus {
+  outline: none;
+}
+
+.ficha-section:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.ficha-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6560;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, #000 8%, transparent);
+}
+
+.ficha-section dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+
+.ficha-section dt {
+  font-size: 0.78rem;
+  color: #7d766e;
+  margin-bottom: 0.1rem;
+}
+
+.ficha-section dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ficha-section ol,
+.ficha-section ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.ficha-section li {
+  margin-bottom: 0.75rem;
+}
+
+.ficha-section p {
+  margin: 0.2rem 0;
+}
+
+.ficha__rodape {
+  margin: 3rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, #000 10%, transparent);
+}
+
+/*
+ * Abaixo de ~900px as duas colunas não convivem: o texto da ficha encolhe
+ * demais ao lado de um trilho de 210px. O trilho some e a navegação de abas
+ * passa a ser a única — as seções continuam acessíveis pela rolagem e pelo
+ * título de cada bloco.
+ */
+@media (max-width: 900px) {
+  .ficha__corpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .ficha__trilho {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .ficha {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .ficha__cabecalho {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
