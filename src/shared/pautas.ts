@@ -40,7 +40,8 @@ export const PAUTAS_CHAVE: readonly PautaChave[] = [
   },
   {
     tema: 'marco-temporal',
-    rotulo: 'Marco temporal (PL 490/2007) — aprovação do texto-base em Plenário',
+    rotulo:
+      'Marco temporal (PL 490/2007) — aprovação do texto-base em Plenário',
     proposicaoLabel: 'PL 490/2007',
     proposicaoId: 345311,
     votacaoId: '345311-270',
@@ -49,7 +50,8 @@ export const PAUTAS_CHAVE: readonly PautaChave[] = [
   },
   {
     tema: 'plataformas',
-    rotulo: 'Regulação das plataformas (PL 2630/2020) — requerimento de urgência',
+    rotulo:
+      'Regulação das plataformas (PL 2630/2020) — requerimento de urgência',
     proposicaoLabel: 'PL 2630/2020',
     proposicaoId: 2256735,
     votacaoId: '2310837-8',

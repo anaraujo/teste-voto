@@ -106,7 +106,10 @@ export function normalizeCandidate(
 
 /** Subconjunto de um registro usado para detectar mudanças entre sincronizações. */
 export function candidateChecksum(
-  candidate: Omit<CandidateRecord, 'id' | 'source' | 'importedAt' | 'updatedAt'>,
+  candidate: Omit<
+    CandidateRecord,
+    'id' | 'source' | 'importedAt' | 'updatedAt'
+  >,
 ): string {
   return JSON.stringify({
     tseSequence: candidate.tseSequence,

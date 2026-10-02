@@ -17,6 +17,8 @@
     "test": "node --experimental-sqlite --experimental-strip-types --test scripts/csv.test.ts scripts/normalize.test.ts scripts/repository.test.ts scripts/quiz-source.test.ts scripts/scoring.test.ts scripts/search.test.ts scripts/complementar.test.ts scripts/identity.test.ts scripts/parliament.test.ts scripts/history.test.ts",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "vite preview",
     "check:distribution": "node --experimental-sqlite --experimental-strip-types scripts/check-distribution.ts"
   },
@@ -31,6 +33,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "prettier": "^3.9.9",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }

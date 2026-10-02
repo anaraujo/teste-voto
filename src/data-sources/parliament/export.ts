@@ -10,10 +10,7 @@
 
 import type { CandidateRecord } from '../../shared/domain.ts'
 import type { IncumbentRow } from '../repository.ts'
-import type {
-  ParliamentaryVote,
-  VotoValor,
-} from './types.ts'
+import type { ParliamentaryVote, VotoValor } from './types.ts'
 import {
   EDITORIAL_THEMES,
   hasEvidence,
@@ -28,7 +25,12 @@ import {
 } from '../tse/history.ts'
 
 export interface ParliamentSummary {
-  mandates: Array<{ casa: string; legislatura: string; partido: string | null; uf: string | null }>
+  mandates: Array<{
+    casa: string
+    legislatura: string
+    partido: string | null
+    uf: string | null
+  }>
   records: Array<{
     casa: string
     proposicoesPorAno: Record<string, number>
@@ -119,8 +121,11 @@ export function emptyFichaParaCsv(
     bens_declarados_reais: candidate.totalAssets,
     teto_gastos_reais: formatMoney(candidate.campaignSpendingCap),
     redes_sociais:
-      candidate.socialLinks.length > 0 ? candidate.socialLinks.join(' | ') : null,
-    tem_historico_parlamentar: parliament && parliament.mandates.length > 0 ? 'Sim' : 'Não',
+      candidate.socialLinks.length > 0
+        ? candidate.socialLinks.join(' | ')
+        : null,
+    tem_historico_parlamentar:
+      parliament && parliament.mandates.length > 0 ? 'Sim' : 'Não',
     deputado_atual: incumbent ? 'Sim' : 'Não',
     camara_legislaturas: null,
     camara_proposicoes_total: null,
@@ -141,22 +146,27 @@ export function emptyFichaParaCsv(
         ? JSON.stringify(camara.proposicoesPorAno)
         : null
     linha.camara_comissoes =
-      camara.comissoes.map((item) => item.sigla || item.nome).join(' | ') || null
+      camara.comissoes.map((item) => item.sigla || item.nome).join(' | ') ||
+      null
     linha.camara_despesas_total_reais =
-      sumValues(camara.despesasPorAno) > 0 ? formatMoney(sumValues(camara.despesasPorAno)) : null
+      sumValues(camara.despesasPorAno) > 0
+        ? formatMoney(sumValues(camara.despesasPorAno))
+        : null
     linha.camara_despesas_por_ano =
       Object.keys(camara.despesasPorAno).length > 0
         ? JSON.stringify(camara.despesasPorAno)
         : null
   }
 
-  const camaraMandates = parliament?.mandates.filter((m) => m.casa === 'camara') ?? []
+  const camaraMandates =
+    parliament?.mandates.filter((m) => m.casa === 'camara') ?? []
   if (camaraMandates.length > 0) {
     linha.camara_legislaturas = camaraMandates
       .map((m) => `${m.legislatura}ª (${m.partido ?? '?'})`)
       .join(', ')
   }
-  const senadoMandates = parliament?.mandates.filter((m) => m.casa === 'senado') ?? []
+  const senadoMandates =
+    parliament?.mandates.filter((m) => m.casa === 'senado') ?? []
   if (senadoMandates.length > 0) {
     linha.senado_legislaturas = senadoMandates
       .map((m) => `${m.legislatura}ª (${m.partido ?? '?'})`)
@@ -170,7 +180,9 @@ export function emptyFichaParaCsv(
     linha.historico_posicoes_total = history.length
   }
 
-  const votePorPauta = new Map(parliament?.votes.map((vote) => [vote.votacaoId, vote]) ?? [])
+  const votePorPauta = new Map(
+    parliament?.votes.map((vote) => [vote.votacaoId, vote]) ?? [],
+  )
   for (const pauta of PAUTAS_CHAVE) {
     const vote = votePorPauta.get(pauta.votacaoId)
     const chave: `voto_${string}` = `voto_${pauta.tema}`
@@ -188,9 +200,10 @@ export function emptyFichaParaCsv(
     const chave: `posicao_${string}` = `posicao_${tema.id}`
     const chaveEvidencia: `posicao_${string}` = `posicao_${tema.id}_evidencia`
     linha[chave] = hasEvidence(campo) && campo ? campo.valor : SEM_EVIDENCIA
-    linha[chaveEvidencia] = hasEvidence(campo) && campo
-      ? tipoEvidenciaLabel(campo.tipo)
-      : 'Sem evidência'
+    linha[chaveEvidencia] =
+      hasEvidence(campo) && campo
+        ? tipoEvidenciaLabel(campo.tipo)
+        : 'Sem evidência'
   }
 
   return linha

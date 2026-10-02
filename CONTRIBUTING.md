@@ -51,7 +51,7 @@ npm run check:distribution
 
 - Faça um fork do repositório e crie uma branch nomeada pela mudança, por
   exemplo `adiciona-pergunta-sindico` ou `corrige-desempate`.
-- Escreva um título claro e descreva o *porquê*, não só o *o quê*.
+- Escreva um título claro e descreva o _porquê_, não só o _o quê_.
 - Referencie qualquer issue relacionada.
 - Use o [modelo de pull request](.github/pull_request_template.md).
 
@@ -66,7 +66,7 @@ fix(results): ajusta altura da foto no ranking
 ```
 
 **Formato longo** — cabeçalho + corpo. Para mudanças que merecem registro:
-explique o *o quê* e o *porquê*, com ou sem itens. Uma boa mensagem longa é
+explique o _o quê_ e o _porquê_, com ou sem itens. Uma boa mensagem longa é
 parte da documentação do projeto.
 
 ```

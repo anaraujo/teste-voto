@@ -22,13 +22,13 @@ Cada pergunta tem um **resolvedor puro** (`src/data/quiz-source.ts`) que mapeia
 o candidato (dados oficiais) para uma opção. Perfil do candidato = o resultado
 dessas 5 resoluções. Nada é escrito à mão por candidato.
 
-| id | Pergunta (título) | Opções | Fonte no TSE |
-| -- | ----------------- | ------ | ------------ |
-| `sector` | Que experiência profissional você quer em quem vai te representar? | 10 setores | `DS_OCUPACAO` |
-| `experience` | Você prefere alguém com mandato político anterior? | 3 | `DS_OCUPACAO` |
-| `age` | Você prefere um representante da sua geração? | 4 faixas | `DT_NASCIMENTO` |
-| `candidacy` | Você dá preferência a federação partidária ou partido isolado? | 2 | tipo de agremiação |
-| `local` | Você valoriza um candidato nascido no Paraná? | 2 | `SG_UF_NASCIMENTO` |
+| id           | Pergunta (título)                                                  | Opções     | Fonte no TSE       |
+| ------------ | ------------------------------------------------------------------ | ---------- | ------------------ |
+| `sector`     | Que experiência profissional você quer em quem vai te representar? | 10 setores | `DS_OCUPACAO`      |
+| `experience` | Você prefere alguém com mandato político anterior?                 | 3          | `DS_OCUPACAO`      |
+| `age`        | Você prefere um representante da sua geração?                      | 4 faixas   | `DT_NASCIMENTO`    |
+| `candidacy`  | Você dá preferência a federação partidária ou partido isolado?     | 2          | tipo de agremiação |
+| `local`      | Você valoriza um candidato nascido no Paraná?                      | 2          | `SG_UF_NASCIMENTO` |
 
 Total: 10 × 3 × 4 × 2 × 2 = **480 combinações possíveis de respostas**.
 
@@ -50,18 +50,18 @@ Acertos conhecidos para evitar itens "pega-pega":
 
 Distribuição observada nos 428 (alvo 5–50% por opção; aviso <3%):
 
-| Setor | % | n |
-| ----- | -- | - |
-| Negócios e economia | 21,5% | 92 |
-| Outra área | 15,2% | 65 |
-| Política e gestão pública | 14,7% | 63 |
-| Saúde | 10,3% | 44 |
-| Direito | 8,9% | 38 |
-| Comunicação e cultura | 7,7% | 33 |
-| Educação | 6,8% | 29 |
-| Segurança pública | 6,3% | 27 |
-| Serviços e trabalho | 5,4% | 23 |
-| Agropecuária | 3,3% | 14 |
+| Setor                     | %     | n   |
+| ------------------------- | ----- | --- |
+| Negócios e economia       | 21,5% | 92  |
+| Outra área                | 15,2% | 65  |
+| Política e gestão pública | 14,7% | 63  |
+| Saúde                     | 10,3% | 44  |
+| Direito                   | 8,9%  | 38  |
+| Comunicação e cultura     | 7,7%  | 33  |
+| Educação                  | 6,8%  | 29  |
+| Segurança pública         | 6,3%  | 27  |
+| Serviços e trabalho       | 5,4%  | 23  |
+| Agropecuária              | 3,3%  | 14  |
 
 Agropecuária fica abaixo de 5% (3,3%) — desvio aceito e documentado (o perfil
 de candidatos PR desta amostra tem poucos agropecuaristas; a opção continua
@@ -138,6 +138,7 @@ Métricas da base atual (428 candidatos):
 O ideal teórico de um quiz com 428 candidatos seria ~0,23% por candidato;
 como os perfis derivam de dados reais (e não são escolhidos à vontade), o
 contrato é **nenhum candidato vencer de forma desproporcional** (nenhum
+
 > ~5%), não uma divisão perfeita.
 
 ## O que fica de fora (decisão)

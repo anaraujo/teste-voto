@@ -72,6 +72,8 @@ export const CURRENT_ELECTION: ElectionConfig = {
   },
 }
 
-export function electionKey(election: Pick<ElectionConfig, 'year' | 'state' | 'office'>): string {
+export function electionKey(
+  election: Pick<ElectionConfig, 'year' | 'state' | 'office'>,
+): string {
   return `${election.year}:${election.state}:${election.office}`
 }

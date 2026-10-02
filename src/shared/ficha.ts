@@ -9,10 +9,7 @@
  */
 
 export type TipoEvidencia =
-  | 'proposta'
-  | 'declaracao'
-  | 'historico'
-  | 'sem-evidencia'
+  'proposta' | 'declaracao' | 'historico' | 'sem-evidencia'
 
 export interface EditorialField {
   /** Texto da posição/proposta. Vazio = não encontramos evidência. */
@@ -67,7 +64,9 @@ export function emptyField(): EditorialField {
 export function hasEvidence(
   field: { valor: string; tipo: string } | undefined,
 ): boolean {
-  return Boolean(field && field.valor.trim() !== '' && field.tipo !== 'sem-evidencia')
+  return Boolean(
+    field && field.valor.trim() !== '' && field.tipo !== 'sem-evidencia',
+  )
 }
 
 export function emptyEditorialFicha(): EditorialFicha {

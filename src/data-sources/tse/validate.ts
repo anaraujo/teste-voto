@@ -14,7 +14,10 @@ export function validateCandidate(row: RawCandidateRow): ValidationError[] {
     errors.push({ field: 'SQ_CANDIDATO', problem: 'obrigatório' })
   }
   if (row.ballotName.trim() === '' && row.fullName.trim() === '') {
-    errors.push({ field: 'NM_URNA_CANDIDATO/NM_CANDIDATO', problem: 'pelo menos um nome obrigatório' })
+    errors.push({
+      field: 'NM_URNA_CANDIDATO/NM_CANDIDATO',
+      problem: 'pelo menos um nome obrigatório',
+    })
   }
   if (row.ballotNumber.trim() === '') {
     errors.push({ field: 'NR_CANDIDATO', problem: 'obrigatório' })
@@ -23,7 +26,10 @@ export function validateCandidate(row: RawCandidateRow): ValidationError[] {
   return errors
 }
 
-export function formatErrors(errors: ValidationError[], sequence: string): string {
+export function formatErrors(
+  errors: ValidationError[],
+  sequence: string,
+): string {
   if (errors.length === 0) return ''
   const detail = errors.map((e) => `${e.field}: ${e.problem}`).join('; ')
   return `candidato ${sequence || '(sem número)'}: ${detail}`

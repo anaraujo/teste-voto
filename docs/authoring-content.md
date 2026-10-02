@@ -76,7 +76,7 @@ Regras práticas ao ajustar perguntas:
   nunca é atingida e divide candidatos por acaso; se passa de 50%, ela domina
   e tende o teste. `check:distribution` avisa nas duas direções.
 - **Espalhe os perfis.** Perfis derivados dos dados de verdade não podem ser
-  "espalhados" à mão — mas você pode escolher *quais dimensões* entrarão e
+  "espalhados" à mão — mas você pode escolher _quais dimensões_ entrarão e
   como seus buckets cortam os dados (ex.: faixas etárias ou agremiação) para
   equilibrar a grade.
 - **Não tema o "sem-mandato".** Nesta eleição 90,4% dos candidatos nunca tiveram

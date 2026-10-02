@@ -2,9 +2,17 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Candidate, OptionId, QuestionId } from '../src/data/quiz.ts'
 import { quizQuestions } from '../src/data/quiz-source.ts'
-import { computeResult, questionMatches, rankResults } from '../src/lib/scoring.ts'
+import {
+  computeResult,
+  questionMatches,
+  rankResults,
+} from '../src/lib/scoring.ts'
 
-function candidate(id: string, name: string, profile: Partial<Record<QuestionId, OptionId>>): Candidate {
+function candidate(
+  id: string,
+  name: string,
+  profile: Partial<Record<QuestionId, OptionId>>,
+): Candidate {
   return {
     id,
     name,

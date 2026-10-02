@@ -60,7 +60,8 @@ async function fetchDeputyBirthDates(items: CamaraDeputy[]): Promise<void> {
         dados?: { dataNascimento?: string | null }
       }
       const date = body.dados?.dataNascimento
-      item.dataNascimento = typeof date === 'string' && date !== '' ? date : null
+      item.dataNascimento =
+        typeof date === 'string' && date !== '' ? date : null
     } catch {
       item.dataNascimento = null
     }
@@ -74,7 +75,12 @@ export async function fetchCamaraDeputados(
   if (!options.force) {
     const cached = await readCache(filePath)
     if (cached) {
-      return { items: cached, retrievedAt: new Date().toISOString(), fromCache: true, url: CAMARA_DEPUTADOS_URL }
+      return {
+        items: cached,
+        retrievedAt: new Date().toISOString(),
+        fromCache: true,
+        url: CAMARA_DEPUTADOS_URL,
+      }
     }
   }
 
@@ -95,5 +101,10 @@ export async function fetchCamaraDeputados(
   await mkdir(dirname(filePath), { recursive: true })
   await writeFile(filePath, JSON.stringify({ items }, null, 2), 'utf8')
 
-  return { items, retrievedAt: new Date().toISOString(), fromCache: false, url: CAMARA_DEPUTADOS_URL }
+  return {
+    items,
+    retrievedAt: new Date().toISOString(),
+    fromCache: false,
+    url: CAMARA_DEPUTADOS_URL,
+  }
 }

@@ -94,7 +94,10 @@ export async function fetchCandidatePhotos(
  * SQ_CANDIDATO (ex.: "123456.jpg"). Aceita também bases que contenham o
  * número (ex.: "foto_123456.jpg").
  */
-export function photoFileForSequence(files: readonly string[], sequence: string): string | null {
+export function photoFileForSequence(
+  files: readonly string[],
+  sequence: string,
+): string | null {
   const base = sequence.trim()
   if (base === '') return null
 
@@ -102,7 +105,8 @@ export function photoFileForSequence(files: readonly string[], sequence: string)
   if (exact) return exact
 
   const contained = files.find(
-    (file) => fileBaseName(file).includes(base) || base.includes(fileBaseName(file)),
+    (file) =>
+      fileBaseName(file).includes(base) || base.includes(fileBaseName(file)),
   )
   return contained ?? null
 }

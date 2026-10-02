@@ -13,7 +13,9 @@ import {
 } from '../src/data-sources/tse/history.ts'
 import { emptyFichaParaCsv } from '../src/data-sources/parliament/export.ts'
 
-function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecord {
+function makeCandidate(
+  overrides: Partial<CandidateRecord> = {},
+): CandidateRecord {
   const base: CandidateRecord = {
     id: '2026-PR-1',
     tseSequence: '1',
@@ -67,7 +69,9 @@ function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecor
   return { ...base, ...overrides }
 }
 
-function fazerLinha(overrides: Partial<HistoricCandidacyRow> = {}): HistoricCandidacyRow {
+function fazerLinha(
+  overrides: Partial<HistoricCandidacyRow> = {},
+): HistoricCandidacyRow {
   return {
     ano: 2020,
     nome: 'Ana Participante Teste',
@@ -101,7 +105,12 @@ test('toIsoDate converte datas do TSE para AAAA-MM-DD', () => {
 test('matchHistoricToCandidates casa mesmo com data em DD/MM/AAAA', () => {
   const candidate = makeCandidate({ birthDate: '1986-10-02' })
   const mandates = matchHistoricToCandidates(
-    [fazerLinha({ nome: 'ANA PARTICIPANTE TESTE', dataNascimento: '02/10/1986' })],
+    [
+      fazerLinha({
+        nome: 'ANA PARTICIPANTE TESTE',
+        dataNascimento: '02/10/1986',
+      }),
+    ],
     [candidate],
   )
   assert.equal(mandates.length, 1)
@@ -212,10 +221,18 @@ test('sortMandates ordena por ano e cargo', () => {
     turno: 0,
     sqCandidato: null,
   })
-  const ordenado = sortMandates([mandato(2020, 'VEREADOR'), mandato(2008, 'VEREADOR'), mandato(2008, 'PREFEITO')])
+  const ordenado = sortMandates([
+    mandato(2020, 'VEREADOR'),
+    mandato(2008, 'VEREADOR'),
+    mandato(2008, 'PREFEITO'),
+  ])
   assert.deepEqual(
     ordenado.map((m) => [m.ano, m.cargo]),
-    [[2008, 'PREFEITO'], [2008, 'VEREADOR'], [2020, 'VEREADOR']],
+    [
+      [2008, 'PREFEITO'],
+      [2008, 'VEREADOR'],
+      [2020, 'VEREADOR'],
+    ],
   )
 })
 
@@ -262,9 +279,18 @@ test('emptyFichaParaCsv preenche o resumo de posições anteriores', () => {
       sqCandidato: null,
     },
   ]
-  const linha = emptyFichaParaCsv(candidate, undefined, undefined, null, history)
+  const linha = emptyFichaParaCsv(
+    candidate,
+    undefined,
+    undefined,
+    null,
+    history,
+  )
   assert.equal(linha.historico_posicoes_total, 2)
-  assert.equal(linha.historico_posicoes, '2008 Vereador em Curitiba/PR (PTE) · eleito | 2016 Prefeito em Curitiba/PR (PTE) · eleito')
+  assert.equal(
+    linha.historico_posicoes,
+    '2008 Vereador em Curitiba/PR (PTE) · eleito | 2016 Prefeito em Curitiba/PR (PTE) · eleito',
+  )
 })
 
 test('emptyFichaParaCsv deixa posições anteriores vazias sem histórico', () => {

@@ -111,13 +111,17 @@ export function buildSearchIndex(
     ballotName: normalize(candidate.ballotName),
     fullName: normalize(candidate.fullName),
     ballotNumber: candidate.ballotNumber,
-    partyAcronym: candidate.partyAcronym ? normalize(candidate.partyAcronym) : '',
+    partyAcronym: candidate.partyAcronym
+      ? normalize(candidate.partyAcronym)
+      : '',
     party: candidate.party ? normalize(candidate.party) : '',
     federation: candidate.federation ? normalize(candidate.federation) : '',
     coalition: candidate.coalition ? normalize(candidate.coalition) : '',
     occupation: candidate.occupation ? normalize(candidate.occupation) : '',
     city: candidate.city ? normalize(candidate.city) : '',
-    birthMunicipality: candidate.birthMunicipality ? normalize(candidate.birthMunicipality) : '',
+    birthMunicipality: candidate.birthMunicipality
+      ? normalize(candidate.birthMunicipality)
+      : '',
     partyKey: partyKeyOf(candidate),
   }))
 }
@@ -146,7 +150,10 @@ function collectParties(entries: readonly CandidateSearchEntry[]): Party[] {
  * Detecta se a busca é por partido: sigla exata, nome exato ou prefixo/subtexto
  * do nome que identifique uma única agremiação. Retorna a chave do partido.
  */
-function matchParty(entries: readonly CandidateSearchEntry[], query: string): string | null {
+function matchParty(
+  entries: readonly CandidateSearchEntry[],
+  query: string,
+): string | null {
   const parties = collectParties(entries)
 
   for (const party of parties) {
@@ -202,7 +209,9 @@ export function searchCandidates(
   query: string,
 ): ApiCandidate[] {
   const normalizedQuery = normalize(query)
-  const sorted = [...index].sort((a, b) => byBallotName(a.candidate, b.candidate))
+  const sorted = [...index].sort((a, b) =>
+    byBallotName(a.candidate, b.candidate),
+  )
 
   if (normalizedQuery === '') return sorted.map((entry) => entry.candidate)
 
@@ -214,7 +223,10 @@ export function searchCandidates(
   }
 
   return sorted
-    .map((entry) => ({ candidate: entry.candidate, score: scoreCandidate(entry, normalizedQuery) }))
+    .map((entry) => ({
+      candidate: entry.candidate,
+      score: scoreCandidate(entry, normalizedQuery),
+    }))
     .filter((scored) => scored.score >= MIN_SCORE)
     .sort((a, b) => b.score - a.score || byBallotName(a.candidate, b.candidate))
     .map((scored) => scored.candidate)

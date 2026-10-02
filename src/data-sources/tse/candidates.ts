@@ -9,9 +9,17 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { DatasetDescriptor, ElectionConfig } from '../../shared/elections.ts'
+import type {
+  DatasetDescriptor,
+  ElectionConfig,
+} from '../../shared/elections.ts'
 import { parseCsv, type ParsedCsv } from './csv.ts'
-import { downloadToFile, extractZip, findEntry, listZipEntries } from './download.ts'
+import {
+  downloadToFile,
+  extractZip,
+  findEntry,
+  listZipEntries,
+} from './download.ts'
 import {
   buildHeaderIndex,
   electionConfigFrom,
@@ -57,12 +65,19 @@ function zipNameFromUrl(url: string): string {
 export async function loadDescriptorCsv(
   descriptor: DatasetDescriptor,
   options: FetchOptions,
-): Promise<{ csv: ParsedCsv; sourceFile: string; downloaded: boolean; validator: string | null }> {
+): Promise<{
+  csv: ParsedCsv
+  sourceFile: string
+  downloaded: boolean
+  validator: string | null
+}> {
   const dataDir = options.dataDir ?? defaultDataDir()
   const zipName = zipNameFromUrl(descriptor.url)
   const zipPath = join(dataDir, 'download', zipName)
 
-  const download = await downloadToFile(descriptor.url, zipPath, { force: options.force })
+  const download = await downloadToFile(descriptor.url, zipPath, {
+    force: options.force,
+  })
 
   const extractDir = join(dataDir, 'download', 'extracted', descriptor.dataset)
   await extractZip(zipPath, extractDir)
@@ -70,7 +85,9 @@ export async function loadDescriptorCsv(
   const entries = listZipEntries(zipPath)
   const entry = findEntry(entries, descriptor.sourceFileMatch)
   if (!entry) {
-    throw new Error(`arquivo '${descriptor.sourceFileMatch}' não encontrado dentro de ${zipName}`)
+    throw new Error(
+      `arquivo '${descriptor.sourceFileMatch}' não encontrado dentro de ${zipName}`,
+    )
   }
 
   const csvPath = join(extractDir, entry.name)
@@ -87,7 +104,12 @@ export async function loadDescriptorCsv(
 export async function loadParsedCsv(
   election: ElectionConfig,
   options: FetchOptions,
-): Promise<{ csv: ParsedCsv; sourceFile: string; downloaded: boolean; validator: string | null }> {
+): Promise<{
+  csv: ParsedCsv
+  sourceFile: string
+  downloaded: boolean
+  validator: string | null
+}> {
   return loadDescriptorCsv(election.datasets.candidates, options)
 }
 
@@ -100,11 +122,16 @@ export async function fetchCandidates(
   election: ElectionConfig,
   options: FetchOptions = {},
 ): Promise<CandidateFetchResult> {
-  const { csv, sourceFile, downloaded, validator } = await loadParsedCsv(election, options)
+  const { csv, sourceFile, downloaded, validator } = await loadParsedCsv(
+    election,
+    options,
+  )
 
   const missing = missingRequiredHeaders(csv.headers)
   if (missing.length > 0) {
-    throw new Error(`colunas obrigatórias ausentes no CSV: ${missing.join(', ')}`)
+    throw new Error(
+      `colunas obrigatórias ausentes no CSV: ${missing.join(', ')}`,
+    )
   }
 
   const index = buildHeaderIndex(csv.headers)

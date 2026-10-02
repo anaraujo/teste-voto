@@ -10,7 +10,9 @@ import { PAUTAS_CHAVE } from '../src/shared/pautas.ts'
 
 const SEM_EVIDENCIA = 'não encontrei evidência suficiente'
 
-function makeCandidate(overrides: Partial<CandidateRecord> = {}): CandidateRecord {
+function makeCandidate(
+  overrides: Partial<CandidateRecord> = {},
+): CandidateRecord {
   const base: CandidateRecord = {
     id: '2026-PR-1',
     tseSequence: '1',
@@ -75,9 +77,10 @@ test('matchHistoryPeople casa pelo nome completo ou nome de urna', () => {
     ballotName: 'ZÉ DO POVO',
     fullName: 'JOSE CARLOS DO POVO',
   })
-  const { matched, unmatched } = matchHistoryPeople([candidate], [
-    { id: 1, nome: 'Zé do Povo', dataNascimento: null },
-  ])
+  const { matched, unmatched } = matchHistoryPeople(
+    [candidate],
+    [{ id: 1, nome: 'Zé do Povo', dataNascimento: null }],
+  )
   assert.equal(matched.get(1), '2026-PR-42')
   assert.equal(unmatched.length, 0)
 })
@@ -89,15 +92,17 @@ test('matchHistoryPeople exige data de nascimento para nome de urna curto', () =
     fullName: 'ANA CARLA DE SOUSA',
     birthDate: '1980-02-02',
   })
-  const { matched, unmatched } = matchHistoryPeople([candidate], [
-    { id: 3, nome: 'Ana', dataNascimento: '1980-02-02' },
-  ])
+  const { matched, unmatched } = matchHistoryPeople(
+    [candidate],
+    [{ id: 3, nome: 'Ana', dataNascimento: '1980-02-02' }],
+  )
   assert.equal(matched.get(3), '2026-PR-7')
   assert.equal(unmatched.length, 0)
 
-  const { matched: semData, unmatched: naoCasou } = matchHistoryPeople([candidate], [
-    { id: 4, nome: 'Ana', dataNascimento: null },
-  ])
+  const { matched: semData, unmatched: naoCasou } = matchHistoryPeople(
+    [candidate],
+    [{ id: 4, nome: 'Ana', dataNascimento: null }],
+  )
   assert.equal(semData.size, 0)
   assert.equal(naoCasou.length, 1)
 })
@@ -150,12 +155,16 @@ test('emptyFichaParaCsv usa valores do histórico parlamentar quando há mandato
     candidate,
     undefined,
     {
-      mandates: [{ casa: 'camara', legislatura: '57', partido: 'PT', uf: 'PR' }],
+      mandates: [
+        { casa: 'camara', legislatura: '57', partido: 'PT', uf: 'PR' },
+      ],
       records: [
         {
           casa: 'camara',
           proposicoesPorAno: { '2023': 12 },
-          comissoes: [{ sigla: 'CLP', nome: 'Comissão de Legislação Participativa' }],
+          comissoes: [
+            { sigla: 'CLP', nome: 'Comissão de Legislação Participativa' },
+          ],
           despesasPorAno: { '2023': 1500.5 },
         },
       ],
@@ -189,7 +198,9 @@ test('emptyFichaParaCsv distingue voto não registrado de votação indisponíve
     candidate,
     undefined,
     {
-      mandates: [{ casa: 'camara', legislatura: '57', partido: 'PT', uf: 'PR' }],
+      mandates: [
+        { casa: 'camara', legislatura: '57', partido: 'PT', uf: 'PR' },
+      ],
       records: [],
       votes: [
         {
