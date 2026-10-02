@@ -642,6 +642,27 @@ export function getCandidate(
   return row ? toCandidate(row) : null
 }
 
+/**
+ * Candidato ativo da eleição configurada, pelo id — o mesmo recorte de
+ * `listCandidates`, mas sem carregar a lista inteira.
+ */
+export function getActiveCandidate(
+  db: DatabaseSync,
+  id: string,
+  filter: ElectionFilter,
+): CandidateRecord | null {
+  const row = single(
+    db,
+    `SELECT * FROM candidates
+     WHERE id = ? AND election_year = ? AND state = ? AND office = ? AND is_active = 1`,
+    id,
+    filter.electionYear,
+    filter.state,
+    filter.office,
+  )
+  return row ? toCandidate(row) : null
+}
+
 /** Atualiza o caminho da foto dos candidatos presentes em `updates`. */
 export function setPhotoUrls(
   db: DatabaseSync,

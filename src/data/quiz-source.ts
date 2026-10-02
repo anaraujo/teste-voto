@@ -168,8 +168,6 @@ const sectorOptions: readonly Option[] = SECTORS.map(({ id, label }) => ({
   label,
 }));
 
-export type SectorOptionId = (typeof sectorOptions)[number]["id"];
-
 const options = {
   sector: sectorOptions,
   experience: [
@@ -281,25 +279,6 @@ export function buildProfile(
     profile[question.id] = optionId;
   }
   return profile;
-}
-
-export interface Introspection {
-  questionId: QuestionId;
-  title: string;
-  hint: string;
-  options: readonly Option[];
-  resolve: (source: ProfileSource) => OptionId | null;
-}
-
-/** Função interna de auditoria: expõe resolvedores por pergunta. */
-export function introspect(): readonly Introspection[] {
-  return qa.map((q) => ({
-    questionId: q.id,
-    title: q.title,
-    hint: q.hint,
-    options: q.options,
-    resolve: q.resolve,
-  }));
 }
 
 /** Nome estável (chave) do perfil completo — usado no desempate por raridade. */

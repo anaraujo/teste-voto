@@ -25,12 +25,3 @@ export function validateCandidate(row: RawCandidateRow): ValidationError[] {
 
   return errors
 }
-
-export function formatErrors(
-  errors: ValidationError[],
-  sequence: string,
-): string {
-  if (errors.length === 0) return ''
-  const detail = errors.map((e) => `${e.field}: ${e.problem}`).join('; ')
-  return `candidato ${sequence || '(sem número)'}: ${detail}`
-}

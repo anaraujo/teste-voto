@@ -8,10 +8,15 @@ cabeça em uma única leitura.
 
 O projeto valoriza a leveza acima de tudo:
 
-- Elementos HTML nativos com seu estilo padrão. Sem framework de CSS, sem
-  biblioteca de componentes. Uma passada de estilização virá depois.
+- Cores guiadas por um design system enxuto: tokens em `src/index.css`
+  (Tailwind v4 `@theme`), uma camada semântica que aponta para eles, e dois
+  botões com fronteiras explícitas (`SpecularButton`, CTA de destaque com
+  WebGL, e `Button`, do kit, para o resto). Nada de hexes soltos no código —
+  veja [docs/design-tokens.md](design-tokens.md).
 - Nenhuma dependência desnecessária. Toda dependência precisa conquistar seu
-  lugar em uma conversa primeiro.
+  lugar em uma conversa primeiro. Os componentes básicos em
+  `src/components/ui/` seguem o formato do shadcn/ui mas são **código do
+  repositório**, não um pacote: por isso não contam como dependência.
 - Módulos pequenos e focados, cada um com uma única responsabilidade.
 - A lógica é pura e os dados são declarativos, para que o aplicativo possa ser
   auditado, estendido e testado sem cerimônia.
@@ -23,18 +28,27 @@ src/
 ├── data/
 │   ├── quiz.ts               Tipos + re-exportação das perguntas (contrato)
 │   └── quiz-source.ts        Fonte oficial do quiz: perguntas + resolvedores
+├── entry-server.tsx         Renderização no servidor (renderToString)
 ├── shared/
 │   ├── elections.ts          Configuração de eleições (2026/PR/DEPUTADO FEDERAL)
 │   ├── domain.ts             Modelo de domínio (CandidateRecord, Source)
 │   └── api.ts                Contratos da API compartilhados com o frontend
-├── hooks/useCandidates.ts    Estado de carregamento da lista (API)
+├── AppRouter.tsx             Cliente do roteamento (History API no navegador)
+├── hooks/useCandidates.ts    Estado de carregamento da lista (API ou seed)
+├── hooks/useCandidateDetail.ts  Estado de carregamento da ficha (API ou seed)
+├── hooks/useQuizAnswers.ts   Respostas do quiz (sessionStorage)
 ├── lib/scoring.ts            Pontuação pura + desempate (ranking)
+├── lib/search.ts             Busca fuzzy de candidatos (índice + ranking)
 ├── components/               Um componente por tela
 │   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
-│   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (via API)
+│   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (busca + grid)
+│   ├── CandidateGrid.tsx     Grid de cards da lista (foto, número, partido, nome)
+│   ├── CandidateDetailScreen.tsx  Ficha do candidato (abas, seções, fontes)
 │   ├── QuestionStep.tsx      Uma pergunta e suas opções
 │   ├── ResultScreen.tsx      Ranking completo dos candidatos
-│   └── FairnessScreen.tsx    Auditoria de imparcialidade
+│   ├── FairnessScreen.tsx    Auditoria de parcialidade
+│   ├── AppHeader.tsx         Cabeçalho com o botão de voltar
+│   └── NotFoundScreen.tsx    Rota desconhecida
 ├── data-sources/
 │   ├── repository.ts         SQLite (node:sqlite): candidatos, incumbentes,
 │   │                         mandatos, registros, votos, posições anteriores,
@@ -44,16 +58,68 @@ src/
 │   ├── camara/               Adaptadores da Câmara (deputados, identidade, registros,
 │   │                         Senado) para a ficha comparável
 │   └── parliament/           Montagem do histórico parlamentar + export da ficha
-└── App.tsx                   A máquina de estados das telas
+├── App.tsx                   Renderiza a tela da rota
 server/index.ts               API HTTP (node:http): candidatos, ficha detalhada + fotos
-scripts/                      ingestão, incumbentes, sincronização parlamentar e de
-                              histórico de posições, export da ficha, auditoria, dev
-                              runner e testes
+scripts/                      pré-renderização, ingestão, incumbentes, sincronização
+                              parlamentar e de histórico de posições, export da
+                              ficha, auditoria, dev runner e testes
 ```
 
 > A **ficha comparável** (histórico parlamentar, votações, posições, histórico
 > de posições anteriores e fontes) é descrita em
 > [`docs/ficha-comparavel.md`](ficha-comparavel.md).
+
+## O build gera as páginas
+
+Não existe backend de render, e renderizar as 436 telas a cada visita seria
+lento. O build renderiza cada rota uma vez, com `renderToString`, e escreve
+HTML estático em `dist/`:
+
+```
+npm run build        # tsc -b → bundle do app (dist/assets) → SSR → páginas
+npm run build:ssr    # vite build --ssr → dist-ssr/entry-server.js
+npm run build:pages  # node scripts/prerender.ts → dist/**/index.html
+```
+
+`scripts/prerender.ts` lê o mesmo SQLite da API e, para cada rota, chama
+`renderRoute` (`src/entry-server.tsx`) e monta a página com `renderPage`
+(`src/shared/html.ts`): título e description próprios, canonical, Open Graph e
+o texto real da tela. `dist/` fica com:
+
+```
+dist/
+├── index.html                     /  e  app.html (shell vazio)
+├── candidatos/index.html          lista
+├── imparcialidade/index.html      auditoria
+├── quiz/1…5/index.html            as perguntas
+├── candidato/<id>/index.html      uma ficha por candidato (428)
+├── sitemap.xml, robots.txt
+└── assets/                        bundle do cliente
+```
+
+Três decisões que evitam surpresa:
+
+- **Os dados embutidos vêm do mesmo módulo que a API.**
+  `src/data-sources/apiPayload.ts` monta a resposta de `/api/candidates` e de
+  `/api/candidates/:id`; a API e o build chamam a mesma função, então o HTML
+  pré-renderizado e a resposta da API não podem divergir. O `seed` vai em um
+  `<script type="application/json">` e o `AppRouter` o lê na partida.
+- **Só `/resultado` fica no cliente.** Ela depende de quem respondeu o quiz, e
+  um HTML estático mentiria. As outras rotas são as mesmas para todo mundo —
+  até `/quiz/n`, que é conteúdo fixo — então entram no build e viram texto
+  indexável. O shell vazio vai para `dist/app.html` e serve de fallback no
+  preview.
+- **Nenhuma data ou aleatoriedade no render.** `Intl`, `Date.now` e
+  `Math.random` ficam fora de todo caminho de render (as últimas posições
+  Overall em `FairnessScreen` são o próprio dado), senão a hidratação quebraria.
+  O botão specular usa `var(--color-*)` no estilo inline, lido dos tokens reais
+  do `index.css`, e o `getComputedStyle` só alimenta os uniforms do shader.
+
+O `vite preview` serve isso como um host estático faria: página pré-renderizada
+quando existe, shell vazio quando não. Ao publicar, defina `SITE_URL` para o
+canonical, o `og:url`, o sitemap e o robots apontarem para o domínio certo.
+As fotos são a exceção: hoje são servidas pela API em `/photos`; num host
+estático, copie `data/photos` para `dist/photos`.
 
 ## O quiz é data-driven
 
@@ -70,23 +136,45 @@ As 5 dimensões e a distribuição real sobre os 428 candidatos estão em
 
 ## O fluxo
 
-`App.tsx` é uma máquina de estados pequena.
+A tela atual é a **rota**: cada tela tem uma URL e o botão voltar do navegador
+funciona. `App.tsx` deriva o que renderizar da rota recebida em `route`; quem
+dá a rota é o `AppRouter.tsx` no navegador (History API) ou o build estático.
+
+| Rota              | Tela                    | Dados                 |
+| ----------------- | ----------------------- | --------------------- |
+| `/`               | `StartScreen`           | lista de candidatos   |
+| `/candidatos`     | `CandidatesScreen`      | lista de candidatos   |
+| `/candidato/:id`  | `CandidateDetailScreen` | ficha do candidato    |
+| `/quiz/:n`        | `QuestionStep`          | pergunta (n de 1 a 5) |
+| `/resultado`      | `ResultScreen`          | ranking das respostas |
+| `/imparcialidade` | `FairnessScreen`        | lista de candidatos   |
+| qualquer outra    | `NotFoundScreen`        | —                     |
+
+`src/shared/router.ts` é puro (sem DOM, sem React) e concentra o par caminho
+↔ tela: `matchRoute`, `routeToPath`, `candidatePath` e `parentPath`. Como não
+depende do ambiente, o mesmo módulo serve o cliente, o build estático e os
+testes.
 
 ```
-início ──▶ candidatos ──▶ ficha do candidato
-   │                        ▲
-   ▼                        │
-pergunta(0) ──▶ … ──▶ resultado ──▶ imparcialidade
-   ▲                             │        │
-   └──────────── reinício ◀──────┘◀───────┘
+início ──▶ /candidatos ──▶ /candidato/:id
+   │                             ▲
+   ▼                             │
+ /quiz/1 ──▶ … ──▶ /resultado ──▶ /imparcialidade
+   ▲                             │          │
+   └──────────── reinício ◀──────┘◀─────────┘
 ```
 
-- As respostas acumulam em um `Record<QuestionId, OptionId>`.
-- A tela de resultado oferece reinício, auditoria de imparcialidade e a ficha
-  de cada candidato (também acessível pela lista de candidatos).
-- A **ficha do candidato** (`CandidateDetailScreen`) tem abas de Resumo
-  (dados do TSE), Mandato e histórico, Posições anteriores, Votações, Posições
-  e Fontes.
+- As respostas acumulam em um `Record<QuestionId, OptionId>` guardado em
+  `sessionStorage` (`useQuizAnswers`), para que `/resultado` sobreviva a um F5 e
+  ao histórico do navegador.
+- O botão de voltar do cabeçalho (`AppHeader`) tem destino **determinístico**
+  (`parentPath`): a ficha volta para a lista, a auditoria volta para o
+  resultado, e as demais telas voltam para a inicial. Nenhum histórico é
+  guardado em estado.
+- A tela de resultado oferece reinício, auditoria de imparcialidade e a ficha de
+  cada candidato (também acessível pela lista de candidatos, onde "Ver ficha" é
+  um `<a href>` de verdade: abre em nova aba com clique modificado e é
+  rastreável).
 
 ## O modelo de pontuação
 
@@ -224,31 +312,42 @@ O Vite encaminha `/api` e `/photos` para a API em dev e preview (mesma origem).
 ### A página de candidatos
 
 `CandidatesScreen.tsx` consome `GET /api/candidates` via hook e cobre quatro
-estados: carregando, erro (sugere `npm run ingest`), vazio e lista. O resumo
-mostra foto, nome de urna, número, partido, agremiação e ocupação; `<details>`
-expande escolaridade, estado civil, nascimento (data + município), idade na
-eleição, quilombola/etnia, bens declarados e redes sociais. Marcas de
-reeleição/incumbência aparecem como `<mark>`.
+estados: carregando, erro (sugere `npm run ingest`), vazio e lista. A lista é um
+grid de cards (`CandidateGrid.tsx`): cada card traz a foto em 1:1, o número de
+urna, a sigla do partido e o nome de urna, com o fundo na cor primária do
+partido e a tinta escolhida por contraste (`readableOn`). O nome de urna encolhe
+em runtime para caber em uma linha. O campo de busca filtra no submit por nome
+(de urna e completo), número, partido, ocupação, cidade e coligação, com
+correspondência fuzzy (`src/lib/search.ts`).
+
+Os dados completos do candidato (escolaridade, estado civil, nascimento, idade,
+bens, redes sociais, marcas de reeleição/incumbência) não ficam no card: moram
+na ficha (`CandidateDetailScreen`, `/candidato/:id`), para os 428 cards não
+virarem uma parede de texto.
 
 ## As decisões de projeto definitivas
 
-| Decisão                                                    | Por quê                                                                  |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Quiz 100% data-driven                                      | Nada de opinião: perfis derivados de arquivos oficiais com proveniência. |
-| Escopo 428 candidatos (PR, Deputado Federal)               | Combinado: foco em uma eleição/cargo no primeiro momento.                |
-| Ignorar resultado do pleito nesta rodada                   | O produto serve para formar intenção de voto antes da eleição.           |
-| Dataset `complementar` corrigido                           | Substitui o "histórico" do rascunho pelo arquivo real do TSE.            |
-| Compatibilidade de perfil como pontuação                   | Simples de explicar ("você concordou em 4 de 5 perguntas").              |
-| Desempate: pontos → raridade → nome                        | Determinístico e reduz a vantagem de perfis muito comuns.                |
-| Regex por prefixo no setor                                 | `\b` do JS é ASCII e ignora acentos; prefixo evita faltar "MÉDICO".      |
-| Formato: complementar `parseDecimalDot`, bens `parseMoney` | Os arquivos TSE usam decimais diferentes; cada um no lugar certo.        |
-| `ST_REELEICAO` não usado (100% `#NE`)                      | Sem campo confiável; incumbente vem da API da Câmara.                    |
-| Incumbente por nome + data de nascimento                   | Nome de urna ≠ nome civil; data desambigua homônimos.                    |
-| Porta 2027 (API)                                           | Definida uma vez; app na 2026 via Vite.                                  |
-| TSE como fonte única de verdade                            | Tudo carrega URL, dataset, arquivo e data de obtenção.                   |
-| Backend só com o padrão do Node                            | `node:sqlite`, `node:http`, `node:test`; zero dependências.              |
-| Ingestão incremental + `sync_log`                          | Novos/alterados/removidos sem sobrescrever às cegas; auditorável.        |
-| Tabela `incumbents` separada                               | Dado derivado (Câmara) não contamina o registro TSE/checksum.            |
+| Decisão                                                    | Por quê                                                                      |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Quiz 100% data-driven                                      | Nada de opinião: perfis derivados de arquivos oficiais com proveniência.     |
+| Escopo 428 candidatos (PR, Deputado Federal)               | Combinado: foco em uma eleição/cargo no primeiro momento.                    |
+| Ignorar resultado do pleito nesta rodada                   | O produto serve para formar intenção de voto antes da eleição.               |
+| Dataset `complementar` corrigido                           | Substitui o "histórico" do rascunho pelo arquivo real do TSE.                |
+| Compatibilidade de perfil como pontuação                   | Simples de explicar ("você concordou em 4 de 5 perguntas").                  |
+| Desempate: pontos → raridade → nome                        | Determinístico e reduz a vantagem de perfis muito comuns.                    |
+| Regex por prefixo no setor                                 | `\b` do JS é ASCII e ignora acentos; prefixo evita faltar "MÉDICO".          |
+| Formato: complementar `parseDecimalDot`, bens `parseMoney` | Os arquivos TSE usam decimais diferentes; cada um no lugar certo.            |
+| `ST_REELEICAO` não usado (100% `#NE`)                      | Sem campo confiável; incumbente vem da API da Câmara.                        |
+| Incumbente por nome + data de nascimento                   | Nome de urna ≠ nome civil; data desambigua homônimos.                        |
+| Porta 2027 (API)                                           | Definida uma vez; app na 2026 via Vite.                                      |
+| TSE como fonte única de verdade                            | Tudo carrega URL, dataset, arquivo e data de obtenção.                       |
+| Backend só com o padrão do Node                            | `node:sqlite`, `node:http`, `node:test`; zero dependências.                  |
+| Ingestão incremental + `sync_log`                          | Novos/alterados/removidos sem sobrescrever às cegas; auditorável.            |
+| Páginas estáticas geradas no build                         | Rotas com URL real, texto indexável e primeira pintura sem esperar a API.    |
+| HTML e API lendo o mesmo `apiPayload.ts`                   | O que foi pré-renderizado não pode divergir do que a API devolve.            |
+| Só `/resultado` fica no cliente                            | As outras rotas são iguais para todo mundo; o ranking depende das respostas. |
+| Sem data/aleatoriedade no render                           | `Date.now` e `Math.random` quebrariam a hidratação.                          |
+| Tabela `incumbents` separada                               | Dado derivado (Câmara) não contamina o registro TSE/checksum.                |
 
 ## Convenções
 

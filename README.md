@@ -66,22 +66,37 @@ documentar o que foi observado no arquivo baixado:
 npm run ingest -- --inspect   # gera/atualiza docs/tse-schema.md
 ```
 
+### Variáveis de ambiente
+
+Todas são opcionais; os padrões vêm comentados em [`.env.example`](.env.example).
+
+| Variável     | Padrão                  | Para quê                                              |
+| ------------ | ----------------------- | ----------------------------------------------------- |
+| `DATA_DIR`   | `data`                  | Onde ficam os zips, o SQLite e as fotos               |
+| `PORT`       | `2027`                  | Porta da API HTTP                                     |
+| `API_TARGET` | `http://localhost:2027` | Alvo do proxy do Vite para a API                      |
+| `SITE_URL`   | `http://localhost:2026` | Domínio no build: canonical, og:url, sitemap e robots |
+
 ### Scripts
 
-| Comando                       | O que faz                                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                           |
-| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                              |
-| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                |
-| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                    |
-| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                   |
-| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                       |
-| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                       |
-| `npm run build`               | Checa os tipos e gera o build de produção em `dist/`                                                   |
-| `npm run preview`             | Visualiza o build de produção na porta 2026                                                            |
-| `npm run lint`                | Executa o lint com Oxlint                                                                              |
-| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz e pontuação |
-| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                    |
+| Comando                       | O que faz                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | Inicia o app (Vite) e a API juntos; app na 2026, API na 2027                                                                           |
+| `npm start`                   | Inicia somente o app (Vite) na porta 2026                                                                                              |
+| `npm run api`                 | Inicia somente a API HTTP na porta 2027                                                                                                |
+| `npm run ingest`              | Baixa e sincroniza os dados do TSE no SQLite local (com complementar, bens e redes)                                                    |
+| `npm run ingest -- --inspect` | Documenta o schema observado em `docs/tse-schema.md`                                                                                   |
+| `npm run ingest -- --force`   | Rebaixa os arquivos do TSE mesmo se já existirem                                                                                       |
+| `npm run sync:incumbents`     | Casa os deputados PR em exercício com os candidatos (API Câmara)                                                                       |
+| `npm run build`               | Tipos + bundle do app + build SSR + 436 páginas estáticas em `dist/`                                                                   |
+| `npm run build:ssr`           | Só o bundle do servidor (`dist-ssr/entry-server.js`), usado pelo passo seguinte                                                        |
+| `npm run build:pages`         | Só as páginas: HTML pré-renderizado por rota, `sitemap.xml` e `robots.txt`                                                             |
+| `npm run preview`             | Visualiza o build de produção na porta 2026                                                                                            |
+| `npm run lint`                | Executa o lint com Oxlint                                                                                                              |
+| `npm run format`              | Aplica o Prettier em todo o repositório (aspas simples, sem `;`)                                                                       |
+| `npm run format:check`        | Verifica a formatação sem alterar arquivos                                                                                             |
+| `npm run test`                | Roda os testes (node:test): CSV, normalização, repositório, complementar, identidade, quiz, pontuação, busca, rotas e pré-renderização |
+| `npm run check:distribution`  | Audita a imparcialidade em todas as 480 combinações                                                                                    |
 
 ## Dados oficiais do TSE
 
@@ -128,6 +143,8 @@ src/
 │   ├── domain.ts           Modelo de domínio (CandidateRecord, Source)
 │   └── api.ts              Contratos da API compartilhados com o frontend
 ├── hooks/useCandidates.ts  Estado de carregamento da lista de candidatos
+├── hooks/useQuizAnswers.ts Respostas do quiz (sessionStorage)
+├── shared/router.ts        Rotas puras: caminho de URL ↔ tela
 ├── data-sources/
 │   ├── repository.ts       Banco SQLite (node:sqlite): candidatos, incumbentes, auditoria
 │   ├── tse/
@@ -146,13 +163,29 @@ src/
 │       ├── deputados.ts   Deputados em exercício (API de Dados Abertos)
 │       └── identity.ts    Casamento por nome + data de nascimento
 ├── lib/scoring.ts          Pontuação por compatibilidade de perfil + desempate
+├── lib/search.ts           Busca fuzzy de candidatos (índice + ranking)
+├── lib/utils.ts            `cn()` — junta classes e resolve conflitos Tailwind
+├── lib/links.ts            Clique com modificador (abrir em nova aba)
+├── index.css               Design tokens (Tailwind v4 @theme) — veja docs/design-tokens.md
 ├── components/
 │   ├── StartScreen.tsx     Tela de boas-vindas
-│   ├── CandidatesScreen.tsx Lista de candidatos oficiais (via API)
+│   ├── CandidatesScreen.tsx Lista de candidatos oficiais (busca + grid)
+│   ├── CandidateGrid.tsx   Grid de cards (foto, número, partido e nome de urna)
+│   ├── CandidateDetailScreen.tsx Ficha: abas, seções e notas editoriais
+│   ├── GooeyNav.tsx        Navegação de abas com a pílula gooey (port do react-bits, sem deps)
+│   ├── LineSidebar.tsx     Trilho lateral de seções (port do react-bits, sem deps)
 │   ├── QuestionStep.tsx     Uma pergunta, suas opções e o progresso
 │   ├── ResultScreen.tsx     Ranking de todos os candidatos, 1º destacado
-│   └── FairnessScreen.tsx   Auditoria de distribuição imparcial
-└── App.tsx                 Máquina de estados das telas
+│   ├── FairnessScreen.tsx   Auditoria de distribuição imparcial
+│   ├── AppHeader.tsx        Cabeçalho com o botão de voltar
+│   ├── NotFoundScreen.tsx   Rota desconhecida
+│   ├── SpecularButton.tsx   Botão de CTA com variantes primary/secondary (WebGL)
+│   ├── specularTheme.ts     Mapeamento variante→token; lê as cores do CSS
+│   ├── ui/                  Kit no padrão shadcn: button, card, badge, input,
+│   │                        label, skeleton, progress, radio-group, sheet,
+│   │                        tooltip, sonner (código do repo, não pacote)
+├── AppRouter.tsx           Cliente do roteamento (History API)
+└── App.tsx                 Renderiza a tela da rota
 server/index.ts             API HTTP (node:http): candidatos + fotos
 scripts/
 ├── ingest.ts               CLI de ingestão (--inspect, --force)
@@ -172,13 +205,55 @@ dados oficiais do TSE — nada é escrito à mão por candidato. Um guia passo a
 passo está em [docs/authoring-content.md](docs/authoring-content.md) e o desenho
 do quiz em [docs/quiz-design.md](docs/quiz-design.md).
 
+## Rotas
+
+Cada tela tem uma URL — `/`, `/candidatos`, `/candidato/:id`, `/quiz/:n`,
+`/resultado` e `/imparcialidade` — então a ficha de um candidato pode ser
+compartilhada e o botão voltar do navegador funciona. O par caminho ↔ tela mora
+em [`src/shared/router.ts`](src/shared/router.ts), um módulo puro sem
+dependência de roteamento; o botão de voltar do cabeçalho tem destino
+determinístico. Como não há backend de render, as páginas são **pré-renderizadas no build**:
+`npm run build` gera um HTML por rota (`dist/candidatos/index.html`,
+`dist/candidato/2026-PR-…/index.html`, …) com título, canonical, Open Graph e
+o texto real da tela, mais `sitemap.xml` e `robots.txt`. O navegador hidrata
+a partir desse HTML; só `/resultado`, que depende de quem respondeu o quiz, usa
+o shell vazio. Ver [docs/how-it-works.md](docs/how-it-works.md).
+
+## Design system
+
+As cores do app são declaradas em uma única página de tokens
+(`src/index.css`, bloco `@theme` do Tailwind v4): cada cor vira uma variável
+CSS global e utilitárias (`bg-primary`, `text-primary-soft` etc.).
+
+Sobre esse bloco há uma **camada semântica** (`:root` + `@theme inline`) que dá
+ao kit em `src/components/ui/` os nomes que ele espera — `background`, `muted`,
+`border`, `ring` — sem introduzir uma segunda fonte de cor: cada valor aponta
+para um token do `@theme`.
+
+Os componentes básicos seguem o **formato** do shadcn/ui (Radix +
+`class-variance-authority`, `cn()`), mas o código é **deste repositório**:
+`npx shadcn@latest add <nome>` copia o arquivo para `src/components/ui/` e a
+partir daí ele é seu. É o que mantém o kit dentro da regra de zero dependências.
+
+Existem dois botões, com fronteiras explícitas:
+
+- **`SpecularButton`** — CTA de destaque ("Começar", "Recomeçar"). É a
+  assinatura visual do app: um shader WebGL que segue o ponteiro.
+- **`Button`** (do kit) — todo o resto: opções do quiz, "Tentar novamente",
+  voltar, ações de ficha. O resultado, quando mostra todos de uma vez, usa o
+  `.sb-link`, e a lista de candidatos usa os cards do `CandidateGrid`: cada
+  `SpecularButton` abre um contexto WebGL e o navegador aceita poucos.
+
+Formatação padronizada com Prettier (aspas simples, sem `;`). Leia
+[docs/design-tokens.md](docs/design-tokens.md).
+
 ## Contribuindo
 
 Contribuições são bem-vindas. Leia primeiro o
 [CONTRIBUTING.md](CONTRIBUTING.md) e o
 [Código de Conduta](CODE_OF_CONDUCT.md). Este projeto valoriza a leveza:
-componentes nativos, estilos padrão e nenhuma dependência nova sem uma
-conversa antes.
+estilo guiado pelo design system (tokens + Tailwind), dependências novas
+apenas com uma conversa antes.
 
 ## Licença
 

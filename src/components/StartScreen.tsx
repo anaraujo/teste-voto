@@ -1,3 +1,7 @@
+import { SpecularButton } from './SpecularButton.tsx'
+import { Button } from './ui/button.tsx'
+import { Card } from './ui/card.tsx'
+
 interface StartScreenProps {
   questionCount: number
   candidateCount: number
@@ -20,7 +24,7 @@ export function StartScreen({
   const canStart = !loading && candidateCount > 0
 
   return (
-    <section>
+    <section className="flex flex-col items-center justify-center gap-4">
       <h1>Teste de Voto</h1>
       <p>
         Descubra qual dos {candidateCount} candidatos a deputado federal combina
@@ -28,32 +32,48 @@ export function StartScreen({
         rápidas.
       </p>
 
-      {loading && <p>Carregando candidatos...</p>}
-
-      {error && (
-        <div>
-          <p>Não foi possível carregar os dados dos candidatos.</p>
-          <p>
-            <small>
-              Verifique se os dados do TSE foram carregados com{' '}
-              <code>npm run ingest</code> e se a API está rodando.
-            </small>
-          </p>
-          <p>
-            <small>({error})</small>
-          </p>
-          <button type="button" onClick={onRetry}>
-            Tentar novamente
-          </button>
-        </div>
+      {loading && (
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          Carregando candidatos...
+        </p>
       )}
 
-      <button type="button" onClick={onStart} disabled={!canStart}>
-        Começar
-      </button>
-      <button type="button" onClick={onShowCandidates}>
-        Ver candidatos
-      </button>
+      {error && (
+        <Card className="max-w-md text-left">
+          <p className="text-sm font-medium">
+            Não foi possível carregar os dados dos candidatos.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Verifique se os dados do TSE foram carregados com{' '}
+            <code>npm run ingest</code> e se a API está rodando.
+          </p>
+          <p className="text-xs text-muted-foreground">({error})</p>
+          <div>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Tentar novamente
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <div className="flex gap-4">
+        <SpecularButton
+          variant="primary"
+          size="md"
+          onClick={onStart}
+          disabled={!canStart}
+        >
+          Começar
+        </SpecularButton>
+        <SpecularButton
+          variant="secondary"
+          size="md"
+          radius={12}
+          onClick={onShowCandidates}
+        >
+          Ver candidatos
+        </SpecularButton>
+      </div>
     </section>
   )
 }

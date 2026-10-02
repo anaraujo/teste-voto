@@ -12,16 +12,18 @@ Backend só com o padrão do Node — sem dependências novas sem conversa.
 ```sh
 npm run dev                     # app (2026) + API (2027)
 npm run ingest                  # dados do TSE -> data/tse.db (SQLite)
-npm run sync:incumbents | sync:parliament | sync:history
+npm run sync:incumbents         # deputados federais em exercício (Câmara)
+npm run sync:parliament         # histórico parlamentar (Câmara/Senado)
+npm run sync:history            # histórico de posições (TSE)
 npm test                        # node:test
 npm run lint                    # oxlint
-npm run build                   # tsc -b && vite build
+npm run build                   # tsc -b && vite build + build:ssr + build:pages
 npm run check:distribution      # auditoria de imparcialidade (480 combinações)
 ```
 
 ## Convenções
 
-- Documentação e interface em PT-BR; código e comentários em inglês.
+- Documentação e interface em PT-BR; código em inglês e comentários em PT-BR.
 - Imports relativos com extensão explícita (`.ts`/`.tsx`).
 - O quiz é **data-driven**: conteúdo em `src/data/quiz-source.ts` (resolvedores
   puros sobre dados oficiais do TSE). Nunca escreva perfis à mão.
