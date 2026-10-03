@@ -7,10 +7,9 @@ para o mesmo lugar:
 - o **mapa do Brasil**, com uma forma clicável por unidade federativa;
 - a **grade de siglas**, que funciona em qualquer largura de tela.
 
-Hoje só o Paraná tem lista, então só ele navega (para `/candidatos`). As demais
-UFs aparecem com a hachura de "em breve" e ficam fora da ordem de foco. Liberar
-um estado novo é só acrescentar a sigla em `availableStates` — a tela e o mapa
-não mudam.
+Hoje as 27 UFs têm lista. Cada uma navega para `/estados/:uf` (candidatos,
+quiz, resultado e imparcialidade daquela UF). A ficha continua em
+`/candidato/:id`.
 
 ## A forma da tela: empilhada no celular, lado a lado no desktop
 

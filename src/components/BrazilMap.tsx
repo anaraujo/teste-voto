@@ -47,9 +47,8 @@ export function BrazilMap({
     >
       <title id={titleId}>Mapa do Brasil por unidade federativa</title>
       <desc id={descId}>
-        As 27 unidades federativas. As que já têm lista levam para os
-        candidatos; as demais ainda não estão disponíveis. A mesma navegação
-        está na lista de estados.
+        As 27 unidades federativas. Cada uma leva à lista de candidatos daquele
+        estado. A mesma navegação está na lista de estados.
       </desc>
 
       <defs>

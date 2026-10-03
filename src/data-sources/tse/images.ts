@@ -57,6 +57,7 @@ export async function fetchCandidatePhotos(
   const dataDir = options.dataDir ?? defaultDataDir()
   const descriptor = election.datasets.photos
   const photosDir = join(dataDir, 'photos')
+  const stateDir = join(photosDir, election.state)
 
   const path = new URL(descriptor.url).pathname
   const zipName = path.slice(path.lastIndexOf('/') + 1)
@@ -72,8 +73,8 @@ export async function fetchCandidatePhotos(
     })
     downloaded = download.downloaded
     validator = download.validator
-    await extractZip(zipPath, photosDir)
-    files = await collectImageFiles(photosDir)
+    await extractZip(zipPath, stateDir)
+    files = await collectImageFiles(stateDir)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`fotos indisponíveis (${descriptor.dataset}): ${message}`)

@@ -108,10 +108,10 @@ Três decisões que evitam surpresa:
   `/api/candidates/:id`; a API e o build chamam a mesma função, então o HTML
   pré-renderizado e a resposta da API não podem divergir. O `seed` vai em um
   `<script type="application/json">` e o `AppRouter` o lê na partida.
-- **Só `/resultado` fica no cliente.** Ela depende de quem respondeu o quiz, e
-  um HTML estático mentiria. As outras rotas são as mesmas para todo mundo —
-  até `/quiz/n`, que é conteúdo fixo — então entram no build e viram texto
-  indexável. O shell vazio vai para `dist/app.html` e serve de fallback no
+- **Só o resultado fica no cliente.** Ele depende de quem respondeu o quiz, e
+  um HTML estático mentiria. As outras rotas — inclusive as perguntas de cada
+  UF — entram no build e viram texto indexável. O shell vazio vai para
+  `dist/app.html` e serve de fallback no
   preview.
 - **Nenhuma data ou aleatoriedade no render.** `Intl`, `Date.now` e
   `Math.random` ficam fora de todo caminho de render (as últimas posições
@@ -144,15 +144,15 @@ A tela atual é a **rota**: cada tela tem uma URL e o botão voltar do navegador
 funciona. `App.tsx` deriva o que renderizar da rota recebida em `route`; quem
 dá a rota é o `AppRouter.tsx` no navegador (History API) ou o build estático.
 
-| Rota              | Tela                    | Dados                 |
-| ----------------- | ----------------------- | --------------------- |
-| `/`               | `EstadosScreen`         | malha estática (IBGE) |
-| `/candidatos`     | `CandidatesScreen`      | lista de candidatos   |
-| `/candidato/:id`  | `CandidateDetailScreen` | ficha do candidato    |
-| `/quiz/:n`        | `QuestionStep`          | pergunta (n de 1 a 5) |
-| `/resultado`      | `ResultScreen`          | ranking das respostas |
-| `/imparcialidade` | `FairnessScreen`        | lista de candidatos   |
-| qualquer outra    | `NotFoundScreen`        | —                     |
+| Rota                          | Tela                    | Dados                 |
+| ----------------------------- | ----------------------- | --------------------- |
+| `/`                           | `EstadosScreen`         | malha estática (IBGE) |
+| `/estados/:uf`                | `CandidatesScreen`      | lista da UF           |
+| `/candidato/:id`              | `CandidateDetailScreen` | ficha do candidato    |
+| `/estados/:uf/quiz/:n`        | `QuestionStep`          | pergunta (n de 1 a 5) |
+| `/estados/:uf/resultado`      | `ResultScreen`          | ranking das respostas |
+| `/estados/:uf/imparcialidade` | `FairnessScreen`        | lista da UF           |
+| qualquer outra                | `NotFoundScreen`        | —                     |
 
 `src/shared/router.ts` é puro (sem DOM, sem React) e concentra o par caminho
 ↔ tela: `matchRoute`, `routeToPath`, `candidatePath` e `parentPath`. Como não
@@ -160,28 +160,23 @@ depende do ambiente, o mesmo módulo serve o cliente, o build estático e os
 testes.
 
 ```
-início ──▶ /candidatos ──▶ /candidato/:id
-   │  ▲
-   │  └── / (estados) ──▶ /candidatos
-   ▼
- /quiz/1 ──▶ … ──▶ /resultado ──▶ /imparcialidade
-   ▲                             │          │
-   └──────────── reinício ◀──────┘◀─────────┘
+/ (estados) ──▶ /estados/:uf ──▶ /candidato/:id
+                     │
+                     └── /estados/:uf/quiz/1 ──▶ … ──▶ /resultado ──▶ /imparcialidade
 ```
 
 - A seleção de estado (`/`, o antigo `/estados`) é a porta de entrada por UF:
-  mostra o **mapa do Brasil** e uma
-  grade com as 27 unidades. Hoje só o Paraná tem lista, então só ele navega; as
-  demais aparecem como "em breve". A malha é **estática**
+  mostra o **mapa do Brasil** e uma grade com as 27 unidades, todas com lista.
+  A malha é **estática**
   (`src/data/brazil-map.ts`), sem biblioteca de mapa em tempo de execução — o
   porquê e a proveniência estão em [`docs/mapa-estados.md`](mapa-estados.md).
 
 - As respostas acumulam em um `Record<QuestionId, OptionId>` guardado em
-  `sessionStorage` (`useQuizAnswers`), para que `/resultado` sobreviva a um F5 e
-  ao histórico do navegador.
+  `sessionStorage` por UF (`useQuizAnswers`), para que o resultado daquela UF
+  sobreviva a um F5 sem misturar as respostas de outro estado.
 - O botão de voltar do cabeçalho (`AppHeader`) tem destino **determinístico**
-  (`parentPath`): a ficha volta para a lista, a auditoria volta para o
-  resultado, e as demais telas voltam para a inicial. Nenhum histórico é
+  (`parentPath`): a ficha volta para a lista da UF, a auditoria volta para o
+  resultado, e o quiz volta para a lista da UF. Nenhum histórico é
   guardado em estado.
 - A tela de resultado oferece reinício, auditoria de imparcialidade e a ficha de
   cada candidato (também acessível pela lista de candidatos, onde "Ver ficha" é

@@ -22,7 +22,7 @@ export interface Candidate {
   profile: Record<QuestionId, OptionId>
 }
 
-export { quizQuestions as questions } from './quiz-source.ts'
+export { quizQuestions as questions, questionsFor } from './quiz-source.ts'
 export type {
   ProfileSource,
   SectorId,

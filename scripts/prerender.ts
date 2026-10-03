@@ -19,9 +19,11 @@ import { openRepository } from '../src/data-sources/repository.ts'
 import {
   buildCandidateDetailPayload,
   buildCandidatesPayload,
+  filterForState,
 } from '../src/data-sources/apiPayload.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
-import { questions } from '../src/data/quiz.ts'
+import { questionsFor } from '../src/data/quiz.ts'
+import { BRAZIL_STATES, stateByCode } from '../src/data/brazil-map.ts'
 import { renderPage } from '../src/shared/html.ts'
 import type {
   PrerenderData,
@@ -29,8 +31,11 @@ import type {
   RouteMeta,
 } from '../src/shared/prerender.ts'
 import {
+  fairnessPath,
   LEGACY_STATES_PATH,
+  quizPath,
   routeToPath,
+  statePath,
   type Route,
 } from '../src/shared/router.ts'
 import type {
@@ -81,7 +86,7 @@ function listMeta(list: ApiCandidatesResponse): RouteMeta {
   const { state, office, year } = list.election
   const title = `Candidatos a ${office} — ${state} ${year} | Teste de Voto`
   const description = `Os ${list.total} candidatos a ${office} em ${state} (${year}), com partido, ocupação, bens declarados, redes e dados oficiais do TSE.`
-  return { title, description, path: routeToPath({ name: 'candidates' }) }
+  return { title, description, path: statePath(state) }
 }
 
 function candidateMeta(detail: ApiCandidateDetail): RouteMeta {
@@ -96,21 +101,22 @@ function candidateMeta(detail: ApiCandidateDetail): RouteMeta {
   }
 }
 
-const COMBINATIONS = questions.reduce(
-  (total, question) => total * question.options.length,
-  1,
-)
-
-const FAIRNESS_META: RouteMeta = {
-  title: 'Imparcialidade do teste — todas as combinações | Teste de Voto',
-  description: `Auditoria de imparcialidade: as ${COMBINATIONS} combinações possíveis de respostas, com as vitórias de cada candidato.`,
-  path: '/imparcialidade',
+function fairnessMeta(list: ApiCandidatesResponse): RouteMeta {
+  const combinations = questionsFor(stateByCode(list.election.state)!).reduce(
+    (total, question) => total * question.options.length,
+    1,
+  )
+  return {
+    title: `Imparcialidade do teste — ${list.election.state} | Teste de Voto`,
+    description: `Auditoria de imparcialidade em ${list.election.state}: as ${combinations} combinações possíveis de respostas, com as vitórias de cada candidato.`,
+    path: fairnessPath(list.election.state),
+  }
 }
 
 const STATES_META: RouteMeta = {
   title: 'Selecione seu estado — candidatos por UF | Teste de Voto',
   description:
-    'Mapa do Brasil para escolher o estado e ver os candidatos. O Paraná já está disponível; os demais estados chegam nas próximas rodadas.',
+    'Mapa do Brasil para escolher o estado e ver os candidatos a deputado federal de cada UF.',
   path: '/',
 }
 
@@ -137,29 +143,37 @@ async function main(): Promise<void> {
 
   const shell = await readFile(join(DIST, 'index.html'), 'utf8')
   const db = await openRepository(dbPath)
-  const list = buildCandidatesPayload(db)
-  const listData: PrerenderData = { kind: 'candidates', payload: list }
 
-  // `/quiz/N` é conteúdo estático (a pergunta e as opções não dependem das
-  // respostas), então entra no build também: as perguntas viram texto
-  // indexável. Só `/resultado` fica no cliente — o ranking depende de quem
-  // respondeu, e por isso usa o shell vazio.
   const pages: Array<{ route: Route; meta: RouteMeta; data?: PrerenderData }> =
-    [
-      { route: { name: 'candidates' }, meta: listMeta(list), data: listData },
-      { route: { name: 'states' }, meta: STATES_META, data: listData },
-      { route: { name: 'fairness' }, meta: FAIRNESS_META, data: listData },
+    [{ route: { name: 'states' }, meta: STATES_META }]
+
+  for (const brazil of BRAZIL_STATES) {
+    const filter = filterForState(brazil.code)
+    if (!filter) continue
+    const list = buildCandidatesPayload(db, filter)
+    const listData: PrerenderData = { kind: 'candidates', payload: list }
+    const questions = questionsFor(brazil)
+    pages.push(
+      {
+        route: { name: 'candidates', uf: brazil.code },
+        meta: listMeta(list),
+        data: listData,
+      },
+      {
+        route: { name: 'fairness', uf: brazil.code },
+        meta: fairnessMeta(list),
+        data: listData,
+      },
       ...questions.map((question, index) => ({
-        route: { name: 'question' as const, step: index + 1 },
+        route: { name: 'question' as const, uf: brazil.code, step: index + 1 },
         meta: {
           title: `${question.title} | Teste de Voto`,
-          description: `${questions.length} perguntas, ${
-            list.total
-          } candidatos a deputado federal no ${list.election.state}: ${question.hint}`,
-          path: routeToPath({ name: 'question', step: index + 1 }),
+          description: `${questions.length} perguntas, ${list.total} candidatos a deputado federal ${brazil.locative}: ${question.hint}`,
+          path: quizPath(brazil.code, index + 1),
         },
       })),
-    ]
+    )
+  }
 
   const seen = new Set<string>()
   const written: string[] = []
@@ -184,17 +198,21 @@ async function main(): Promise<void> {
   for (const page of pages) await emit(page)
 
   let skipped = 0
-  for (const candidate of list.candidates) {
-    const detail = await buildCandidateDetailPayload(db, candidate.id)
-    if (!detail) {
-      skipped += 1
-      continue
+  for (const brazil of BRAZIL_STATES) {
+    const filter = filterForState(brazil.code)
+    if (!filter) continue
+    for (const candidate of buildCandidatesPayload(db, filter).candidates) {
+      const detail = await buildCandidateDetailPayload(db, candidate.id)
+      if (!detail) {
+        skipped += 1
+        continue
+      }
+      await emit({
+        route: { name: 'candidate', id: candidate.id },
+        meta: candidateMeta(detail),
+        data: { kind: 'candidate', payload: detail },
+      })
     }
-    await emit({
-      route: { name: 'candidate', id: candidate.id },
-      meta: candidateMeta(detail),
-      data: { kind: 'candidate', payload: detail },
-    })
   }
 
   db.close()

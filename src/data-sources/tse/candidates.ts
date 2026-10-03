@@ -62,6 +62,50 @@ function zipNameFromUrl(url: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
 }
 
+interface PreparedZip {
+  extractDir: string
+  zipPath: string
+  zipName: string
+  downloaded: boolean
+  validator: string | null
+}
+
+/** Um ZIP nacional por URL neste processo: as 27 UFs leem o mesmo arquivo. */
+const preparedZips = new Map<string, Promise<PreparedZip>>()
+
+function prepareZip(
+  descriptor: DatasetDescriptor,
+  options: FetchOptions,
+): Promise<PreparedZip> {
+  const dataDir = options.dataDir ?? defaultDataDir()
+  const key = `${dataDir}\0${descriptor.url}`
+  const cached = preparedZips.get(key)
+  if (cached) return cached
+
+  const task = (async () => {
+    const zipName = zipNameFromUrl(descriptor.url)
+    const zipPath = join(dataDir, 'download', zipName)
+    const download = await downloadToFile(descriptor.url, zipPath, {
+      force: options.force,
+    })
+    const extractDir = join(dataDir, 'download', 'extracted', descriptor.dataset)
+    await extractZip(zipPath, extractDir)
+    return {
+      extractDir,
+      zipPath,
+      zipName,
+      downloaded: download.downloaded,
+      validator: download.validator,
+    }
+  })()
+
+  preparedZips.set(key, task)
+  task.catch(() => {
+    if (preparedZips.get(key) === task) preparedZips.delete(key)
+  })
+  return task
+}
+
 export async function loadDescriptorCsv(
   descriptor: DatasetDescriptor,
   options: FetchOptions,
@@ -71,32 +115,22 @@ export async function loadDescriptorCsv(
   downloaded: boolean
   validator: string | null
 }> {
-  const dataDir = options.dataDir ?? defaultDataDir()
-  const zipName = zipNameFromUrl(descriptor.url)
-  const zipPath = join(dataDir, 'download', zipName)
-
-  const download = await downloadToFile(descriptor.url, zipPath, {
-    force: options.force,
-  })
-
-  const extractDir = join(dataDir, 'download', 'extracted', descriptor.dataset)
-  await extractZip(zipPath, extractDir)
-
-  const entries = listZipEntries(zipPath)
+  const prepared = await prepareZip(descriptor, options)
+  const entries = listZipEntries(prepared.zipPath)
   const entry = findEntry(entries, descriptor.sourceFileMatch)
   if (!entry) {
     throw new Error(
-      `arquivo '${descriptor.sourceFileMatch}' não encontrado dentro de ${zipName}`,
+      `arquivo '${descriptor.sourceFileMatch}' não encontrado dentro de ${prepared.zipName}`,
     )
   }
 
-  const csvPath = join(extractDir, entry.name)
+  const csvPath = join(prepared.extractDir, entry.name)
   const buffer = await readFile(csvPath)
   return {
     csv: parseCsv(buffer),
     sourceFile: entry.name,
-    downloaded: download.downloaded,
-    validator: download.validator,
+    downloaded: prepared.downloaded,
+    validator: prepared.validator,
   }
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import App from './App.tsx'
 import type { NavigateOptions } from './App.tsx'
 import { PRERENDER_DATA_ID, type PrerenderData } from './shared/prerender.ts'
@@ -103,6 +103,16 @@ export function AppRouter() {
     [],
   )
   const [data] = useState(readPrerenderData)
+
+  useEffect(() => {
+    if (route.name === 'not-found') return
+    const canonical = routeToPath(route)
+    const current = window.location.pathname.replace(/\/+$/, '') || '/'
+    if (current === canonical) return
+    const search = window.location.search
+    window.history.replaceState(null, '', `${canonical}${search}`)
+    notify()
+  }, [route])
 
   /**
    * Trocar de aba não vira entrada de histórico: `replaceState` mantém o botão

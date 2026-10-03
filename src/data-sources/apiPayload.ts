@@ -18,7 +18,7 @@ import {
   type IncumbentRow,
 } from './repository.ts'
 import { readEditorialFicha } from './parliament/editorial.ts'
-import { CURRENT_ELECTION } from '../shared/elections.ts'
+import { electionFor, isFederationUnit } from '../shared/elections.ts'
 import type {
   ApiCandidate,
   ApiCandidateDetail,
@@ -32,10 +32,15 @@ import type {
 } from '../shared/api.ts'
 import type { CandidateRecord } from '../shared/domain.ts'
 
-export const CURRENT_ELECTION_FILTER: ElectionFilter = {
-  electionYear: CURRENT_ELECTION.year,
-  state: CURRENT_ELECTION.state,
-  office: CURRENT_ELECTION.office,
+/** Filtro da lista de uma UF. `null` quando a sigla não é uma UF. */
+export function filterForState(state: string): ElectionFilter | null {
+  if (!isFederationUnit(state)) return null
+  const election = electionFor(state)
+  return {
+    electionYear: election.year,
+    state: election.state,
+    office: election.office,
+  }
 }
 
 export function toApiCandidate(
@@ -148,7 +153,7 @@ function toApiEditorial(
 /** Lista da eleição configurada, com a incumbência da Câmara. */
 export function buildCandidatesPayload(
   db: DatabaseSync,
-  filter: ElectionFilter = CURRENT_ELECTION_FILTER,
+  filter: ElectionFilter,
 ): ApiCandidatesResponse {
   const incumbents = listIncumbents(db)
   const candidates = listCandidates(db, filter).map((candidate) =>
@@ -169,9 +174,8 @@ export function buildCandidatesPayload(
 export async function buildCandidateDetailPayload(
   db: DatabaseSync,
   id: string,
-  filter: ElectionFilter = CURRENT_ELECTION_FILTER,
 ): Promise<ApiCandidateDetail | null> {
-  const candidate = getActiveCandidate(db, id, filter)
+  const candidate = getActiveCandidate(db, id)
   if (!candidate) return null
 
   const incumbent = listIncumbents(db).get(id)

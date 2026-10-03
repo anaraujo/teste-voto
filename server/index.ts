@@ -3,7 +3,7 @@
  *
  * Endpoints:
  *   GET /api/health
- *   GET /api/candidates                 (lista da eleição configurada)
+ *   GET /api/candidates?state=PR        (lista da UF)
  *   GET /api/candidates/:id             (detalhe)
  *   GET /photos/*                       (fotos locais)
  *   GET /*                              (SPA em dist/ quando SERVE_STATIC=true)
@@ -29,9 +29,10 @@ import { openRepository } from '../src/data-sources/repository.ts'
 import {
   buildCandidateDetailPayload,
   buildCandidatesPayload,
+  filterForState,
 } from '../src/data-sources/apiPayload.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
-import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
+import { CURRENT_ELECTION } from '../src/shared/elections.ts'
 
 const PORT = Number(process.env.PORT ?? 2027)
 const DATA_DIR = defaultDataDir()
@@ -52,9 +53,8 @@ function sendError(res: ServerResponse, status: number, message: string): void {
   sendJson(res, status, { error: message })
 }
 
-function parseUrlPath(req: IncomingMessage): string {
+function requestUrl(req: IncomingMessage): URL {
   return new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
-    .pathname
 }
 
 const PHOTO_TYPES: Record<string, string> = {
@@ -181,19 +181,27 @@ async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> 
   sendError(res, 404, 'arquivo não encontrado')
 }
 
-async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
+async function handleApi(res: ServerResponse, url: URL): Promise<void> {
+  const urlPath = url.pathname
+
   if (urlPath === '/api/health') {
     sendJson(res, 200, {
       status: 'ok',
-      election: electionKey(CURRENT_ELECTION),
+      year: CURRENT_ELECTION.year,
+      office: CURRENT_ELECTION.office,
     })
     return
   }
 
   if (urlPath === '/api/candidates') {
+    const filter = filterForState(url.searchParams.get('state') ?? '')
+    if (!filter) {
+      sendError(res, 400, 'informe state com a sigla da UF')
+      return
+    }
     const db = await openRepository(join(DATA_DIR, 'tse.db'))
     try {
-      sendJson(res, 200, buildCandidatesPayload(db))
+      sendJson(res, 200, buildCandidatesPayload(db, filter))
     } finally {
       db.close()
     }
@@ -222,10 +230,11 @@ async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
 
 const server = createServer(async (req, res) => {
   try {
-    const urlPath = parseUrlPath(req)
+    const url = requestUrl(req)
+    const urlPath = url.pathname
 
     if (urlPath.startsWith('/api/')) {
-      await handleApi(res, urlPath)
+      await handleApi(res, url)
       return
     }
 
