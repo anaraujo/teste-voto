@@ -23,7 +23,8 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http'
-import { extname, join, normalize } from 'node:path'
+import { dirname, extname, join, normalize, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { openRepository } from '../src/data-sources/repository.ts'
 import {
   buildCandidateDetailPayload,
