@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import type { CandidateRecord } from '../src/shared/domain.ts'
 import {
   classifyMandateResult,
+  formatCargoLabel,
   formatMandateSummary,
   matchHistoricToCandidates,
   normalizeResultado,
@@ -234,6 +235,17 @@ test('sortMandates ordena por ano e cargo', () => {
       [2020, 'VEREADOR'],
     ],
   )
+})
+
+test('formatCargoLabel dá rótulo legível a cargos executivos e do Senado', () => {
+  assert.equal(formatCargoLabel('SENADOR'), 'Senador')
+  assert.equal(formatCargoLabel('PREFEITO'), 'Prefeito')
+  assert.equal(formatCargoLabel('GOVERNADOR'), 'Governador')
+  assert.equal(formatCargoLabel('VICE-GOVERNADOR'), 'Vice-governador')
+  assert.equal(formatCargoLabel('PRESIDENTE'), 'Presidente')
+  assert.equal(formatCargoLabel('VICE-PRESIDENTE'), 'Vice-presidente')
+  assert.equal(formatCargoLabel('1º SUPLENTE'), '1º suplente de senador')
+  assert.equal(formatCargoLabel('2º SUPLENTE'), '2º suplente de senador')
 })
 
 test('formatMandateSummary descreve cargo, lugar, partido e resultado', () => {

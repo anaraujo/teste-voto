@@ -1,15 +1,16 @@
 import { useId, type CSSProperties } from 'react'
 import { BRAZIL_MAP_VIEWBOX, BRAZIL_STATES } from '../data/brazil-map.ts'
 import { isModifiedClick } from '../lib/links.ts'
+import type { OfficeKind } from '../shared/elections.ts'
+import { statePath } from '../shared/router.ts'
+import { StateChooser } from './StateChooser.tsx'
 import './BrazilMap.css'
 
 interface BrazilMapProps {
   /** Siglas das UFs que já têm lista. As demais entram como "em breve". */
   availableStates: readonly string[]
-  /** URL real de cada UF disponível — sustenta nova aba, SEO e o `<a>`. */
-  hrefForState: (code: string) => string
-  /** Chamado no clique simples (sem modificador) de uma UF disponível. */
-  onSelectState: (code: string) => void
+  /** Chamado no clique simples (sem modificador) de um cargo de uma UF. */
+  onSelectState: (code: string, office: OfficeKind) => void
 }
 
 /**
@@ -25,11 +26,7 @@ interface BrazilMapProps {
  * sumiriam da árvore de acessibilidade. O nome do mapa vem do
  * `<title>`/`<desc>` e o de cada UF, do `aria-label` do próprio link.
  */
-export function BrazilMap({
-  availableStates,
-  hrefForState,
-  onSelectState,
-}: BrazilMapProps) {
+export function BrazilMap({ availableStates, onSelectState }: BrazilMapProps) {
   // O `useId` gera ids estáveis entre servidor e cliente; os `:` não são
   // válidos em `url(#...)`, então saem antes de virar referência do padrão.
   const uid = useId().replace(/:/g, '')
@@ -74,19 +71,23 @@ export function BrazilMap({
       <g className="brazil-map-estados">
         {BRAZIL_STATES.map((state) =>
           available.has(state.code) ? (
-            <a
+            <StateChooser
               key={state.code}
-              className="uf uf--available"
-              href={hrefForState(state.code)}
-              aria-label={`${state.name} — ver candidatos`}
-              onClick={(event) => {
-                if (isModifiedClick(event)) return
-                event.preventDefault()
-                onSelectState(state.code)
-              }}
+              uf={state.code}
+              onSelectState={onSelectState}
             >
-              <path className="uf-forma" d={state.path} />
-            </a>
+              <a
+                className="uf uf--available"
+                href={statePath(state.code)}
+                aria-label={`${state.name} — escolher cargo`}
+                onClick={(event) => {
+                  if (isModifiedClick(event)) return
+                  event.preventDefault()
+                }}
+              >
+                <path className="uf-forma" d={state.path} />
+              </a>
+            </StateChooser>
           ) : (
             <g key={state.code} className="uf uf--soon" aria-hidden="true">
               <path className="uf-forma" d={state.path} />

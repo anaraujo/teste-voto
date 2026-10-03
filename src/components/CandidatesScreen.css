@@ -39,3 +39,11 @@
   gap: 1rem;
   padding-inline: 1rem;
 }
+
+.candidates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1rem;
+}

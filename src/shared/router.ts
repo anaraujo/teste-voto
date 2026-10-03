@@ -6,10 +6,11 @@
  */
 
 import { isFederationUnit } from '../data/brazil-map.ts'
+import { isOfficeKind, type OfficeKind } from './elections.ts'
 
 export type Route =
   | { name: 'start' }
-  | { name: 'candidates'; uf: string }
+  | { name: 'candidates'; uf: string; office: OfficeKind }
   | { name: 'states' }
   | { name: 'candidate'; id: string }
   | { name: 'fairness'; uf: string }
@@ -83,17 +84,28 @@ function matchStatePath(path: string): Route {
   const uf = decodeSegment(rawUf ?? '').toUpperCase()
   if (!isFederationUnit(uf)) return { name: 'not-found', path }
 
-  if (tail.length === 0) return { name: 'candidates', uf }
-  if (tail.length === 1 && tail[0] === RESULT_SEGMENT)
+  // `/estados/:uf` (sem cargo) vira o federal; o efeito canônico do cliente
+  // reescreve a URL para `/estados/:uf/federal`.
+  if (tail.length === 0) return { name: 'candidates', uf, office: 'federal' }
+
+  const [head, ...inner] = tail
+
+  if (isOfficeKind(head)) {
+    if (inner.length === 0) return { name: 'candidates', uf, office: head }
+    // Quiz/resultado/imparcialidade ainda são só do federal.
+    return { name: 'not-found', path }
+  }
+
+  if (tail.length === 1 && head === RESULT_SEGMENT)
     return { name: 'result', uf }
-  if (tail.length === 1 && tail[0] === FAIRNESS_SEGMENT) {
+  if (tail.length === 1 && head === FAIRNESS_SEGMENT) {
     return { name: 'fairness', uf }
   }
-  if (tail[0] === QUIZ_SEGMENT && tail.length === 1) {
+  if (head === QUIZ_SEGMENT && tail.length === 1) {
     return { name: 'question', uf, step: 1 }
   }
   if (
-    tail[0] === QUIZ_SEGMENT &&
+    head === QUIZ_SEGMENT &&
     tail.length === 2 &&
     /^[1-9]\d*$/.test(tail[1])
   ) {
@@ -102,8 +114,9 @@ function matchStatePath(path: string): Route {
   return { name: 'not-found', path }
 }
 
-export function statePath(uf: string): string {
-  return `${STATE_FLOW_PATH}/${uf}`
+/** Caminho da lista de candidatos de uma UF, no cargo pedido (padrão: federal). */
+export function statePath(uf: string, office: OfficeKind = 'federal'): string {
+  return `${STATE_FLOW_PATH}/${uf}/${office}`
 }
 
 export function quizPath(uf: string, step: number): string {
@@ -126,7 +139,7 @@ export function routeToPath(route: Route): string {
     case 'states':
       return STATES_PATH
     case 'candidates':
-      return statePath(route.uf)
+      return statePath(route.uf, route.office)
     case 'candidate':
       return `${CANDIDATE_PATH}/${encodeURIComponent(route.id)}`
     case 'fairness':
@@ -184,7 +197,7 @@ export function parseTab(search: string): Tab {
   return raw !== null && isTab(raw) ? raw : DEFAULT_TAB
 }
 
-function ufFromCandidateId(id: string): string | null {
+export function ufFromCandidateId(id: string): string | null {
   const uf = id.split('-')[1]?.toUpperCase()
   return uf && isFederationUnit(uf) ? uf : null
 }

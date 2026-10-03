@@ -16,8 +16,31 @@ import {
 test('matchRoute reconhece as rotas do app', () => {
   assert.deepEqual(matchRoute('/'), { name: 'states' })
   assert.deepEqual(matchRoute('/estados'), { name: 'states' })
-  assert.deepEqual(matchRoute('/estados/PR'), { name: 'candidates', uf: 'PR' })
-  assert.deepEqual(matchRoute('/estados/sp'), { name: 'candidates', uf: 'SP' })
+  assert.deepEqual(matchRoute('/estados/PR'), {
+    name: 'candidates',
+    uf: 'PR',
+    office: 'federal',
+  })
+  assert.deepEqual(matchRoute('/estados/sp'), {
+    name: 'candidates',
+    uf: 'SP',
+    office: 'federal',
+  })
+  assert.deepEqual(matchRoute('/estados/PR/federal'), {
+    name: 'candidates',
+    uf: 'PR',
+    office: 'federal',
+  })
+  assert.deepEqual(matchRoute('/estados/PR/estadual'), {
+    name: 'candidates',
+    uf: 'PR',
+    office: 'estadual',
+  })
+  assert.deepEqual(matchRoute('/estados/DF/estadual'), {
+    name: 'candidates',
+    uf: 'DF',
+    office: 'estadual',
+  })
   assert.deepEqual(matchRoute('/estados/PR/imparcialidade'), {
     name: 'fairness',
     uf: 'PR',
@@ -38,7 +61,11 @@ test('matchRoute reconhece as rotas do app', () => {
 
 test('matchRoute aceita barra final e número de pergunta', () => {
   assert.deepEqual(matchRoute('/estados/'), { name: 'states' })
-  assert.deepEqual(matchRoute('/estados/PR/'), { name: 'candidates', uf: 'PR' })
+  assert.deepEqual(matchRoute('/estados/PR/'), {
+    name: 'candidates',
+    uf: 'PR',
+    office: 'federal',
+  })
   assert.deepEqual(matchRoute('/candidato/abc/'), {
     name: 'candidate',
     id: 'abc',
@@ -89,7 +116,8 @@ test('matchRoute decodifica o id e marca o que não existe', () => {
 test('routeToPath é o inverso de matchRoute', () => {
   const routes: Route[] = [
     { name: 'states' },
-    { name: 'candidates', uf: 'PR' },
+    { name: 'candidates', uf: 'PR', office: 'federal' },
+    { name: 'candidates', uf: 'PR', office: 'estadual' },
     { name: 'candidate', id: '2026-PR-16 002' },
     { name: 'fairness', uf: 'SP' },
     { name: 'question', uf: 'PR', step: 3 },
@@ -103,6 +131,14 @@ test('routeToPath é o inverso de matchRoute', () => {
     routeToPath({ name: 'question', uf: 'PR', step: 0 }),
     '/estados/PR/quiz/1',
   )
+  assert.equal(
+    routeToPath({ name: 'candidates', uf: 'PR', office: 'federal' }),
+    '/estados/PR/federal',
+  )
+  assert.equal(
+    routeToPath({ name: 'candidates', uf: 'PR', office: 'estadual' }),
+    '/estados/PR/estadual',
+  )
 })
 
 test('o caminho antigo /estados volta ao canônico /', () => {
@@ -111,21 +147,24 @@ test('o caminho antigo /estados volta ao canônico /', () => {
 })
 
 test('parentPath dá um destino determinístico e a inicial não mostra voltar', () => {
-  assert.equal(parentPath({ name: 'candidates', uf: 'PR' }), '/')
+  assert.equal(
+    parentPath({ name: 'candidates', uf: 'PR', office: 'federal' }),
+    '/',
+  )
   assert.equal(parentPath({ name: 'states' }), '/')
   assert.equal(
     parentPath({ name: 'candidate', id: '2026-PR-1' }),
-    '/estados/PR',
+    '/estados/PR/federal',
   )
   assert.equal(parentPath({ name: 'candidate', id: 'x' }), '/')
   assert.equal(
     parentPath({ name: 'fairness', uf: 'SP' }),
     '/estados/SP/resultado',
   )
-  assert.equal(parentPath({ name: 'result', uf: 'PR' }), '/estados/PR')
+  assert.equal(parentPath({ name: 'result', uf: 'PR' }), '/estados/PR/federal')
   assert.equal(
     parentPath({ name: 'question', uf: 'PR', step: 1 }),
-    '/estados/PR',
+    '/estados/PR/federal',
   )
   assert.equal(showsBackButton({ name: 'start' }), false)
   assert.equal(showsBackButton({ name: 'states' }), false)

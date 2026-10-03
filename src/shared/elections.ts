@@ -5,10 +5,7 @@
  * Nenhuma URL deve ser "chumbada" na lógica: tudo passa por aqui.
  */
 
-import {
-  BRAZIL_STATES,
-  isFederationUnit,
-} from '../data/brazil-map.ts'
+import { BRAZIL_STATES, isFederationUnit } from '../data/brazil-map.ts'
 
 export interface DatasetDescriptor {
   /** URL oficial do arquivo ZIP no CDN do TSE. */
@@ -49,13 +46,27 @@ export const OFFICE_DISTRITAL = 'DEPUTADO DISTRITAL'
 /** Família de cargo a ingerir. O DF não tem estadual: é distrital. */
 export type OfficeKind = 'federal' | 'estadual'
 
+export const OFFICE_KINDS: readonly OfficeKind[] = ['federal', 'estadual']
+
+/** Reconhece uma família de cargo a partir de um valor externo (query/rota). */
+export function isOfficeKind(value: string): value is OfficeKind {
+  return value === 'federal' || value === 'estadual'
+}
+
 /**
  * Cargo da família pedida para uma UF. A família `estadual` cobre as
  * assembleias legislativas (26 UFs) e a Câmara Legislativa do DF.
  */
 export function officeFor(state: string, kind: OfficeKind): string {
   if (kind === 'federal') return OFFICE_FEDERAL
-  return state.trim().toUpperCase() === 'DF' ? OFFICE_DISTRITAL : OFFICE_ESTADUAL
+  return state.trim().toUpperCase() === 'DF'
+    ? OFFICE_DISTRITAL
+    : OFFICE_ESTADUAL
+}
+
+/** Inverso de `officeFor`: devolve a família a partir do cargo (não-DF). */
+export function officeKindOf(office: string): OfficeKind {
+  return office === OFFICE_FEDERAL ? 'federal' : 'estadual'
 }
 
 const CANDIDATES_2026_URL =

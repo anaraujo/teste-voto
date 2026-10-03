@@ -43,7 +43,10 @@ test('officeFor mapeia a família de cargo e trata o DF como distrital', () => {
 test('electionFor aceita o cargo e mantém a chave com o cargo', () => {
   const estadual = electionFor('SP', OFFICE_ESTADUAL)
   assert.equal(estadual.office, OFFICE_ESTADUAL)
-  assert.equal(estadual.datasets.candidates.sourceFileMatch, 'consulta_cand_2026_SP')
+  assert.equal(
+    estadual.datasets.candidates.sourceFileMatch,
+    'consulta_cand_2026_SP',
+  )
   assert.equal(electionKey(estadual), '2026:SP:DEPUTADO ESTADUAL')
 
   const distrital = electionFor('DF', officeFor('DF', 'estadual'))
@@ -56,6 +59,16 @@ test('filterForState só aceita sigla de UF', () => {
     electionYear: 2026,
     state: 'SP',
     office: 'DEPUTADO FEDERAL',
+  })
+  assert.deepEqual(filterForState('sp', 'estadual'), {
+    electionYear: 2026,
+    state: 'SP',
+    office: 'DEPUTADO ESTADUAL',
+  })
+  assert.deepEqual(filterForState('DF', 'estadual'), {
+    electionYear: 2026,
+    state: 'DF',
+    office: 'DEPUTADO DISTRITAL',
   })
   assert.equal(filterForState(''), null)
   assert.equal(filterForState('XX'), null)

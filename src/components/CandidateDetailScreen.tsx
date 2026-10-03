@@ -7,6 +7,9 @@ import type {
   ApiPoliticalMandate,
 } from '../shared/api.ts'
 import { useCandidateDetail } from '../hooks/useCandidateDetail.ts'
+import { stateByCode } from '../data/brazil-map.ts'
+import { officeKindOf, type OfficeKind } from '../shared/elections.ts'
+import { formatCargoLabel } from '../shared/cargo.ts'
 import {
   EDITORIAL_THEMES,
   hasEvidence,
@@ -28,6 +31,8 @@ interface CandidateDetailScreenProps {
   /** Aba viva; vem da query string (ver `src/shared/router.ts`). */
   tab: Tab
   onTabChange: (tab: Tab) => void
+  /** Informa o cargo da ficha, para o cabeçalho acertar o botão de voltar. */
+  onOfficeChange?: (office: OfficeKind) => void
 }
 
 /**
@@ -75,6 +80,14 @@ function votoLabel(voto: string | null): string {
 
 function statusLabel(status: ApiPoliticalMandate['status']): string {
   return status === 'eleito' ? 'Eleito' : 'Suplente'
+}
+
+/** Rótulo do cargo em minúsculas, para "Candidato(a) a deputado(a) federal". */
+function officeLabel(office: string): string {
+  if (office === 'DEPUTADO FEDERAL') return 'deputado(a) federal'
+  if (office === 'DEPUTADO ESTADUAL') return 'deputado(a) estadual'
+  if (office === 'DEPUTADO DISTRITAL') return 'deputado(a) distrital'
+  return office.toLowerCase()
 }
 
 function totalDespesas(record: ApiParliamentaryRecord): number | null {
@@ -303,7 +316,9 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
           <Campo
             label="Município"
             value={
-              dado.city && dado.city.toUpperCase() !== 'PR' ? dado.city : null
+              dado.city && dado.city.toUpperCase() !== dado.state
+                ? dado.city
+                : null
             }
           />
           <Campo label="Nacionalidade" value={dado.nationality} />
@@ -450,13 +465,15 @@ function HistoricoTab({ dado }: { dado: ApiCandidateDetail }) {
       <div>
         <p>
           Não encontramos registros de posições políticas anteriores deste
-          candidato nas consultas do TSE (2004–2024) para o Paraná.
+          candidato nas consultas do TSE (2004–2024) para{' '}
+          {stateByCode(dado.state)?.name ?? dado.state}.
         </p>
         <p>
           <small>
             Consideramos mandatos eleitos e suplentes em todas as posições:
             vereador, prefeito, vice-prefeito, deputado estadual, deputado
-            federal, senador, governador e vice-governador.
+            federal, senador, governador, vice-governador, presidente e
+            vice-presidente.
           </small>
         </p>
       </div>
@@ -477,7 +494,7 @@ function HistoricoTab({ dado }: { dado: ApiCandidateDetail }) {
                 <li key={`${mandate.ano}-${mandate.cargo}-${mandate.turno}`}>
                   <p>
                     <strong>
-                      {mandate.ano} · {mandate.cargo}
+                      {mandate.ano} · {formatCargoLabel(mandate.cargo)}
                     </strong>
                     {lugar && <span> · {lugar}</span>}
                     {mandate.partidoSigla && (
@@ -845,7 +862,9 @@ function FichaStructure({
           </p>
           <p>
             <small>
-              Candidato(a) a deputado(a) federal pelo Paraná — Eleições 2026
+              Candidato(a) a {officeLabel(dado.office)}{' '}
+              {stateByCode(dado.state)?.locative ?? `em ${dado.state}`} —
+              Eleições {dado.electionYear}
             </small>
           </p>
           {(candidate.isIncumbent ||
@@ -918,8 +937,15 @@ export function CandidateDetailScreen({
   initialData,
   tab = DEFAULT_TAB,
   onTabChange,
+  onOfficeChange,
 }: CandidateDetailScreenProps) {
   const { state, retry } = useCandidateDetail(candidateId, initialData)
+
+  // Informa o cargo ao cabeçalho para o botão de voltar apontar à lista certa.
+  useEffect(() => {
+    if (state.status === 'ready')
+      onOfficeChange?.(officeKindOf(state.data.office))
+  }, [state, onOfficeChange])
 
   if (state.status === 'error') {
     return (

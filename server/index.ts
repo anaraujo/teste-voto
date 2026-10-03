@@ -32,7 +32,7 @@ import {
   filterForState,
 } from '../src/data-sources/apiPayload.ts'
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
-import { CURRENT_ELECTION } from '../src/shared/elections.ts'
+import { CURRENT_ELECTION, isOfficeKind } from '../src/shared/elections.ts'
 
 const PORT = Number(process.env.PORT ?? 2027)
 const DATA_DIR = defaultDataDir()
@@ -124,8 +124,13 @@ async function servePhoto(res: ServerResponse, urlPath: string): Promise<void> {
   createReadStream(filePath).pipe(res)
 }
 
-function sendFile(res: ServerResponse, filePath: string, meta: { size: number }): void {
-  const type = STATIC_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
+function sendFile(
+  res: ServerResponse,
+  filePath: string,
+  meta: { size: number },
+): void {
+  const type =
+    STATIC_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
   res.writeHead(200, {
     'content-type': type,
     'cache-control': 'public, max-age=3600',
@@ -135,7 +140,10 @@ function sendFile(res: ServerResponse, filePath: string, meta: { size: number })
 }
 
 /** Serve dist/ com fallback SPA (index.html) para rotas desconhecidas. */
-async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
+async function serveStatic(
+  res: ServerResponse,
+  urlPath: string,
+): Promise<void> {
   const indexPath = join(DIST_DIR, 'index.html')
 
   if (urlPath === '/' || urlPath === '') {
@@ -194,7 +202,9 @@ async function handleApi(res: ServerResponse, url: URL): Promise<void> {
   }
 
   if (urlPath === '/api/candidates') {
-    const filter = filterForState(url.searchParams.get('state') ?? '')
+    const rawKind = url.searchParams.get('office') ?? 'federal'
+    const kind = isOfficeKind(rawKind) ? rawKind : 'federal'
+    const filter = filterForState(url.searchParams.get('state') ?? '', kind)
     if (!filter) {
       sendError(res, 400, 'informe state com a sigla da UF')
       return

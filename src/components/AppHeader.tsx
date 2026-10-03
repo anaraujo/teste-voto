@@ -4,6 +4,8 @@ import { parentPath, showsBackButton, type Route } from '../shared/router.ts'
 interface AppHeaderProps {
   route: Route
   onNavigate: (to: string) => void
+  /** Destino de voltar opcional (ex.: ficha sabe o cargo e quer voltar a ele). */
+  parent?: string
 }
 
 /**
@@ -26,19 +28,28 @@ interface AppHeaderProps {
  * Título de cada tela, para o cabeçalho. As que não têm título próprio — a
  * seleção de estado (que não mostra o cabeçalho), a ficha (o nome do candidato
  * vive no bloco da foto) e a pergunta (o título é o conteúdo) — ficam de fora.
+ *
+ * A lista de candidatos varia com o cargo; as demais são fixas por tela.
  */
 const TITLES: Partial<Record<Route['name'], string>> = {
-  candidates: 'Candidatos',
   result: 'Resultado',
   fairness: 'Imparcialidade do teste',
   'not-found': 'Página não encontrada',
 }
 
-export function AppHeader({ route, onNavigate }: AppHeaderProps) {
+function titleFor(route: Route): string | null {
+  if (route.name === 'candidates') {
+    if (route.office === 'federal') return 'Deputados federais'
+    return route.uf === 'DF' ? 'Deputados distritais' : 'Deputados estaduais'
+  }
+  return TITLES[route.name] ?? null
+}
+
+export function AppHeader({ route, onNavigate, parent }: AppHeaderProps) {
   if (!showsBackButton(route)) return null
 
-  const target = parentPath(route)
-  const title = TITLES[route.name] ?? null
+  const target = parent ?? parentPath(route)
+  const title = titleFor(route)
   // A lista de candidatos e a ficha de cada candidato compartilham o fundo
   // âmbar, então as duas usam a mesma tinta escura no cabeçalho.
   const onGreen = route.name === 'candidates'
@@ -60,8 +71,8 @@ export function AppHeader({ route, onNavigate }: AppHeaderProps) {
           onAmber
             ? 'text-muted-foreground hover:bg-tse-mist-100'
             : onGreen
-            ? 'text-primary-on hover:bg-white/20'
-            : 'text-tse-mist-100 hover:bg-tse-ink-700'
+              ? 'text-primary-on hover:bg-white/20'
+              : 'text-tse-mist-100 hover:bg-tse-ink-700'
         }`}
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
@@ -70,7 +81,11 @@ export function AppHeader({ route, onNavigate }: AppHeaderProps) {
       {title && (
         <h1
           className={`font-titulo text-2xl font-semibold tracking-tight${
-            onAmber ? ' text-muted-foreground' : onGreen ? ' text-primary-on' : ''
+            onAmber
+              ? ' text-muted-foreground'
+              : onGreen
+                ? ' text-primary-on'
+                : ''
           }`}
         >
           {title}

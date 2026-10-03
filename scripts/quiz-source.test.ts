@@ -28,6 +28,9 @@ function apiCandidate(
   return {
     id: '2026-PR-1',
     tseSequence: '1',
+    electionYear: 2026,
+    state: 'PR',
+    office: 'DEPUTADO FEDERAL',
     ballotName: 'FULANO DE TAL',
     fullName: 'FULANO DE TAL',
     ballotNumber: '700',

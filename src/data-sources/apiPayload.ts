@@ -22,7 +22,12 @@ import {
   type QuizPositionRow,
 } from './repository.ts'
 import { readEditorialFicha } from './parliament/editorial.ts'
-import { electionFor, isFederationUnit } from '../shared/elections.ts'
+import {
+  electionFor,
+  isFederationUnit,
+  officeFor,
+  type OfficeKind,
+} from '../shared/elections.ts'
 import type {
   ApiCandidate,
   ApiCandidateDetail,
@@ -38,10 +43,13 @@ import type {
 } from '../shared/api.ts'
 import type { CandidateRecord } from '../shared/domain.ts'
 
-/** Filtro da lista de uma UF. `null` quando a sigla não é uma UF. */
-export function filterForState(state: string): ElectionFilter | null {
+/** Filtro da lista de uma UF, no cargo da família pedida. `null` quando a sigla não é uma UF. */
+export function filterForState(
+  state: string,
+  kind: OfficeKind = 'federal',
+): ElectionFilter | null {
   if (!isFederationUnit(state)) return null
-  const election = electionFor(state)
+  const election = electionFor(state, officeFor(state, kind))
   return {
     electionYear: election.year,
     state: election.state,
@@ -60,7 +68,9 @@ function toApiQuizPosition(row: QuizPositionRow): ApiQuizPosition {
   }
 }
 
-function toApiQuizMetrics(row: QuizMetricRow | undefined): ApiQuizMetrics | null {
+function toApiQuizMetrics(
+  row: QuizMetricRow | undefined,
+): ApiQuizMetrics | null {
   if (!row) return null
   return {
     alinhamentoGoverno: row.alinhamentoGoverno,
@@ -78,6 +88,9 @@ export function toApiCandidate(
   return {
     id: candidate.id,
     tseSequence: candidate.tseSequence,
+    electionYear: candidate.electionYear,
+    state: candidate.state,
+    office: candidate.office,
     ballotName: candidate.ballotName,
     fullName: candidate.fullName,
     ballotNumber: candidate.ballotNumber,
