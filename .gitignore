@@ -33,3 +33,12 @@ dist-ssr
 # Dados ingeridos do TSE (zips, banco local e fotos)
 # Ancorado na raiz para não ignorar src/data/
 /data/
+
+# Terraform (infra/)
+# Estado local no início; backend GCS é evolução futura (okf/infra/terraform-variables.md)
+infra/.terraform/
+infra/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+infra/terraform.tfvars
