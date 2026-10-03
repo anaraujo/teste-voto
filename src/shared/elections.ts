@@ -5,10 +5,7 @@
  * Nenhuma URL deve ser "chumbada" na lógica: tudo passa por aqui.
  */
 
-import {
-  BRAZIL_STATES,
-  isFederationUnit,
-} from '../data/brazil-map.ts'
+import { BRAZIL_STATES, isFederationUnit } from '../data/brazil-map.ts'
 
 export interface DatasetDescriptor {
   /** URL oficial do arquivo ZIP no CDN do TSE. */
@@ -37,6 +34,7 @@ export interface ElectionConfig {
     social: DatasetDescriptor
     complementar: DatasetDescriptor
     photos: DatasetDescriptor
+    finance: DatasetDescriptor
   }
 }
 
@@ -55,7 +53,9 @@ export type OfficeKind = 'federal' | 'estadual'
  */
 export function officeFor(state: string, kind: OfficeKind): string {
   if (kind === 'federal') return OFFICE_FEDERAL
-  return state.trim().toUpperCase() === 'DF' ? OFFICE_DISTRITAL : OFFICE_ESTADUAL
+  return state.trim().toUpperCase() === 'DF'
+    ? OFFICE_DISTRITAL
+    : OFFICE_ESTADUAL
 }
 
 const CANDIDATES_2026_URL =
@@ -69,6 +69,9 @@ const SOCIAL_2026_URL =
 
 const COMPLEMENTAR_2026_URL =
   'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip'
+
+const FINANCE_2026_URL =
+  'https://cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestacao_de_contas_eleitorais_candidatos_2026.zip'
 
 /** Siglas das 27 UFs, na ordem de `BRAZIL_STATES`. */
 export const FEDERATION_UNITS: readonly string[] = BRAZIL_STATES.map(
@@ -116,6 +119,11 @@ export function electionFor(
         url: `https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes${YEAR}/fotos/foto_cand${YEAR}_${uf}_div.zip`,
         dataset: 'fotos_candidatos',
         sourceFileMatch: '',
+      },
+      finance: {
+        url: FINANCE_2026_URL,
+        dataset: 'prestacao_contas_eleitorais_candidatos',
+        sourceFileMatch: `candidatos_${YEAR}_${uf}`,
       },
     },
   }
