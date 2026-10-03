@@ -9,8 +9,8 @@
  *
  * **O degrau de compressão.** Com o console do navegador aberto a janela perde
  * uns 200px e a tela parava de caber. O bloco de baixo encolhe, um degrau só, o
- * que dá: o gap da seção, o título, o gap da grade e a tipografia do cartão
- * (padding, sigla, nome e "Em breve").
+ * que dá: o gap da seção, o gap da grade e a tipografia do cartão (padding,
+ * sigla, nome e "Em breve").
  *
  * Um degrau, e não uma escala contínua em `clamp()`: em escala a sigla do cartão
  * só ficaria legível numa faixa estreita de alturas, e o resto do app ganharia
@@ -34,11 +34,6 @@
 @media (min-width: 48rem) and (max-height: 44rem) {
   .estados-secao {
     gap: 0.75rem;
-  }
-
-  .estados-titulo {
-    font-size: 1.5rem;
-    line-height: 2rem;
   }
 
   .estados-grade {

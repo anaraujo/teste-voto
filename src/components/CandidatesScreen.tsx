@@ -9,6 +9,7 @@ import { CandidateGrid, type CandidateItem } from './CandidateGrid.tsx'
 // O esqueleto de carregamento usa a classe `.candidate-grid`, e no estado de
 // carregamento o `CandidateGrid` não é montado para trazer o CSS junto.
 import './CandidateGrid.css'
+import './CandidatesScreen.css'
 import { Button } from './ui/button.tsx'
 import { Card } from './ui/card.tsx'
 import { Input } from './ui/input.tsx'
@@ -102,11 +103,8 @@ export function CandidatesScreen({
       <section
         aria-live="polite"
         aria-busy="true"
-        className="mx-auto flex w-full flex-col gap-3"
+        className="candidates-section"
       >
-        <h2 className="font-titulo text-2xl font-semibold tracking-tight">
-          Candidatos
-        </h2>
         <span className="sr-only">Carregando candidatos...</span>
         {/*
          * O esqueleto usa a classe do grid de verdade em vez de contar
@@ -141,17 +139,17 @@ export function CandidatesScreen({
     return (
       <section
         aria-live="assertive"
-        className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4"
+        className="candidates-section candidates-section--message"
       >
         <Card>
           <h2 className="text-base font-semibold">
             Não foi possível carregar a lista de candidatos.
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm">
             Verifique se os dados do TSE foram carregados com{' '}
             <code>npm run ingest</code> e se a API está rodando.
           </p>
-          <p className="text-xs text-muted-foreground">({state.message})</p>
+          <p className="text-xs">({state.message})</p>
           <div>
             <Button variant="outline" onClick={onRetry}>
               Tentar novamente
@@ -166,13 +164,13 @@ export function CandidatesScreen({
     return (
       <section
         aria-live="polite"
-        className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4"
+        className="candidates-section candidates-section--message"
       >
         <Card>
           <h2 className="text-base font-semibold">
             Nenhum candidato encontrado para esta eleição.
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm">
             Rode <code>npm run ingest</code> para carregar os dados oficiais do
             TSE.
           </p>
@@ -187,11 +185,8 @@ export function CandidatesScreen({
      * `--max-columns`, e a section só cede a largura que sobra. Ver o
      * comentário do `.candidate-grid`.
      */
-    <section className="mx-auto flex w-full flex-col gap-3">
-      <h2 className="font-titulo text-2xl font-semibold tracking-tight">
-        Candidatos
-      </h2>
-      <p className="text-sm text-muted-foreground">
+    <section className="candidates-section">
+      <p className="text-sm">
         {state.data.total} candidatos a {state.data.election.office} em{' '}
         {state.data.election.state} ({state.data.election.year}). Fonte:{' '}
         <a
@@ -213,7 +208,10 @@ export function CandidatesScreen({
         }}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium" htmlFor="candidate-search">
+          <label
+            className="text-sm font-medium text-muted-foreground"
+            htmlFor="candidate-search"
+          >
             Buscar candidato
           </label>
           <Input
@@ -240,7 +238,7 @@ export function CandidatesScreen({
       </form>
 
       {appliedQuery !== '' && filtered.length > 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm">
           {filtered.length === 1
             ? '1 candidato encontrado'
             : `${filtered.length} candidatos encontrados`}
@@ -249,7 +247,7 @@ export function CandidatesScreen({
 
       {appliedQuery !== '' && filtered.length === 0 ? (
         <Card>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm">
             Nenhum candidato encontrado para sua busca.
           </p>
         </Card>

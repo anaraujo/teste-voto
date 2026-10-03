@@ -1,0 +1,41 @@
+/*
+ * Contêiner das telas da lista de candidatos (`/candidatos/:uf`).
+ *
+ * As quatro telas — carregando, erro, eleição vazia e lista pronta — dividem a
+ * mesma casca. A classe fica aqui, e não em utilitários repetidos em cada
+ * `section`, para que a cor, o eixo e o vão mudem num lugar só: antes a mesma
+ * lista de classes vivia em quatro pontos e qualquer ajuste exigia repetir tudo.
+ */
+.candidates-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-inline: auto;
+  /*
+   * O vão entre o `AppHeader` e a seção é o mesmo que a `/estados` usa entre o
+   * título e o conteúdo (`gap-8` da `.estados-secao`, que cai para `md:gap-5`).
+   */
+  margin-block-start: 32px;
+  gap: 32px;
+  /*
+   * Tinta escura sobre o fundo âmbar da rota, o mesmo par que o `main` declara
+   * em `App.tsx`. Ver `--color-primary-on` no index.css.
+   */
+  color: var(--color-primary-on);
+}
+
+@media (min-width: 48rem) {
+  .candidates-section {
+    margin-block-start: 20px;
+  }
+}
+
+/*
+ * Estado de mensagem — erro e eleição vazia. É a mesma casca, numa coluna
+ * estreita: um Card de texto não deve esticar a largura inteira da tela.
+ */
+.candidates-section--message {
+  max-width: 32rem;
+  gap: 1rem;
+  padding-inline: 1rem;
+}

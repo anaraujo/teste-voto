@@ -42,7 +42,7 @@ export function EstadosScreen({
   return (
     <section className="estados-secao mx-auto flex w-full flex-col gap-8 md:min-h-0 md:flex-1 md:gap-5">
       <header className="flex shrink-0 flex-col gap-2 text-center">
-        <h1 className="estados-titulo font-titulo text-3xl font-semibold">
+        <h1 className="font-titulo text-2xl font-semibold">
           Selecione seu estado
         </h1>
       </header>
@@ -60,7 +60,7 @@ export function EstadosScreen({
        */}
       <div className="flex flex-col gap-6 justify-center md:min-h-0 md:flex-row md:gap-6">
         <figure className="flex-1 mx-auto flex w-full md:w-auto flex-col md:mx-0 md:min-h-0">
-          <div className="min-h-0 md:flex-1">
+          <div className="min-h-0 lg:flex-1">
             <BrazilMap
               availableStates={availableStates}
               hrefForState={statePath}

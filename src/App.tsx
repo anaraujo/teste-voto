@@ -159,7 +159,12 @@ function App({
   return (
     <main
       className={cn(
-        'min-h-screen bg-tse-primary px-4 py-8 sm:px-8 lg:px-12',
+        'min-h-screen px-4 py-8 sm:px-8 lg:px-12',
+        route.name === 'candidates'
+          ? 'bg-tse-success/90 text-primary-on'
+          : route.name === 'candidate'
+            ? 'bg-tertiary/90 text-panel-on'
+            : 'bg-tse-primary bg-linear-to-r from-tse-ink-700 to-tse-primary',
         fillsViewport && 'flex flex-col md:min-h-dvh md:h-dvh',
       )}
     >

@@ -21,21 +21,62 @@ interface AppHeaderProps {
  * O `-ml-2` devolve ao texto o alinhamento da margem da página: o `px` do botão
  * é área de clique, não recuo.
  */
+
+/*
+ * Título de cada tela, para o cabeçalho. As que não têm título próprio — a
+ * seleção de estado (que não mostra o cabeçalho), a ficha (o nome do candidato
+ * vive no bloco da foto) e a pergunta (o título é o conteúdo) — ficam de fora.
+ */
+const TITLES: Partial<Record<Route['name'], string>> = {
+  candidates: 'Candidatos',
+  result: 'Resultado',
+  fairness: 'Imparcialidade do teste',
+  'not-found': 'Página não encontrada',
+}
+
 export function AppHeader({ route, onNavigate }: AppHeaderProps) {
   if (!showsBackButton(route)) return null
 
   const target = parentPath(route)
+  const title = TITLES[route.name] ?? null
+  // A lista de candidatos e a ficha de cada candidato compartilham o fundo
+  // âmbar, então as duas usam a mesma tinta escura no cabeçalho.
+  const onGreen = route.name === 'candidates'
+  const onAmber = route.name === 'candidate'
 
   return (
-    <header>
+    /*
+     * Três colunas `1fr auto 1fr`: o botão fica no início, o título no meio e
+     * as duas pontas de `1fr` são iguais, então o título fica no centro de
+     * verdade — sem `absolute`, que deixaria o título por cima do botão em
+     * telas estreitas. Sem título (ficha, pergunta), o botão continua no
+     * início e as outras duas células ficam vazias.
+     */
+    <header className="grid grid-cols-[1fr_auto_1fr] items-center">
       <button
         type="button"
         onClick={() => onNavigate(target)}
-        className="-ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-tse-mist-100 transition-colors hover:bg-tse-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tse-mist-100"
+        className={`justify-self-start -ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tse-mist-100 ${
+          onAmber
+            ? 'text-muted-foreground hover:bg-tse-mist-100'
+            : onGreen
+            ? 'text-primary-on hover:bg-white/20'
+            : 'text-tse-mist-100 hover:bg-tse-ink-700'
+        }`}
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
         Voltar
       </button>
+      {title && (
+        <h1
+          className={`font-titulo text-2xl font-semibold tracking-tight${
+            onAmber ? ' text-muted-foreground' : onGreen ? ' text-primary-on' : ''
+          }`}
+        >
+          {title}
+        </h1>
+      )}
+      <span aria-hidden="true" />
     </header>
   )
 }

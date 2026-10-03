@@ -8,7 +8,6 @@ interface NotFoundScreenProps {
 export function NotFoundScreen({ path, onHome }: NotFoundScreenProps) {
   return (
     <section>
-      <h2 className="font-titulo text-3xl">Página não encontrada</h2>
       <p>
         Não encontramos nada em <code>{path}</code>.
       </p>
