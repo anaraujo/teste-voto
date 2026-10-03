@@ -49,6 +49,7 @@ const SECTION_ID = {
   identificacao: 'identificacao',
   naturalidade: 'naturalidade',
   patrimonio: 'patrimonio',
+  contas: 'contas-campanha',
   contato: 'contato',
   camara: 'camara',
   camaraMetricas: 'camara-metricas',
@@ -140,13 +141,17 @@ function Campo({
  * aba do Senado só ganha seção quando há mandato no Senado, nos dois lugares.
  */
 
-function resumoAnchors(): SectionAnchor[] {
-  return [
+function resumoAnchors(dado: ApiCandidateDetail): SectionAnchor[] {
+  const anchors: SectionAnchor[] = [
     { id: SECTION_ID.identificacao, label: 'Identificação' },
     { id: SECTION_ID.naturalidade, label: 'Naturalidade' },
     { id: SECTION_ID.patrimonio, label: 'Bens e gastos' },
-    { id: SECTION_ID.contato, label: 'Contato e redes' },
   ]
+  if (dado.campaignFinance) {
+    anchors.push({ id: SECTION_ID.contas, label: 'Contas de campanha' })
+  }
+  anchors.push({ id: SECTION_ID.contato, label: 'Contato e redes' })
+  return anchors
 }
 
 function mandatoAnchors(dado: ApiCandidateDetail): SectionAnchor[] {
@@ -195,7 +200,7 @@ function fontesAnchors(dado: ApiCandidateDetail): SectionAnchor[] {
 function anchorsForTab(tab: Tab, dado: ApiCandidateDetail): SectionAnchor[] {
   switch (tab) {
     case 'resumo':
-      return resumoAnchors()
+      return resumoAnchors(dado)
     case 'mandato':
       return mandatoAnchors(dado)
     case 'historico':
@@ -329,6 +334,45 @@ function ResumoTab({ dado }: { dado: ApiCandidateDetail }) {
           />
         </dl>
       </Section>
+
+      {dado.campaignFinance && (
+        <Section id={SECTION_ID.contas} title="Contas de campanha">
+          <dl>
+            <Campo
+              label="Total recebido"
+              value={formatBRL(dado.campaignFinance.totalReceitas)}
+            />
+            <Campo
+              label="Total de despesas contratadas"
+              value={formatBRL(dado.campaignFinance.totalDespesas)}
+            />
+          </dl>
+          {dado.campaignFinance.doadores.length > 0 && (
+            <div>
+              <p>Maiores doadores</p>
+              <ul>
+                {dado.campaignFinance.doadores.map((doador) => (
+                  <li key={doador.nome}>
+                    {doador.nome} — {formatBRL(doador.valor)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {dado.campaignFinance.fornecedores.length > 0 && (
+            <div>
+              <p>Maiores fornecedores</p>
+              <ul>
+                {dado.campaignFinance.fornecedores.map((fornecedor) => (
+                  <li key={fornecedor.nome}>
+                    {fornecedor.nome} — {formatBRL(fornecedor.valor)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section id={SECTION_ID.contato} title="Contato e redes">
         <dl>

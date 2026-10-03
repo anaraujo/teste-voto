@@ -34,6 +34,14 @@ separando o que é de cada camada.
    suplentes** (quem assume vaga de suplente manda no mandato). O casamento com
    os 428 candidatos usa nome normalizado + data de nascimento.
 
+5. **Prestação de contas de campanha** (`npm run sync:finance`, tabelas
+   `campaign_receitas` e `campaign_despesas`): receitas (doadores) e despesas
+   contratadas (fornecedores) do dataset oficial do TSE
+   (`prestacao-de-contas-eleitorais-candidatos`, sistema SPCE). Um ZIP nacional
+   com um arquivo por UF; o casamento com o candidato é pelo `SQ_CANDIDATO`. A
+   ficha mostra o total recebido, o total contratado e os maiores doadores e
+   fornecedores, com a fonte.
+
 ## A regra de ouro
 
 > **O candidato afirma X** (camada editorial) ≠ **o histórico parlamentar mostra
@@ -113,6 +121,7 @@ posição editorial e não entra na aba Posições.
 ```bash
 npm run sync:parliament   # Câmara + Senado -> tabelas parliament_*
 npm run sync:history      # TSE 2004–2024 -> tabela political_mandates
+npm run sync:finance      # TSE prestação de contas -> campaign_receitas/despesas
 npm run editorial:templates  # gera/atualiza content/editorial/<id>.json
 npm run export:ficha      # gera CSV + JSON em data/ficha/
 ```

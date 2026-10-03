@@ -306,6 +306,45 @@ function createSchema(db: DatabaseSync): void {
       trajetoria INTEGER NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS campaign_receitas (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      doador TEXT,
+      doador_documento TEXT,
+      fonte TEXT,
+      origem TEXT,
+      especie TEXT,
+      data TEXT,
+      valor REAL NOT NULL,
+      source_provider TEXT NOT NULL,
+      source_url TEXT NOT NULL,
+      source_dataset TEXT NOT NULL,
+      source_file TEXT,
+      source_retrieved_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_campaign_receitas_candidate
+      ON campaign_receitas (candidate_id);
+
+    CREATE TABLE IF NOT EXISTS campaign_despesas (
+      candidate_id TEXT NOT NULL REFERENCES candidates(id),
+      fornecedor TEXT,
+      fornecedor_documento TEXT,
+      origem TEXT,
+      descricao TEXT,
+      data TEXT,
+      valor REAL NOT NULL,
+      source_provider TEXT NOT NULL,
+      source_url TEXT NOT NULL,
+      source_dataset TEXT NOT NULL,
+      source_file TEXT,
+      source_retrieved_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_campaign_despesas_candidate
+      ON campaign_despesas (candidate_id);
   `)
 }
 
@@ -1325,7 +1364,9 @@ export function replaceQuizDerived(
 export function listQuizPositions(
   db: DatabaseSync,
 ): Map<string, QuizPositionRow[]> {
-  const rows = db.prepare(`SELECT * FROM quiz_positions`).all() as unknown as Array<{
+  const rows = db
+    .prepare(`SELECT * FROM quiz_positions`)
+    .all() as unknown as Array<{
     candidate_id: string
     pauta_id: string
     value: 'sim' | 'nao' | null
@@ -1353,7 +1394,9 @@ export function listQuizPositions(
 }
 
 export function listQuizMetrics(db: DatabaseSync): Map<string, QuizMetricRow> {
-  const rows = db.prepare(`SELECT * FROM quiz_metrics`).all() as unknown as Array<{
+  const rows = db
+    .prepare(`SELECT * FROM quiz_metrics`)
+    .all() as unknown as Array<{
     candidate_id: string
     alinhamento_governo: number | null
     alinhamento_origem: 'candidato' | 'partido' | null
@@ -1369,4 +1412,190 @@ export function listQuizMetrics(db: DatabaseSync): Map<string, QuizMetricRow> {
     })
   }
   return map
+}
+
+export interface CampaignReceitaRow {
+  candidateId: string
+  doador: string | null
+  doadorDocumento: string | null
+  fonte: string | null
+  origem: string | null
+  especie: string | null
+  data: string | null
+  valor: number
+  source: Source
+}
+
+export interface CampaignDespesaRow {
+  candidateId: string
+  fornecedor: string | null
+  fornecedorDocumento: string | null
+  origem: string | null
+  descricao: string | null
+  data: string | null
+  valor: number
+  source: Source
+}
+
+/**
+ * Substitui toda a camada de contas de campanha (receitas e despesas) de uma
+ * vez, em transação. O script de sincronização recalcula o conjunto inteiro.
+ */
+export function replaceCampaignFinance(
+  db: DatabaseSync,
+  receitas: readonly CampaignReceitaRow[],
+  despesas: readonly CampaignDespesaRow[],
+): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM campaign_receitas`).run()
+    db.prepare(`DELETE FROM campaign_despesas`).run()
+    const now = new Date().toISOString()
+
+    const receitaStmt = db.prepare(
+      `INSERT INTO campaign_receitas (
+        candidate_id, doador, doador_documento, fonte, origem, especie, data,
+        valor, source_provider, source_url, source_dataset, source_file,
+        source_retrieved_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    for (const row of receitas) {
+      receitaStmt.run(
+        row.candidateId,
+        row.doador,
+        row.doadorDocumento,
+        row.fonte,
+        row.origem,
+        row.especie,
+        row.data,
+        row.valor,
+        row.source.provider,
+        row.source.url,
+        row.source.dataset,
+        row.source.sourceFile,
+        row.source.retrievedAt,
+        now,
+      )
+    }
+
+    const despesaStmt = db.prepare(
+      `INSERT INTO campaign_despesas (
+        candidate_id, fornecedor, fornecedor_documento, origem, descricao, data,
+        valor, source_provider, source_url, source_dataset, source_file,
+        source_retrieved_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    for (const row of despesas) {
+      despesaStmt.run(
+        row.candidateId,
+        row.fornecedor,
+        row.fornecedorDocumento,
+        row.origem,
+        row.descricao,
+        row.data,
+        row.valor,
+        row.source.provider,
+        row.source.url,
+        row.source.dataset,
+        row.source.sourceFile,
+        row.source.retrievedAt,
+        now,
+      )
+    }
+
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+interface ReceitaDbRow {
+  candidate_id: string
+  doador: string | null
+  doador_documento: string | null
+  fonte: string | null
+  origem: string | null
+  especie: string | null
+  data: string | null
+  valor: number
+  source_provider: string
+  source_url: string
+  source_dataset: string
+  source_file: string | null
+  source_retrieved_at: string
+}
+
+interface DespesaDbRow {
+  candidate_id: string
+  fornecedor: string | null
+  fornecedor_documento: string | null
+  origem: string | null
+  descricao: string | null
+  data: string | null
+  valor: number
+  source_provider: string
+  source_url: string
+  source_dataset: string
+  source_file: string | null
+  source_retrieved_at: string
+}
+
+function toReceitaRow(row: ReceitaDbRow): CampaignReceitaRow {
+  return {
+    candidateId: row.candidate_id,
+    doador: row.doador,
+    doadorDocumento: row.doador_documento,
+    fonte: row.fonte,
+    origem: row.origem,
+    especie: row.especie,
+    data: row.data,
+    valor: row.valor,
+    source: {
+      provider: row.source_provider,
+      url: row.source_url,
+      dataset: row.source_dataset,
+      sourceFile: row.source_file,
+      retrievedAt: row.source_retrieved_at,
+      sourceUpdatedAt: null,
+    },
+  }
+}
+
+function toDespesaRow(row: DespesaDbRow): CampaignDespesaRow {
+  return {
+    candidateId: row.candidate_id,
+    fornecedor: row.fornecedor,
+    fornecedorDocumento: row.fornecedor_documento,
+    origem: row.origem,
+    descricao: row.descricao,
+    data: row.data,
+    valor: row.valor,
+    source: {
+      provider: row.source_provider,
+      url: row.source_url,
+      dataset: row.source_dataset,
+      sourceFile: row.source_file,
+      retrievedAt: row.source_retrieved_at,
+      sourceUpdatedAt: null,
+    },
+  }
+}
+
+/** Contas de campanha de um candidato (vazias quando não há prestação). */
+export function getCampaignFinance(
+  db: DatabaseSync,
+  candidateId: string,
+): { receitas: CampaignReceitaRow[]; despesas: CampaignDespesaRow[] } {
+  const receitas = (
+    db
+      .prepare(`SELECT * FROM campaign_receitas WHERE candidate_id = ?`)
+      .all(candidateId) as unknown as ReceitaDbRow[]
+  ).map(toReceitaRow)
+  const despesas = (
+    db
+      .prepare(`SELECT * FROM campaign_despesas WHERE candidate_id = ?`)
+      .all(candidateId) as unknown as DespesaDbRow[]
+  ).map(toDespesaRow)
+  return { receitas, despesas }
 }

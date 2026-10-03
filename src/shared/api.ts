@@ -122,6 +122,20 @@ export interface ApiPoliticalMandate {
   turno: number
 }
 
+export interface ApiCampaignContributor {
+  nome: string
+  valor: number
+}
+
+export interface ApiCampaignFinance {
+  totalReceitas: number
+  totalDespesas: number
+  /** Maiores doadores, somados por nome, em ordem decrescente. */
+  doadores: ApiCampaignContributor[]
+  /** Maiores fornecedores, somados por nome, em ordem decrescente. */
+  fornecedores: ApiCampaignContributor[]
+}
+
 export interface ApiCandidateDetail extends ApiCandidate {
   campaignStatus: string | null
   nationality: string | null
@@ -137,4 +151,6 @@ export interface ApiCandidateDetail extends ApiCandidate {
   editorial: Record<string, ApiEditorialField> | null
   /** Mandatos/posições políticas anteriores (TSE, 2004+). */
   politicalMandates: ApiPoliticalMandate[]
+  /** Prestação de contas de campanha; null quando não há. */
+  campaignFinance: ApiCampaignFinance | null
 }
