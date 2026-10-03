@@ -10,6 +10,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import {
   getActiveCandidate,
+  getCampaignFinance,
   getParliamentary,
   getPoliticalMandates,
   listCandidates,
@@ -22,6 +23,7 @@ import {
   type QuizPositionRow,
 } from './repository.ts'
 import { readEditorialFicha } from './parliament/editorial.ts'
+import { topContributors } from './tse/finance.ts'
 import {
   electionFor,
   isFederationUnit,
@@ -29,6 +31,7 @@ import {
   type OfficeKind,
 } from '../shared/elections.ts'
 import type {
+  ApiCampaignFinance,
   ApiCandidate,
   ApiCandidateDetail,
   ApiCandidatesResponse,
@@ -235,6 +238,26 @@ export async function buildCandidateDetailPayload(
   const politicalMandates = getPoliticalMandates(db, id)
   const editorial = await readEditorialFicha(id)
 
+  const { receitas, despesas } = getCampaignFinance(db, id)
+  const campaignFinance: ApiCampaignFinance | null =
+    receitas.length === 0 && despesas.length === 0
+      ? null
+      : {
+          totalReceitas: receitas.reduce((sum, row) => sum + row.valor, 0),
+          totalDespesas: despesas.reduce((sum, row) => sum + row.valor, 0),
+          doadores: topContributors(
+            receitas.map((row) => ({ nome: row.doador, valor: row.valor })),
+            5,
+          ),
+          fornecedores: topContributors(
+            despesas.map((row) => ({
+              nome: row.fornecedor,
+              valor: row.valor,
+            })),
+            5,
+          ),
+        }
+
   const parliamentary: ApiParliamentary | null =
     mandates.length === 0 && records.length === 0 && votes.length === 0
       ? null
@@ -257,5 +280,6 @@ export async function buildCandidateDetailPayload(
     parliamentary,
     editorial: editorial ? toApiEditorial(editorial) : null,
     politicalMandates: politicalMandates.map(toApiPoliticalMandate),
+    campaignFinance,
   }
 }

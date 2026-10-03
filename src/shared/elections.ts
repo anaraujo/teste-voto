@@ -34,6 +34,7 @@ export interface ElectionConfig {
     social: DatasetDescriptor
     complementar: DatasetDescriptor
     photos: DatasetDescriptor
+    finance: DatasetDescriptor
   }
 }
 
@@ -81,6 +82,9 @@ const SOCIAL_2026_URL =
 const COMPLEMENTAR_2026_URL =
   'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand_complementar/consulta_cand_complementar_2026.zip'
 
+const FINANCE_2026_URL =
+  'https://cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestacao_de_contas_eleitorais_candidatos_2026.zip'
+
 /** Siglas das 27 UFs, na ordem de `BRAZIL_STATES`. */
 export const FEDERATION_UNITS: readonly string[] = BRAZIL_STATES.map(
   (state) => state.code,
@@ -127,6 +131,11 @@ export function electionFor(
         url: `https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes${YEAR}/fotos/foto_cand${YEAR}_${uf}_div.zip`,
         dataset: 'fotos_candidatos',
         sourceFileMatch: '',
+      },
+      finance: {
+        url: FINANCE_2026_URL,
+        dataset: 'prestacao_contas_eleitorais_candidatos',
+        sourceFileMatch: `candidatos_${YEAR}_${uf}`,
       },
     },
   }
