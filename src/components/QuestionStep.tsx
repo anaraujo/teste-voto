@@ -8,7 +8,7 @@ interface QuestionStepProps {
   question: Question
   index: number
   total: number
-  onAnswer: (optionId: OptionId) => void
+  onAnswer: (optionId: OptionId, weight?: 1 | 2) => void
 }
 
 /** Uma pergunta, suas opções e o progresso. */
@@ -19,6 +19,8 @@ export function QuestionStep({
   onAnswer,
 }: QuestionStepProps) {
   const [selected, setSelected] = useState<OptionId | null>(null)
+  const [important, setImportant] = useState(false)
+  const stance = question.kind === 'stance'
 
   /*
    * O clique (do mouse ou do Enter/Espaço num item focado) avança na hora, como
@@ -64,19 +66,35 @@ export function QuestionStep({
           >
             <RadioGroupItem
               value={option.id}
-              onClick={() => onAnswer(option.id)}
+              onClick={() => {
+                if (stance) setSelected(option.id)
+                else onAnswer(option.id)
+              }}
             />
             <span className="text-base">{option.label}</span>
           </label>
         ))}
       </RadioGroup>
 
+      {stance && (
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={important}
+            onChange={(event) => setImportant(event.target.checked)}
+          />
+          Esta resposta pesa o dobro para mim
+        </label>
+      )}
+
       <div className="flex justify-end">
         <Button
           variant="ghost"
           size="sm"
           disabled={!selected}
-          onClick={() => selected && onAnswer(selected)}
+          onClick={() =>
+            selected && onAnswer(selected, important && stance ? 2 : 1)
+          }
         >
           Confirmar resposta
         </Button>

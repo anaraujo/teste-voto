@@ -44,6 +44,11 @@ passa a mostrar um posicionamento quando alguém preenche `content/editorial/`
 com valor, tipo de evidência e fonte. A ficha nunca deduz posição a partir de
 votos ou métricas por conta própria.
 
+O quiz usa os mesmos votos e orientações, mas só como fato literal ("votou
+Sim" ou "o partido orientou Não") e como métrica numérica publicada
+(alinhamento com a orientação do Governo, contagem de mandatos). Isso não é
+posição editorial e não entra na aba Posições.
+
 ## Como a ficha é exibida
 
 - Página de detalhe no app (`CandidateDetailScreen`), com 6 abas:

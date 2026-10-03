@@ -1,38 +1,43 @@
 /**
  * Fonte oficial do quiz (data-driven).
  *
- * As perguntas são resolvidas exclusivamente a partir de dados oficiais do TSE
- * para os 428 candidatos a deputado federal pelo Paraná em 2026 (100% de
- * cobertura). Cada pergunta declara:
- *   - texto e opções apresentados ao eleitor;
- *   - um resolvedor puro (perfil do candidato -> opção);
- *   - a proveniência exibida na tela de resultado.
+ * As perguntas de perfil saem do TSE e valem para qualquer UF. As de pauta
+ * saem de votações nominais da Câmara (voto do candidato, senão a orientação
+ * do partido). Cada pergunta declara o texto, as opções, um resolvedor puro
+ * e a proveniência.
  *
  * Regras documentadas em docs/quiz-design.md.
  */
 
-import type { ApiCandidate } from '../shared/api.ts'
+import rawPautas from '../../content/quiz/pautas-quiz.json' with { type: 'json' }
+import type {
+  ApiCandidate,
+  ApiQuizMetrics,
+  ApiQuizPosition,
+} from '../shared/api.ts'
+import { parsePautasQuiz, type PautaQuiz } from '../shared/quiz-pautas.ts'
+import { alignmentBucket, trajetoriaBucket } from '../shared/quiz-metrics.ts'
 import { stateByCode, type BrazilState } from './brazil-map.ts'
 import type {
   Candidate,
+  CandidateFact,
   Option,
   OptionId,
   Question,
   QuestionId,
 } from './quiz.ts'
 
-export class QuizResolutionError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'QuizResolutionError'
-  }
-}
+const PAUTAS: readonly PautaQuiz[] = parsePautasQuiz(rawPautas)
 
 /** Campos do candidato necessários para montar o perfil do quiz. */
 export type ProfileSource = Pick<
   ApiCandidate,
   'occupation' | 'birthDate' | 'candidacyType' | 'birthState'
->
+> & {
+  quizPositions?: readonly ApiQuizPosition[]
+  quizMetrics?: ApiQuizMetrics | null
+  partyAcronym?: string | null
+}
 
 const DEPUTADO_RE = /\bDEPUTADO\b/i
 const MANDATO_ELEITO_RE = /\b(VEREADOR|SENADOR|GOVERNADOR|PREFEITO)\b/i
@@ -150,10 +155,12 @@ export function resolveLocal(
 
 interface QuestionDefinition {
   id: QuestionId
+  kind: Question['kind']
   title: string
   hint: string
   options: readonly Option[]
   resolve: (source: ProfileSource) => OptionId | null
+  fact: (source: ProfileSource) => CandidateFact | null
 }
 
 const SECTORS: readonly { readonly id: SectorId; readonly label: string }[] = [
@@ -176,12 +183,29 @@ const sectorOptions: readonly Option[] = SECTORS.map(({ id, label }) => ({
 
 const options = {
   sector: sectorOptions,
-  experience: [
-    { id: 'experiencia:ja-deputado', label: 'Já foi deputado(a)' },
-    { id: 'experiencia:outro-mandato', label: 'Teve outro mandato eletivo' },
+  trajetoria: [
+    { id: 'trajetoria:renovacao', label: 'Um nome novo, sem mandato anterior' },
     {
-      id: 'experiencia:sem-mandato',
-      label: 'Sem mandato anterior (área técnica/empresarial)',
+      id: 'trajetoria:alguma-experiencia',
+      label: 'Alguém com um ou dois mandatos',
+    },
+    {
+      id: 'trajetoria:carreira-longa',
+      label: 'Alguém com uma trajetória longa na política',
+    },
+  ] as readonly Option[],
+  alinhamento: [
+    {
+      id: 'alinhamento:governista',
+      label: 'Quem costuma votar com o governo',
+    },
+    {
+      id: 'alinhamento:independente',
+      label: 'Quem fica no meio, nem sempre com o governo nem sempre contra',
+    },
+    {
+      id: 'alinhamento:oposicao',
+      label: 'Quem costuma votar contra a orientação do governo',
     },
   ] as readonly Option[],
   age: [
@@ -203,10 +227,61 @@ function localOptions(state: BrazilState): readonly Option[] {
   ]
 }
 
+function noFact(): null {
+  return null
+}
+
+function stanceOptions(pautaId: string): readonly Option[] {
+  return [
+    { id: `pauta:${pautaId}:concordo`, label: 'Concordo' },
+    { id: `pauta:${pautaId}:discordo`, label: 'Discordo' },
+    { id: `pauta:${pautaId}:tanto-faz`, label: 'Tanto faz' },
+  ]
+}
+
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split('-')
+  if (!year || !month || !day) return iso
+  return `${day}/${month}/${year}`
+}
+
+function stanceFact(
+  pauta: PautaQuiz,
+  position: ApiQuizPosition | undefined,
+): CandidateFact | null {
+  if (!position || !position.origin) {
+    return {
+      text: 'Sem voto nominal deste candidato nem orientação do partido para esta votação.',
+      sourceUrl: pauta.source,
+      origin: null,
+    }
+  }
+  const when = formatDate(pauta.data)
+  if (position.origin === 'candidato') {
+    const verbo =
+      position.voto === 'Sim' || position.voto === 'Não'
+        ? `Votou ${position.voto}`
+        : `Registrou ${position.voto ?? 'voto'}`
+    return {
+      text: `${verbo} em ${when} (${pauta.proposicaoLabel}).`,
+      sourceUrl: position.sourceUrl ?? pauta.source,
+      origin: 'candidato',
+    }
+  }
+  const party = position.partyAcronym ?? 'o partido'
+  const lado = position.value === 'sim' ? 'Sim' : 'Não'
+  return {
+    text: `Partido ${party} orientou ${lado} em ${when} (${pauta.proposicaoLabel}).`,
+    sourceUrl: position.sourceUrl ?? pauta.source,
+    origin: 'partido',
+  }
+}
+
 function questionsOf(state: BrazilState): readonly QuestionDefinition[] {
   return [
     {
       id: 'sector',
+      kind: 'profile',
       title:
         'Que experiência profissional você quer em quem vai te representar?',
       hint: 'Derivado da ocupação declarada ao TSE.',
@@ -215,17 +290,58 @@ function questionsOf(state: BrazilState): readonly QuestionDefinition[] {
         const id = resolveSector(s.occupation)
         return `setor:${id}` as OptionId
       },
+      fact: noFact,
     },
     {
-      id: 'experience',
-      title: 'Você prefere alguém com mandato político anterior?',
-      hint: 'Derivado da ocupação declarada ao TSE.',
-      options: options.experience as readonly Option[],
-      resolve: (s) =>
-        `experiencia:${resolveExperience(s.occupation)}` as OptionId,
+      id: 'trajetoria',
+      kind: 'profile',
+      title: 'Você prefere manter quem já está na política ou um nome novo?',
+      hint: 'Contagem de mandatos eleitos ou suplentes no TSE desde 2004. O mandato atual entra quando o deputado em exercício ainda não aparece nesse histórico.',
+      options: options.trajetoria as readonly Option[],
+      resolve: (s) => {
+        const metrics = s.quizMetrics
+        if (!metrics) return null
+        return `trajetoria:${trajetoriaBucket(metrics.trajetoria)}` as OptionId
+      },
+      fact: (s) => {
+        const metrics = s.quizMetrics
+        if (!metrics) return null
+        return {
+          text: `${metrics.trajetoria} mandato(s) eleito(s) ou suplente(s) no TSE desde 2004.`,
+          sourceUrl: 'https://dadosabertos.tse.jus.br/dataset/candidatos-2024',
+          origin: 'metrica',
+        }
+      },
+    },
+    {
+      id: 'alinhamento',
+      kind: 'profile',
+      title:
+        'Nas votações em que o governo orientou o voto, você prefere quem acompanha, quem fica no meio ou quem vota contra?',
+      hint: 'Proporção de votos iguais à orientação do Governo na 57ª legislatura. Usa o voto do candidato quando há pelo menos 5; senão, a orientação do partido. Governista é 70% ou mais; oposição é 30% ou menos.',
+      options: options.alinhamento as readonly Option[],
+      resolve: (s) => {
+        const bucket = alignmentBucket(s.quizMetrics?.alinhamentoGoverno ?? null)
+        return bucket ? (`alinhamento:${bucket}` as OptionId) : null
+      },
+      fact: (s) => {
+        const rate = s.quizMetrics?.alinhamentoGoverno
+        if (rate === null || rate === undefined) return null
+        const origem =
+          s.quizMetrics?.alinhamentoOrigem === 'candidato'
+            ? 'voto do candidato'
+            : 'orientação do partido'
+        return {
+          text: `Acompanhou a orientação do Governo em ${Math.round(rate * 100)}% das votações comparáveis (${origem}).`,
+          sourceUrl:
+            'https://dadosabertos.camara.leg.br/arquivos/votacoesOrientacoes/csv/',
+          origin: 'metrica',
+        }
+      },
     },
     {
       id: 'age',
+      kind: 'profile',
       title: 'Você prefere um representante da sua geração?',
       hint: 'Derivado da data de nascimento do TSE.',
       options: options.age as readonly Option[],
@@ -233,34 +349,65 @@ function questionsOf(state: BrazilState): readonly QuestionDefinition[] {
         const id = resolveAgeBand(s.birthDate)
         return id ? (`idade:${id}` as OptionId) : null
       },
+      fact: noFact,
     },
     {
       id: 'candidacy',
+      kind: 'profile',
       title: 'Você dá preferência a federação partidária ou partido isolado?',
       hint: 'Derivado do tipo de agremiação no TSE.',
       options: options.candidacy as readonly Option[],
       resolve: (s) =>
         `agremiacao:${resolveCandidacy(s.candidacyType)}` as OptionId,
+      fact: noFact,
     },
     {
       id: 'local',
+      kind: 'profile',
       title: `Você valoriza um candidato nascido ${state.locative}?`,
       hint: 'Derivado da UF de nascimento do TSE.',
       options: localOptions(state),
       resolve: (s) =>
         `local:${resolveLocal(s.birthState, state.code)}` as OptionId,
+      fact: noFact,
     },
+    ...PAUTAS.map(
+      (pauta): QuestionDefinition => ({
+        id: `pauta:${pauta.id}`,
+        kind: 'stance',
+        title: pauta.pergunta,
+        hint: pauta.contexto,
+        options: stanceOptions(pauta.id),
+        resolve: (s) => {
+          const position = s.quizPositions?.find(
+            (item) => item.pautaId === pauta.id,
+          )
+          if (!position?.value) return null
+          return `pauta:${pauta.id}:${position.value}` as OptionId
+        },
+        fact: (s) =>
+          stanceFact(
+            pauta,
+            s.quizPositions?.find((item) => item.pautaId === pauta.id),
+          ),
+      }),
+    ),
   ]
+}
+
+function toQuestion(question: QuestionDefinition): Question {
+  return {
+    id: question.id,
+    kind: question.kind,
+    title: question.title,
+    hint: question.hint,
+    options: question.options,
+  }
 }
 
 /** Perguntas do quiz para a UF escolhida. A de nascimento usa o nome do estado. */
 export function questionsFor(state: BrazilState): readonly Question[] {
-  return questionsOf(state).map((q) => ({
-    id: q.id,
-    title: q.title,
-    hint: q.hint,
-    options: q.options,
-  }))
+  return questionsOf(state).map(toQuestion)
 }
 
 const paranaState = stateByCode('PR')
@@ -272,39 +419,52 @@ export const quizQuestions: readonly Question[] = questionsFor(PARANA)
 
 const QUESTION_IDS = quizQuestions.map((q) => q.id) as QuestionId[]
 
+function stateQuestions(electionState: string): readonly QuestionDefinition[] {
+  const state = stateByCode(electionState)
+  if (!state) throw new Error(`UF desconhecida: ${electionState}`)
+  return questionsOf(state)
+}
+
 /**
- * Constrói o perfil completo (opção por pergunta) de um candidato.
- * Lança QuizResolutionError se alguma dimensão oficial estiver indisponível.
+ * Perfil do candidato. Dimensão sem dado fica `null` e não entra na conta.
  */
 export function buildProfile(
   source: ProfileSource,
   electionState: string,
-): Record<QuestionId, OptionId> {
-  const state = stateByCode(electionState)
-  if (!state) {
-    throw new QuizResolutionError(`UF desconhecida: ${electionState}`)
-  }
-  const profile = {} as Record<QuestionId, OptionId>
-  for (const question of questionsOf(state)) {
+): Record<QuestionId, OptionId | null> {
+  const profile = {} as Record<QuestionId, OptionId | null>
+  for (const question of stateQuestions(electionState)) {
     const optionId = question.resolve(source)
-    if (optionId === null) {
-      throw new QuizResolutionError(
-        `Dimensão "${question.id}" não resolvível para o candidato com os dados atuais.`,
-      )
-    }
-    if (!question.options.some((o) => o.id === optionId)) {
-      throw new QuizResolutionError(
-        `Opção "${optionId}" desconhecida para a dimensão "${question.id}".`,
-      )
+    if (
+      optionId !== null &&
+      !question.options.some((option) => option.id === optionId) &&
+      !optionId.endsWith(':sim') &&
+      !optionId.endsWith(':nao')
+    ) {
+      profile[question.id] = null
+      continue
     }
     profile[question.id] = optionId
   }
   return profile
 }
 
+export function buildFacts(
+  source: ProfileSource,
+  electionState: string,
+): Record<QuestionId, CandidateFact | null> {
+  const facts = {} as Record<QuestionId, CandidateFact | null>
+  for (const question of stateQuestions(electionState)) {
+    facts[question.id] = question.fact(source)
+  }
+  return facts
+}
+
 /** Nome estável (chave) do perfil completo — usado no desempate por raridade. */
-export function profileKey(profile: Record<QuestionId, OptionId>): string {
-  return QUESTION_IDS.map((id) => profile[id]).join('|')
+export function profileKey(
+  profile: Record<QuestionId, OptionId | null>,
+): string {
+  return QUESTION_IDS.map((id) => profile[id] ?? 'sem-dado').join('|')
 }
 
 /** Proveniência de cada resposta do candidato, exibida no detalhe do resultado. */
@@ -323,7 +483,10 @@ export function toQuizCandidate(
     name: api.ballotName,
     description: describeCandidate(api),
     photo: api.photoUrl ?? undefined,
+    ballotNumber: api.ballotNumber,
+    partyAcronym: api.partyAcronym,
     profile: buildProfile(api, electionState),
+    facts: buildFacts(api, electionState),
   }
 }
 

@@ -7,11 +7,20 @@ export interface Option {
   label: string
 }
 
+export type QuestionKind = 'profile' | 'stance'
+
 export interface Question {
   id: QuestionId
   title: string
   hint?: string
+  kind: QuestionKind
   options: readonly Option[]
+}
+
+export interface CandidateFact {
+  text: string
+  sourceUrl: string | null
+  origin: 'candidato' | 'partido' | 'metrica' | null
 }
 
 export interface Candidate {
@@ -19,14 +28,21 @@ export interface Candidate {
   name: string
   description: string
   photo?: string
-  profile: Record<QuestionId, OptionId>
+  ballotNumber?: string
+  partyAcronym: string | null
+  profile: Record<QuestionId, OptionId | null>
+  facts: Record<QuestionId, CandidateFact | null>
+}
+
+export interface GivenAnswer {
+  optionId: OptionId
+  weight: 1 | 2
 }
 
 export { quizQuestions as questions, questionsFor } from './quiz-source.ts'
 export type {
   ProfileSource,
   SectorId,
-  ExperienceId,
   AgeBandId,
   CandidacyId,
   LocalId,

@@ -1,5 +1,9 @@
 # Log do bundle de deploy
 
+## 2026-10-02
+
+* **Update**: Playbook do quiz com votações da Câmara em `/operations/quiz-votacoes.md` — sync do plenário, lista curta, classificação via llama.cpp local e pautas fixas em `content/quiz/pautas-quiz.json`.
+
 ## 2026-09-30
 
 * **Creation**: Bundle OKF v0.2 com a implementação completa de `PLAN-DEPLOY.md` — `scripts/publish-data.ts`, `server/index.ts` com `SERVE_STATIC`, Dockerfile/entrypoint/.dockerignore, módulo Terraform em `infra/`, `.env.example`, `.gitignore` e `AGENTS.md`.

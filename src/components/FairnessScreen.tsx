@@ -1,28 +1,58 @@
 import { useMemo } from 'react'
 import type { Candidate, Question } from '../data/quiz.ts'
-import { computeDistribution } from '../lib/distribution.ts'
+import { AUDIT_SAMPLES, computeDistribution } from '../lib/distribution.ts'
 
 interface FairnessScreenProps {
   questions: readonly Question[]
   candidates: readonly Candidate[]
 }
 
+const UI_SAMPLES = 4_000
+
 export function FairnessScreen({ questions, candidates }: FairnessScreenProps) {
   const distribution = useMemo(
-    () => computeDistribution(questions, candidates),
+    () => computeDistribution(questions, candidates, { samples: UI_SAMPLES }),
     [questions, candidates],
   )
   const idealPercent =
-    (distribution.idealShare / distribution.totalCombinations) * 100
+    candidates.length > 0 ? (1 / candidates.length) * 100 : 0
 
   return (
     <section>
       <h2 className="font-titulo text-3xl">Imparcialidade do teste</h2>
       <p>
-        O teste avalia todas as {distribution.totalCombinations} combinações
-        possíveis de respostas. Em um teste equilibrado, cada candidato vence em
-        cerca de {idealPercent.toFixed(1)}% delas.
+        O teste sorteia {distribution.totalCombinations.toLocaleString('pt-BR')}{' '}
+        combinações de respostas (a auditoria completa usa{' '}
+        {AUDIT_SAMPLES.toLocaleString('pt-BR')}). Em um teste equilibrado, cada
+        candidato vence em cerca de {idealPercent.toFixed(1)}% delas.
       </p>
+
+      <h3>Vitórias por partido</h3>
+      <p>
+        <small>
+          A orientação do partido repete o mesmo perfil entre candidatos da
+          mesma legenda. A proporção de vitórias deve ficar perto da proporção
+          de candidatos.
+        </small>
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Partido</th>
+            <th>Candidatos</th>
+            <th>Vitórias</th>
+          </tr>
+        </thead>
+        <tbody>
+          {distribution.partyShares.map((party) => (
+            <tr key={party.party}>
+              <td>{party.party}</td>
+              <td>{(party.candidateShare * 100).toFixed(1)}%</td>
+              <td>{(party.winShare * 100).toFixed(1)}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <table>
         <thead>

@@ -16,20 +16,25 @@ npm run ingest                  # dados do TSE -> data/tse.db (SQLite)
 npm run sync:incumbents         # deputados federais em exercício (Câmara)
 npm run sync:parliament         # histórico parlamentar (Câmara/Senado)
 npm run sync:history            # histórico de posições (TSE)
+npm run sync:votacoes           # votações nominais de plenário (Câmara 2019–2026)
+npm run rank:votacoes           # lista curta objetiva -> data/quiz/shortlist.json
+npm run classify:votacoes       # llama.cpp local (QUIZ_LLM_BASE_URL) -> content/quiz/votacoes.draft.json
+npm run build:quiz              # pautas fixas -> quiz_positions e quiz_metrics no tse.db
 npm run sync:incumbents | sync:parliament | sync:history
 npm run publish:data            # tse.db + manifest + photos -> GCS (--ingest | --reload)
 npm test                        # node:test
 npm run lint                    # oxlint
 npm run build                   # tsc -b && vite build + build:ssr + build:pages
-npm run check:distribution      # auditoria de imparcialidade (480 combinações)
+npm run check:distribution      # auditoria por amostra (50 mil); nenhum candidato acima de ~5%
 ```
 
 ## Convenções
 
 - Documentação e interface em PT-BR; código em inglês e comentários em PT-BR.
 - Imports relativos com extensão explícita (`.ts`/`.tsx`).
-- O quiz é **data-driven**: conteúdo em `src/data/quiz-source.ts` (resolvedores
-  puros sobre dados oficiais do TSE). Nunca escreva perfis à mão.
+- O quiz é **data-driven**: perguntas fixas em `src/data/quiz-source.ts` e
+  `content/quiz/pautas-quiz.json`. O perfil de cada candidato sai de dado
+  oficial (TSE ou voto/orientação da Câmara). Nunca escreva perfis à mão.
 - `src/data-sources/` é só do servidor (fica fora de `tsconfig.app.json`).
 - No `.gitignore`, `data/` deve ser ancorado na raiz (`/data/`) — nunca solto,
   ou ignora também `src/data/`.
