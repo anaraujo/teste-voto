@@ -6,12 +6,14 @@
  *   GET /api/candidates                 (lista da eleição configurada)
  *   GET /api/candidates/:id             (detalhe)
  *   GET /photos/*                       (fotos locais)
+ *   GET /*                              (SPA em dist/ quando SERVE_STATIC=true)
  *
  * O payload é montado em `src/data-sources/apiPayload.ts`, o mesmo módulo que
  * alimenta o build estático — assim a ficha pré-renderizada e a resposta da
  * API são idênticas.
  *
  * Execução: node --experimental-sqlite --experimental-strip-types server/index.ts
+ * Produção: SERVE_STATIC=true no container (Cloud Run); dev inalterado (Vite proxy).
  */
 
 import { createReadStream } from 'node:fs'
@@ -21,7 +23,8 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http'
-import { extname, join, normalize } from 'node:path'
+import { dirname, extname, join, normalize, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { openRepository } from '../src/data-sources/repository.ts'
 import {
   buildCandidateDetailPayload,
@@ -32,6 +35,8 @@ import { CURRENT_ELECTION, electionKey } from '../src/shared/elections.ts'
 
 const PORT = Number(process.env.PORT ?? 2027)
 const DATA_DIR = defaultDataDir()
+const SERVE_STATIC = process.env.SERVE_STATIC === 'true'
+const DIST_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   const body = JSON.stringify(payload)
@@ -56,6 +61,35 @@ const PHOTO_TYPES: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
+}
+
+const STATIC_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.ico': 'image/x-icon',
+  '.txt': 'text/plain; charset=utf-8',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+}
+
+function isUnsafeRelative(relativePath: string): boolean {
+  const normalized = normalize(relativePath)
+  return (
+    normalized.startsWith('..') ||
+    normalized.includes(`..${sep}`) ||
+    normalized.includes('../') ||
+    normalized.startsWith('/')
+  )
 }
 
 async function servePhoto(res: ServerResponse, urlPath: string): Promise<void> {
@@ -88,6 +122,63 @@ async function servePhoto(res: ServerResponse, urlPath: string): Promise<void> {
     'content-length': meta.size,
   })
   createReadStream(filePath).pipe(res)
+}
+
+function sendFile(res: ServerResponse, filePath: string, meta: { size: number }): void {
+  const type = STATIC_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
+  res.writeHead(200, {
+    'content-type': type,
+    'cache-control': 'public, max-age=3600',
+    'content-length': meta.size,
+  })
+  createReadStream(filePath).pipe(res)
+}
+
+/** Serve dist/ com fallback SPA (index.html) para rotas desconhecidas. */
+async function serveStatic(res: ServerResponse, urlPath: string): Promise<void> {
+  const indexPath = join(DIST_DIR, 'index.html')
+
+  if (urlPath === '/' || urlPath === '') {
+    try {
+      const meta = await stat(indexPath)
+      if (meta.isFile()) {
+        sendFile(res, indexPath, meta)
+        return
+      }
+    } catch {
+      // cai no 404 abaixo
+    }
+    sendError(res, 404, 'dist/ não encontrado — rode npm run build')
+    return
+  }
+
+  const relative = decodeURIComponent(urlPath.slice(1))
+  if (isUnsafeRelative(relative)) {
+    sendError(res, 400, 'caminho inválido')
+    return
+  }
+
+  const filePath = join(DIST_DIR, relative)
+  try {
+    const meta = await stat(filePath)
+    if (meta.isFile()) {
+      sendFile(res, filePath, meta)
+      return
+    }
+  } catch {
+    // SPA fallback
+  }
+
+  try {
+    const meta = await stat(indexPath)
+    if (meta.isFile()) {
+      sendFile(res, indexPath, meta)
+      return
+    }
+  } catch {
+    // sem index.html
+  }
+  sendError(res, 404, 'arquivo não encontrado')
 }
 
 async function handleApi(res: ServerResponse, urlPath: string): Promise<void> {
@@ -140,6 +231,11 @@ const server = createServer(async (req, res) => {
 
     if (urlPath.startsWith('/photos/')) {
       await servePhoto(res, urlPath)
+      return
+    }
+
+    if (SERVE_STATIC) {
+      await serveStatic(res, urlPath)
       return
     }
 

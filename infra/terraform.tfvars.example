@@ -1,0 +1,22 @@
+# Copie para terraform.tfvars (gitignored) e ajuste.
+# Comandos: terraform -chdir=infra init && terraform -chdir=infra plan
+
+project_id  = "meu-projeto-gcp"
+region      = "southamerica-east1"
+service_name = "teste-voto"
+
+# Nome GLOBAL do bucket (único no projeto e na organização).
+bucket_name = "meu-projeto-teste-voto-dados"
+
+# Tag publicada: gcloud builds submit --tag <region>-docker.pkg.dev/<proj>/teste-voto/app:<tag> .
+image = "southamerica-east1-docker.pkg.dev/meu-projeto-gcp/teste-voto/app:latest"
+
+# Fase privada (allow-list) → false; virar pública → true + terraform apply.
+public_access = false
+allowed_emails = [
+  "voce@gmail.com",
+]
+
+# Opcional: alerta de orçamento simbólico. Vazio desativa.
+# billing_account_id = "012345-ABCDEF-123456"
+# budget_amount_usd  = 1
