@@ -22,7 +22,7 @@ function candidate(
       experience: 'experiencia:sem-mandato',
       age: 'idade:40-49',
       candidacy: 'agremiacao:isolado',
-      local: 'local:pr',
+      local: 'local:aqui',
       ...profile,
     },
   }
@@ -33,7 +33,7 @@ const answers: Record<QuestionId, OptionId> = {
   experience: 'experiencia:sem-mandato',
   age: 'idade:40-49',
   candidacy: 'agremiacao:isolado',
-  local: 'local:pr',
+  local: 'local:aqui',
 }
 
 test('rankResults ordena por mais concordâncias', () => {

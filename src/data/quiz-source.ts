@@ -12,6 +12,7 @@
  */
 
 import type { ApiCandidate } from '../shared/api.ts'
+import { stateByCode, type BrazilState } from './brazil-map.ts'
 import type {
   Candidate,
   Option,
@@ -135,11 +136,16 @@ export function resolveCandidacy(candidacyType: string | null): CandidacyId {
   return t === 'FEDERAÇÃO' ? 'federacao' : 'isolado'
 }
 
-export type LocalId = 'pr' | 'fora'
+export type LocalId = 'aqui' | 'fora'
 
-/** Vínculo territorial, derivado da UF de nascimento. */
-export function resolveLocal(birthState: string | null): LocalId {
-  return (birthState ?? '').trim().toUpperCase() === 'PR' ? 'pr' : 'fora'
+/** Vínculo territorial: nascido na UF da eleição, ou fora dela. */
+export function resolveLocal(
+  birthState: string | null,
+  electionState: string,
+): LocalId {
+  const birth = (birthState ?? '').trim().toUpperCase()
+  const election = electionState.trim().toUpperCase()
+  return birth !== '' && birth === election ? 'aqui' : 'fora'
 }
 
 interface QuestionDefinition {
@@ -188,73 +194,83 @@ const options = {
     { id: 'agremiacao:federacao', label: 'Federação partidária' },
     { id: 'agremiacao:isolado', label: 'Partido isolado' },
   ] as readonly Option[],
-  local: [
-    { id: 'local:pr', label: 'Nascido(a) no Paraná' },
-    { id: 'local:fora', label: 'Nascido(a) em outro estado' },
-  ] as readonly Option[],
 } as const
 
-const qa: readonly QuestionDefinition[] = [
-  {
-    id: 'sector',
-    title: 'Que experiência profissional você quer em quem vai te representar?',
-    hint: 'Derivado da ocupação declarada ao TSE.',
-    options: options.sector as readonly Option[],
-    resolve: (s) => {
-      const id = resolveSector(s.occupation)
-      return `setor:${id}` as OptionId
-    },
-  },
-  {
-    id: 'experience',
-    title: 'Você prefere alguém com mandato político anterior?',
-    hint: 'Derivado da ocupação declarada ao TSE.',
-    options: options.experience as readonly Option[],
-    resolve: (s) =>
-      `experiencia:${resolveExperience(s.occupation)}` as OptionId,
-  },
-  {
-    id: 'age',
-    title: 'Você prefere um representante da sua geração?',
-    hint: 'Derivado da data de nascimento do TSE.',
-    options: options.age as readonly Option[],
-    resolve: (s) => {
-      const id = resolveAgeBand(s.birthDate)
-      return id ? (`idade:${id}` as OptionId) : null
-    },
-  },
-  {
-    id: 'candidacy',
-    title: 'Você dá preferência a federação partidária ou partido isolado?',
-    hint: 'Derivado do tipo de agremiação no TSE.',
-    options: options.candidacy as readonly Option[],
-    resolve: (s) =>
-      `agremiacao:${resolveCandidacy(s.candidacyType)}` as OptionId,
-  },
-  {
-    id: 'local',
-    title: 'Você valoriza um candidato nascido no Paraná?',
-    hint: 'Derivado da UF de nascimento do TSE.',
-    options: options.local as readonly Option[],
-    resolve: (s) => `local:${resolveLocal(s.birthState)}` as OptionId,
-  },
-]
-
-/** Perguntas oficiais do quiz, na ordem de apresentação. */
-export const quizQuestions: readonly Question[] = qa.map((q) => ({
-  id: q.id,
-  title: q.title,
-  hint: q.hint,
-  options: q.options,
-}))
-
-/** Proveniência de cada resposta do candidato, exibida no detalhe do resultado. */
-export function questionProvenance(questionId: QuestionId): string {
-  const question = qa.find((q) => q.id === questionId)
-  return question?.hint ?? 'Fonte não disponível.'
+function localOptions(state: BrazilState): readonly Option[] {
+  return [
+    { id: 'local:aqui', label: `Nascido(a) ${state.locative}` },
+    { id: 'local:fora', label: 'Nascido(a) em outro estado' },
+  ]
 }
 
-const QUESTION_BY_ID = new Map(qa.map((q) => [q.id, q]))
+function questionsOf(state: BrazilState): readonly QuestionDefinition[] {
+  return [
+    {
+      id: 'sector',
+      title:
+        'Que experiência profissional você quer em quem vai te representar?',
+      hint: 'Derivado da ocupação declarada ao TSE.',
+      options: options.sector as readonly Option[],
+      resolve: (s) => {
+        const id = resolveSector(s.occupation)
+        return `setor:${id}` as OptionId
+      },
+    },
+    {
+      id: 'experience',
+      title: 'Você prefere alguém com mandato político anterior?',
+      hint: 'Derivado da ocupação declarada ao TSE.',
+      options: options.experience as readonly Option[],
+      resolve: (s) =>
+        `experiencia:${resolveExperience(s.occupation)}` as OptionId,
+    },
+    {
+      id: 'age',
+      title: 'Você prefere um representante da sua geração?',
+      hint: 'Derivado da data de nascimento do TSE.',
+      options: options.age as readonly Option[],
+      resolve: (s) => {
+        const id = resolveAgeBand(s.birthDate)
+        return id ? (`idade:${id}` as OptionId) : null
+      },
+    },
+    {
+      id: 'candidacy',
+      title: 'Você dá preferência a federação partidária ou partido isolado?',
+      hint: 'Derivado do tipo de agremiação no TSE.',
+      options: options.candidacy as readonly Option[],
+      resolve: (s) =>
+        `agremiacao:${resolveCandidacy(s.candidacyType)}` as OptionId,
+    },
+    {
+      id: 'local',
+      title: `Você valoriza um candidato nascido ${state.locative}?`,
+      hint: 'Derivado da UF de nascimento do TSE.',
+      options: localOptions(state),
+      resolve: (s) =>
+        `local:${resolveLocal(s.birthState, state.code)}` as OptionId,
+    },
+  ]
+}
+
+/** Perguntas do quiz para a UF escolhida. A de nascimento usa o nome do estado. */
+export function questionsFor(state: BrazilState): readonly Question[] {
+  return questionsOf(state).map((q) => ({
+    id: q.id,
+    title: q.title,
+    hint: q.hint,
+    options: q.options,
+  }))
+}
+
+const paranaState = stateByCode('PR')
+if (!paranaState) throw new Error('UF PR ausente da malha')
+const PARANA: BrazilState = paranaState
+
+/** Perguntas do Paraná — o mesmo formato das outras UFs, com o locativo local. */
+export const quizQuestions: readonly Question[] = questionsFor(PARANA)
+
+const QUESTION_IDS = quizQuestions.map((q) => q.id) as QuestionId[]
 
 /**
  * Constrói o perfil completo (opção por pergunta) de um candidato.
@@ -262,9 +278,14 @@ const QUESTION_BY_ID = new Map(qa.map((q) => [q.id, q]))
  */
 export function buildProfile(
   source: ProfileSource,
+  electionState: string,
 ): Record<QuestionId, OptionId> {
+  const state = stateByCode(electionState)
+  if (!state) {
+    throw new QuizResolutionError(`UF desconhecida: ${electionState}`)
+  }
   const profile = {} as Record<QuestionId, OptionId>
-  for (const question of qa) {
+  for (const question of questionsOf(state)) {
     const optionId = question.resolve(source)
     if (optionId === null) {
       throw new QuizResolutionError(
@@ -286,25 +307,31 @@ export function profileKey(profile: Record<QuestionId, OptionId>): string {
   return QUESTION_IDS.map((id) => profile[id]).join('|')
 }
 
-const QUESTION_IDS = quizQuestions.map((q) => q.id) as QuestionId[]
-
-export { QUESTION_BY_ID }
+/** Proveniência de cada resposta do candidato, exibida no detalhe do resultado. */
+export function questionProvenance(questionId: QuestionId): string {
+  const question = questionsOf(PARANA).find((q) => q.id === questionId)
+  return question?.hint ?? 'Fonte não disponível.'
+}
 
 /** Converte um candidato da API em um participante do quiz, com perfil resolvido. */
-export function toQuizCandidate(api: ApiCandidate): Candidate {
+export function toQuizCandidate(
+  api: ApiCandidate,
+  electionState: string,
+): Candidate {
   return {
     id: api.id,
     name: api.ballotName,
     description: describeCandidate(api),
     photo: api.photoUrl ?? undefined,
-    profile: buildProfile(api),
+    profile: buildProfile(api, electionState),
   }
 }
 
 export function toQuizCandidates(
   list: readonly ApiCandidate[],
+  electionState: string,
 ): readonly Candidate[] {
-  return list.map(toQuizCandidate)
+  return list.map((api) => toQuizCandidate(api, electionState))
 }
 
 function describeCandidate(api: ApiCandidate): string {

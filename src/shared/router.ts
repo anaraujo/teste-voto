@@ -5,23 +5,27 @@
  * (`src/AppRouter.tsx`), o build estático (`scripts/prerender.ts`) e os testes.
  */
 
+import { isFederationUnit } from '../data/brazil-map.ts'
+
 export type Route =
   | { name: 'start' }
-  | { name: 'candidates' }
+  | { name: 'candidates'; uf: string }
   | { name: 'states' }
   | { name: 'candidate'; id: string }
-  | { name: 'fairness' }
-  | { name: 'question'; step: number }
-  | { name: 'result' }
+  | { name: 'fairness'; uf: string }
+  | { name: 'question'; uf: string; step: number }
+  | { name: 'result'; uf: string }
   | { name: 'not-found'; path: string }
 
 export const START_PATH = '/'
+/** A seleção de estado é a rota principal. */
 export const STATES_PATH = '/'
-export const CANDIDATES_PATH = '/candidatos'
+/** Prefixo da lista, do quiz, do resultado e da imparcialidade de uma UF. */
+export const STATE_FLOW_PATH = '/estados'
 export const CANDIDATE_PATH = '/candidato'
-export const FAIRNESS_PATH = '/imparcialidade'
-export const QUIZ_PATH = '/quiz'
-export const RESULT_PATH = '/resultado'
+export const QUIZ_SEGMENT = 'quiz'
+export const RESULT_SEGMENT = 'resultado'
+export const FAIRNESS_SEGMENT = 'imparcialidade'
 
 /** Caminho antigo da seleção de estado, antes de ela virar a rota principal. */
 export const LEGACY_STATES_PATH = '/estados'
@@ -48,24 +52,70 @@ export function matchRoute(pathname: string): Route {
   if (path === STATES_PATH || path === LEGACY_STATES_PATH) {
     return { name: 'states' }
   }
-  if (path === CANDIDATES_PATH) return { name: 'candidates' }
-  if (path === FAIRNESS_PATH) return { name: 'fairness' }
-  if (path === RESULT_PATH) return { name: 'result' }
-  if (path === QUIZ_PATH) return { name: 'question', step: 1 }
+  if (isLegacyPath(path)) return { name: 'states' }
 
   if (path.startsWith(`${CANDIDATE_PATH}/`)) {
     const id = decodeSegment(path.slice(CANDIDATE_PATH.length + 1))
     return id ? { name: 'candidate', id } : { name: 'not-found', path }
   }
 
-  if (path.startsWith(`${QUIZ_PATH}/`)) {
-    const step = path.slice(QUIZ_PATH.length + 1)
-    return /^[1-9]\d*$/.test(step)
-      ? { name: 'question', step: Number(step) }
-      : { name: 'not-found', path }
+  if (path.startsWith(`${STATE_FLOW_PATH}/`)) {
+    return matchStatePath(path)
   }
 
   return { name: 'not-found', path }
+}
+
+/** `/candidatos` e `/quiz/n` antigos: o cliente troca a URL pela seleção de estado (`/`). */
+function isLegacyPath(path: string): boolean {
+  return (
+    path === '/candidatos' ||
+    path === '/resultado' ||
+    path === '/imparcialidade' ||
+    path === '/quiz' ||
+    /^\/quiz\/[1-9]\d*$/.test(path)
+  )
+}
+
+function matchStatePath(path: string): Route {
+  const rest = path.slice(STATE_FLOW_PATH.length + 1)
+  const [rawUf, ...tail] = rest.split('/')
+  const uf = decodeSegment(rawUf ?? '').toUpperCase()
+  if (!isFederationUnit(uf)) return { name: 'not-found', path }
+
+  if (tail.length === 0) return { name: 'candidates', uf }
+  if (tail.length === 1 && tail[0] === RESULT_SEGMENT)
+    return { name: 'result', uf }
+  if (tail.length === 1 && tail[0] === FAIRNESS_SEGMENT) {
+    return { name: 'fairness', uf }
+  }
+  if (tail[0] === QUIZ_SEGMENT && tail.length === 1) {
+    return { name: 'question', uf, step: 1 }
+  }
+  if (
+    tail[0] === QUIZ_SEGMENT &&
+    tail.length === 2 &&
+    /^[1-9]\d*$/.test(tail[1])
+  ) {
+    return { name: 'question', uf, step: Number(tail[1]) }
+  }
+  return { name: 'not-found', path }
+}
+
+export function statePath(uf: string): string {
+  return `${STATE_FLOW_PATH}/${uf}`
+}
+
+export function quizPath(uf: string, step: number): string {
+  return `${STATE_FLOW_PATH}/${uf}/${QUIZ_SEGMENT}/${step < 1 ? 1 : step}`
+}
+
+export function resultPath(uf: string): string {
+  return `${STATE_FLOW_PATH}/${uf}/${RESULT_SEGMENT}`
+}
+
+export function fairnessPath(uf: string): string {
+  return `${STATE_FLOW_PATH}/${uf}/${FAIRNESS_SEGMENT}`
 }
 
 /** Converte uma rota no caminho canônico (o inverso de `matchRoute`). */
@@ -76,15 +126,15 @@ export function routeToPath(route: Route): string {
     case 'states':
       return STATES_PATH
     case 'candidates':
-      return CANDIDATES_PATH
+      return statePath(route.uf)
     case 'candidate':
       return `${CANDIDATE_PATH}/${encodeURIComponent(route.id)}`
     case 'fairness':
-      return FAIRNESS_PATH
+      return fairnessPath(route.uf)
     case 'question':
-      return `${QUIZ_PATH}/${route.step < 1 ? 1 : route.step}`
+      return quizPath(route.uf, route.step)
     case 'result':
-      return RESULT_PATH
+      return resultPath(route.uf)
     case 'not-found':
       return route.path
   }
@@ -134,6 +184,11 @@ export function parseTab(search: string): Tab {
   return raw !== null && isTab(raw) ? raw : DEFAULT_TAB
 }
 
+function ufFromCandidateId(id: string): string | null {
+  const uf = id.split('-')[1]?.toUpperCase()
+  return uf && isFederationUnit(uf) ? uf : null
+}
+
 /**
  * Tela "de onde se veio" de forma determinística — sem guardar histórico na
  * máquina de estados. A seleção de estado é a rota principal (`/`), então é o
@@ -145,10 +200,15 @@ export function parentPath(route: Route): string {
       return STATES_PATH
     case 'states':
       return STATES_PATH
-    case 'candidate':
-      return CANDIDATES_PATH
+    case 'candidate': {
+      const uf = ufFromCandidateId(route.id)
+      return uf ? statePath(uf) : STATES_PATH
+    }
     case 'fairness':
-      return RESULT_PATH
+      return resultPath(route.uf)
+    case 'question':
+    case 'result':
+      return statePath(route.uf)
     default:
       return START_PATH
   }

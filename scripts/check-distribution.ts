@@ -11,18 +11,21 @@
  */
 
 import { DatabaseSync } from 'node:sqlite'
-import type { Candidate, QuestionId, OptionId } from '../src/data/quiz.ts'
+import type { Candidate, OptionId } from '../src/data/quiz.ts'
 import {
   buildProfile,
-  quizQuestions,
   profileKey,
+  questionsFor,
   resolveSector,
 } from '../src/data/quiz-source.ts'
+import { stateByCode } from '../src/data/brazil-map.ts'
 import { computeDistribution } from '../src/lib/distribution.ts'
 
 const MIN_SHARE = 0.05
 const HARD_FLOOR = 0.03
 const MAX_SHARE = 0.5
+/** Nenhum candidato deve vencer mais do que isso das combinações. */
+const MAX_WIN_SHARE = 0.05
 
 interface DbRow {
   id: string
@@ -31,13 +34,14 @@ interface DbRow {
   birth_date: string | null
   candidacy_type: string | null
   birth_state: string | null
+  state: string
 }
 
 function loadRows(db: DatabaseSync): DbRow[] {
   const rows = db
     .prepare(
-      `SELECT id, ballot_name, occupation, birth_date, candidacy_type, birth_state
-       FROM candidates WHERE is_active = 1 ORDER BY ballot_name`,
+      `SELECT id, ballot_name, occupation, birth_date, candidacy_type, birth_state, state
+       FROM candidates WHERE is_active = 1 ORDER BY state, ballot_name`,
     )
     .all() as unknown as DbRow[]
   return rows
@@ -47,13 +51,16 @@ function percent(share: number): string {
   return `${(share * 100).toFixed(1).padStart(5)}%`
 }
 
-function coverageReport(profiles: ReadonlyMap<string, Candidate[]>): void {
+function coverageReport(
+  profiles: ReadonlyMap<string, Candidate[]>,
+  questions: ReturnType<typeof questionsFor>,
+): void {
   const total = [...profiles.values()].reduce(
     (sum, group) => sum + group.length,
     0,
   )
   console.log('\nCobertura por pergunta:')
-  for (const question of quizQuestions) {
+  for (const question of questions) {
     const counts = new Map<OptionId, number>(
       question.options.map((option) => [option.id, 0]),
     )
@@ -82,23 +89,26 @@ function coverageReport(profiles: ReadonlyMap<string, Candidate[]>): void {
   }
 }
 
-function main(): void {
-  const db = new DatabaseSync('data/tse.db')
-
-  const rows = loadRows(db)
-  db.close()
-
-  console.log(`Candidatos auditados: ${rows.length}`)
+function auditState(state: string, rows: DbRow[]): boolean {
+  const brazil = stateByCode(state)
+  if (!brazil) {
+    console.error(`UF desconhecida no banco: ${state}`)
+    return false
+  }
+  const questions = questionsFor(brazil)
+  console.log(`\n=== ${brazil.code} (${rows.length} candidatos) ===`)
 
   const profiles = new Map<string, Candidate[]>()
-  let unresolved = 0
   for (const row of rows) {
-    const profile: Record<QuestionId, OptionId> = buildProfile({
-      occupation: row.occupation,
-      birthDate: row.birth_date,
-      candidacyType: row.candidacy_type,
-      birthState: row.birth_state,
-    })
+    const profile = buildProfile(
+      {
+        occupation: row.occupation,
+        birthDate: row.birth_date,
+        candidacyType: row.candidacy_type,
+        birthState: row.birth_state,
+      },
+      state,
+    )
     const candidate: Candidate = {
       id: row.id,
       name: row.ballot_name,
@@ -111,17 +121,13 @@ function main(): void {
     else profiles.set(key, [candidate])
   }
 
-  if (unresolved > 0) console.error(`Perfis não resolvíveis: ${unresolved}`)
   if (profiles.size === 0) {
-    console.error('Nenhum perfil válido. Rode `npm run ingest`?')
-    process.exit(1)
+    console.error(`Nenhum perfil válido em ${state}.`)
+    return false
   }
 
   console.log(`Perfis completos distintos: ${profiles.size}`)
-
-  const sortedBySize = [...profiles.values()].sort(
-    (a, b) => b.length - a.length,
-  )
+  const sortedBySize = [...profiles.values()].sort((a, b) => b.length - a.length)
   const topProfile = sortedBySize[0]
   if (topProfile) {
     console.log(
@@ -129,13 +135,10 @@ function main(): void {
     )
   }
 
-  coverageReport(profiles)
+  coverageReport(profiles, questions)
 
   const candidates = [...profiles.values()].flat()
-  const { entries, totalCombinations } = computeDistribution(
-    quizQuestions,
-    candidates,
-  )
+  const { entries, totalCombinations } = computeDistribution(questions, candidates)
   const wins = entries.map((entry) => entry.wins)
   const min = Math.min(...wins)
   const max = Math.max(...wins)
@@ -167,6 +170,40 @@ function main(): void {
       `    ${sector.padEnd(20)} ${String(n).padStart(3)} ${percent(n / rows.length)}`,
     )
   }
+
+  const leader = entries[0]
+  if (leader && leader.share > MAX_WIN_SHARE) {
+    console.error(
+      `\n${state}: ${leader.candidate.name} vence ${percent(leader.share)} das combinações (teto ${percent(MAX_WIN_SHARE)}).`,
+    )
+    return false
+  }
+  return true
+}
+
+function main(): void {
+  const db = new DatabaseSync('data/tse.db')
+  const rows = loadRows(db)
+  db.close()
+
+  console.log(`Candidatos auditados: ${rows.length}`)
+  if (rows.length === 0) {
+    console.error('Nenhum perfil válido. Rode `npm run ingest`?')
+    process.exit(1)
+  }
+
+  const byState = new Map<string, DbRow[]>()
+  for (const row of rows) {
+    const group = byState.get(row.state)
+    if (group) group.push(row)
+    else byState.set(row.state, [row])
+  }
+
+  let ok = true
+  for (const [state, group] of byState) {
+    if (!auditState(state, group)) ok = false
+  }
+  if (!ok) process.exit(1)
 }
 
 main()

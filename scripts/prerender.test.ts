@@ -127,12 +127,12 @@ test('a lista de candidatos não volta a paginar', () => {
 })
 
 const CANDIDATOS_HTML = new URL(
-  '../dist/candidatos/index.html',
+  '../dist/estados/PR/index.html',
   import.meta.url,
 )
 
 test(
-  'o HTML de /candidatos tem um card por candidato',
+  'o HTML de /estados/PR tem um card por candidato',
   {
     skip: existsSync(CANDIDATOS_HTML)
       ? false

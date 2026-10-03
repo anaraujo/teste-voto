@@ -1,6 +1,6 @@
 import { BRAZIL_STATES } from '../data/brazil-map.ts'
 import { isModifiedClick } from '../lib/links.ts'
-import { CANDIDATES_PATH } from '../shared/router.ts'
+import { statePath } from '../shared/router.ts'
 import { BrazilMap } from './BrazilMap.tsx'
 import './EstadosScreen.css'
 
@@ -12,9 +12,7 @@ interface EstadosScreenProps {
 }
 
 /**
- * Seleção de estado. Hoje só o Paraná tem dados, então ele é a única UF
- * clicável; as demais já aparecem no mapa e na grade, marcadas como "em breve",
- * para que a expansão futura seja só liberar a sigla — nada de refazer a tela.
+ * Seleção de estado. Cada UF leva à própria lista de candidatos.
  *
  * Duas formas, um breakpoint. Abaixo de `md` (768px) a tela empilha: o mapa
  * primeiro, com no máximo 65svh de altura, e a grade de siglas depois. A página
@@ -65,7 +63,7 @@ export function EstadosScreen({
           <div className="min-h-0 md:flex-1">
             <BrazilMap
               availableStates={availableStates}
-              hrefForState={() => CANDIDATES_PATH}
+              hrefForState={statePath}
               onSelectState={onSelectState}
             />
           </div>
@@ -96,7 +94,7 @@ export function EstadosScreen({
                 {isAvailable ? (
                   <a
                     className="estados-cartao flex h-full flex-col gap-0.5 rounded-lg bg-muted-foreground px-3 py-2 text-tse-mist no-underline transition-colors hover:bg-tse-mist hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-panel md:gap-0 md:py-1.5"
-                    href={CANDIDATES_PATH}
+                    href={statePath(state.code)}
                     onClick={(event) => {
                       if (isModifiedClick(event)) return
                       event.preventDefault()

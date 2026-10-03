@@ -7,6 +7,7 @@ import {
   buildProfile,
   profileKey,
   questionProvenance,
+  questionsFor,
   quizQuestions,
   resolveAgeBand,
   resolveCandidacy,
@@ -15,6 +16,7 @@ import {
   resolveSector,
   toQuizCandidate,
 } from '../src/data/quiz-source.ts'
+import { stateByCode } from '../src/data/brazil-map.ts'
 
 function apiCandidate(
   overrides: Partial<
@@ -134,10 +136,13 @@ test('resolveCandidacy distingue federação de partido isolado', () => {
   assert.equal(resolveCandidacy(null), 'isolado')
 })
 
-test('resolveLocal usa a UF de nascimento', () => {
-  assert.equal(resolveLocal('PR'), 'pr')
-  assert.equal(resolveLocal('SP'), 'fora')
-  assert.equal(resolveLocal(null), 'fora')
+test('resolveLocal compara a UF de nascimento com a da eleição', () => {
+  assert.equal(resolveLocal('PR', 'PR'), 'aqui')
+  assert.equal(resolveLocal('SP', 'SP'), 'aqui')
+  assert.equal(resolveLocal('PR', 'SP'), 'fora')
+  assert.equal(resolveLocal('SP', 'PR'), 'fora')
+  assert.equal(resolveLocal(null, 'PR'), 'fora')
+  assert.equal(resolveLocal('', 'PR'), 'fora')
 })
 
 test('buildProfile resolve as cinco dimensões e valida as opções', () => {
@@ -146,9 +151,9 @@ test('buildProfile resolve as cinco dimensões e valida as opções', () => {
     experience: 'experiencia:sem-mandato',
     age: 'idade:40-49',
     candidacy: 'agremiacao:isolado',
-    local: 'local:pr',
+    local: 'local:aqui',
   }
-  const profile = buildProfile(apiCandidate())
+  const profile = buildProfile(apiCandidate(), 'PR')
   assert.deepEqual(profile, expected)
   for (const question of quizQuestions) {
     assert.ok(
@@ -159,13 +164,13 @@ test('buildProfile resolve as cinco dimensões e valida as opções', () => {
 
 test('buildProfile lança quando uma dimensão oficial está indisponível', () => {
   assert.throws(
-    () => buildProfile(apiCandidate({ birthDate: null })),
+    () => buildProfile(apiCandidate({ birthDate: null }), 'PR'),
     QuizResolutionError,
   )
 })
 
 test('buildProfile sem ocupação cai em "outra área" sem quebrar', () => {
-  const profile = buildProfile(apiCandidate({ occupation: null }))
+  const profile = buildProfile(apiCandidate({ occupation: null }), 'PR')
   assert.equal(profile.sector, 'setor:outros')
   assert.equal(profile.experience, 'experiencia:sem-mandato')
 })
@@ -176,7 +181,7 @@ test('profileKey é estável por conjunto de opções', () => {
     experience: 'experiencia:sem-mandato',
     age: 'idade:40-49',
     candidacy: 'agremiacao:isolado',
-    local: 'local:pr',
+    local: 'local:aqui',
   } as Record<QuestionId, OptionId>
   assert.equal(profileKey(a), profileKey(a))
   assert.equal(profileKey(a).split('|').length, quizQuestions.length)
@@ -189,9 +194,25 @@ test('questionProvenance devolve a fonte de cada dimensão', () => {
   assert.ok(questionProvenance('desconhecida').length > 0)
 })
 
+test('a pergunta de nascimento usa a UF da eleição', () => {
+  const sp = stateByCode('SP')
+  assert.ok(sp)
+  const questions = questionsFor(sp)
+  const local = questions.find((question) => question.id === 'local')
+  assert.equal(local?.title, 'Você valoriza um candidato nascido em São Paulo?')
+  assert.equal(local?.options[0]?.id, 'local:aqui')
+  assert.equal(local?.options[0]?.label, 'Nascido(a) em São Paulo')
+
+  const bornInSp = buildProfile(apiCandidate({ birthState: 'SP' }), 'SP')
+  assert.equal(bornInSp.local, 'local:aqui')
+  const bornInPr = buildProfile(apiCandidate({ birthState: 'PR' }), 'SP')
+  assert.equal(bornInPr.local, 'local:fora')
+})
+
 test('toQuizCandidate espelha nome, foto e perfil da API', () => {
   const candidate: Candidate = toQuizCandidate(
     apiCandidate({ occupation: 'PEDAGOGO' }),
+    'PR',
   )
   assert.equal(candidate.id, '2026-PR-1')
   assert.equal(candidate.name, 'FULANO DE TAL')

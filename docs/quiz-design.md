@@ -6,15 +6,18 @@ oficiais do TSE — nunca de opinião.
 
 ## Escopo (decisão)
 
-Nesta rodada o quiz responde sobre uma única eleição: **2026 · Paraná ·
-Deputado Federal**. Exatamente **428 candidatos** (todos os registros
-`SG_UF=PR`, `DS_CARGO=DEPUTADO FEDERAL`, `ANO_ELEICAO=2026`, `is_active=1` do
-banco local). Outros cargos do mesmo arquivo (governador, senador, deputado
-estadual, etc.) ficam de fora.
+O quiz responde sobre **2026 · Deputado Federal**, uma UF por vez. A pessoa
+escolhe o estado no mapa (`/`) e, dali em diante, lista, perguntas,
+resultado e imparcialidade ficam em `/estados/:uf/...`. O recorte é
+`SG_UF` da UF escolhida, `DS_CARGO=DEPUTADO FEDERAL`, `ANO_ELEICAO=2026`,
+`is_active=1`. Outros cargos do mesmo arquivo ficam de fora.
 
-Proveniência da regra: a ingestão já filtra a eleição configurada
-(`ElectionConfig` em `src/shared/elections.ts`); o quiz apenas consome essa
-base.
+A pergunta de nascimento usa o nome da UF (`nascido no Paraná`, `em São Paulo`,
+`na Bahia`). A opção `local:aqui` é quem nasceu na UF da eleição; `local:fora`
+é quem nasceu em outra.
+
+Proveniência da regra: a ingestão percorre as 27 UFs (`electionFor` em
+`src/shared/elections.ts`); o quiz consome a lista da UF da rota.
 
 ## As 5 perguntas
 
@@ -28,7 +31,7 @@ dessas 5 resoluções. Nada é escrito à mão por candidato.
 | `experience` | Você prefere alguém com mandato político anterior?                 | 3          | `DS_OCUPACAO`      |
 | `age`        | Você prefere um representante da sua geração?                      | 4 faixas   | `DT_NASCIMENTO`    |
 | `candidacy`  | Você dá preferência a federação partidária ou partido isolado?     | 2          | tipo de agremiação |
-| `local`      | Você valoriza um candidato nascido no Paraná?                      | 2          | `SG_UF_NASCIMENTO` |
+| `local`      | Você valoriza um candidato nascido na UF escolhida?                | 2          | `SG_UF_NASCIMENTO` |
 
 Total: 10 × 3 × 4 × 2 × 2 = **480 combinações possíveis de respostas**.
 
@@ -99,7 +102,8 @@ uniforme (21,5%–27,3%) — a pergunta contribui bem para diferenciar candidato
 
 ### `local` — vínculo territorial (2 opções)
 
-UF de nascimento igual a `PR` → `pr` (79%), senão `fora` (21%).
+UF de nascimento igual à UF da eleição → `aqui`, senão `fora`. No Paraná a
+base de 2026 ficava em cerca de 79% nascidos no estado.
 
 ## Perfis e raridade
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { questions } from './data/quiz.ts'
+import { questionsFor } from './data/quiz.ts'
 import type { OptionId } from './data/quiz.ts'
+import { stateByCode, BRAZIL_STATES } from './data/brazil-map.ts'
 import { toQuizCandidates } from './data/quiz-source.ts'
 import { rankResults } from './lib/scoring.ts'
 import { cn } from './lib/utils.ts'
@@ -11,11 +12,14 @@ import type { PrerenderData } from './shared/prerender.ts'
 import {
   candidatePath,
   DEFAULT_TAB,
+  fairnessPath,
+  quizPath,
+  resultPath,
+  statePath,
   STATES_PATH,
   type Route,
   type Tab,
 } from './shared/router.ts'
-import { CURRENT_ELECTION } from './shared/elections.ts'
 import { AppHeader } from './components/AppHeader.tsx'
 import { CandidatesScreen } from './components/CandidatesScreen.tsx'
 import { CandidateDetailScreen } from './components/CandidateDetailScreen.tsx'
@@ -42,8 +46,21 @@ export interface AppProps {
 }
 
 /** Índice da pergunta (0-based) a partir do passo da URL, preso aos limites. */
-function questionIndex(step: number): number {
-  return Math.min(Math.max(step - 1, 0), questions.length - 1)
+function questionIndex(step: number, total: number): number {
+  if (total < 1) return 0
+  return Math.min(Math.max(step - 1, 0), total - 1)
+}
+
+function routeUf(route: Route): string | null {
+  switch (route.name) {
+    case 'candidates':
+    case 'question':
+    case 'result':
+    case 'fairness':
+      return route.uf
+    default:
+      return null
+  }
 }
 
 /** No build estático não há URL para trocar: a aba padrão fica onde está. */
@@ -56,13 +73,25 @@ function App({
   onTabChange,
   data,
 }: AppProps) {
-  const { answers, answer, reset } = useQuizAnswers()
+  const uf = routeUf(route)
+  const state = uf ? stateByCode(uf) : undefined
+  const questions = useMemo(
+    () => (state ? questionsFor(state) : questionsFor(BRAZIL_STATES[0])),
+    [state],
+  )
 
-  const seedCandidates = data?.kind === 'candidates' ? data.payload : undefined
+  const { answers, answer, reset } = useQuizAnswers(uf)
+
+  const seedCandidates =
+    data?.kind === 'candidates' && data.payload.election.state === uf
+      ? data.payload
+      : undefined
   const seedDetail = data?.kind === 'candidate' ? data.payload : undefined
 
-  const { state: candidatesState, retry: retryCandidates } =
-    useCandidates(seedCandidates)
+  const { state: candidatesState, retry: retryCandidates } = useCandidates(
+    uf,
+    seedCandidates,
+  )
 
   const apiCandidates = useMemo(
     () =>
@@ -70,18 +99,24 @@ function App({
     [candidatesState],
   )
   const candidates = useMemo(
-    () => toQuizCandidates(apiCandidates),
-    [apiCandidates],
+    () => (uf ? toQuizCandidates(apiCandidates, uf) : []),
+    [apiCandidates, uf],
   )
 
   const ranked = useMemo(
     () => rankResults(answers, questions, candidates),
-    [answers, candidates],
+    [answers, questions, candidates],
   )
 
   const goHome = useCallback(() => onNavigate('/'), [onNavigate])
 
-  const handleStart = () => onNavigate('/quiz/1')
+  const handleStart = () => {
+    if (!uf) {
+      onNavigate(STATES_PATH)
+      return
+    }
+    onNavigate(quizPath(uf, 1))
+  }
 
   const showCandidate = useCallback(
     (id: string) => onNavigate(candidatePath(id)),
@@ -91,16 +126,19 @@ function App({
   const handleAnswer = (optionId: OptionId) => {
     if (route.name !== 'question') return
 
-    const index = questionIndex(route.step)
+    const index = questionIndex(route.step, questions.length)
     answer(questions[index].id, optionId)
     onNavigate(
-      index === questions.length - 1 ? '/resultado' : `/quiz/${index + 2}`,
+      index === questions.length - 1
+        ? resultPath(route.uf)
+        : quizPath(route.uf, index + 2),
     )
   }
 
   const handleRestart = () => {
     reset()
-    onNavigate('/')
+    if (uf) onNavigate(quizPath(uf, 1))
+    else onNavigate(STATES_PATH)
   }
 
   // A seleção de estado é a única tela que se prende à altura da janela: mapa
@@ -129,8 +167,8 @@ function App({
 
       {route.name === 'states' && (
         <EstadosScreen
-          availableStates={[CURRENT_ELECTION.state]}
-          onSelectState={() => onNavigate('/candidatos')}
+          availableStates={BRAZIL_STATES.map((item) => item.code)}
+          onSelectState={(code) => onNavigate(statePath(code))}
         />
       )}
 
@@ -153,8 +191,8 @@ function App({
 
       {route.name === 'question' && (
         <QuestionStep
-          question={questions[questionIndex(route.step)]}
-          index={questionIndex(route.step)}
+          question={questions[questionIndex(route.step, questions.length)]}
+          index={questionIndex(route.step, questions.length)}
           total={questions.length}
           onAnswer={handleAnswer}
         />
@@ -168,7 +206,7 @@ function App({
             answers={answers}
             questions={questions}
             onRestart={handleRestart}
-            onShowFairness={() => onNavigate('/imparcialidade')}
+            onShowFairness={() => onNavigate(fairnessPath(route.uf))}
             onShowCandidate={showCandidate}
           />
         ) : (

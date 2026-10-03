@@ -6,37 +6,61 @@ export type CandidatesLoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; data: ApiCandidatesResponse }
 
+const EMPTY: ApiCandidatesResponse = {
+  election: { year: 0, state: '', office: '' },
+  total: 0,
+  candidates: [],
+}
+
 /**
- * Carrega a lista oficial de candidatos da API local (/api/candidates).
+ * Carrega a lista oficial de candidatos da UF (`/api/candidates?state=`).
  *
- * `seed` são os dados embutidos no HTML pré-renderizado: quando vêm, a tela já
- * aparece pronta na primeira pintura e nenhuma requisição é feita.
+ * `seed` são os dados embutidos no HTML pré-renderizado: quando batem com a
+ * UF, a tela já aparece pronta e nenhuma requisição é feita.
  */
-export function useCandidates(seed?: ApiCandidatesResponse): {
+export function useCandidates(
+  uf: string | null,
+  seed?: ApiCandidatesResponse,
+): {
   state: CandidatesLoadState
   retry: () => void
 } {
-  const [fetched, setFetched] = useState<CandidatesLoadState | null>(null)
+  const matchingSeed =
+    seed && uf && seed.election.state === uf ? seed : undefined
+  const [fetched, setFetched] = useState<{
+    uf: string
+    state: CandidatesLoadState
+  } | null>(null)
   const [attempt, setAttempt] = useState(0)
 
+  if (fetched && fetched.uf !== uf) setFetched(null)
+
   useEffect(() => {
-    if (seed) return
+    if (!uf || matchingSeed) return
+    const stateCode = uf
 
     let cancelled = false
 
     async function load() {
       try {
-        const response = await fetch('/api/candidates')
+        const response = await fetch(
+          `/api/candidates?state=${encodeURIComponent(stateCode)}`,
+        )
         if (!response.ok) {
           throw new Error(`erro ao carregar candidatos (${response.status})`)
         }
         const data = (await response.json()) as ApiCandidatesResponse
-        if (!cancelled) setFetched({ status: 'ready', data })
+        if (!cancelled) {
+          setFetched({ uf: stateCode, state: { status: 'ready', data } })
+        }
       } catch (error) {
         if (!cancelled) {
           setFetched({
-            status: 'error',
-            message: error instanceof Error ? error.message : String(error),
+            uf: stateCode,
+            state: {
+              status: 'error',
+              message: error instanceof Error ? error.message : String(error),
+            },
           })
         }
       }
@@ -46,16 +70,18 @@ export function useCandidates(seed?: ApiCandidatesResponse): {
     return () => {
       cancelled = true
     }
-  }, [attempt, seed])
-
-  const state: CandidatesLoadState = seed
-    ? { status: 'ready', data: seed }
-    : (fetched ?? { status: 'loading' })
+  }, [attempt, matchingSeed, uf])
 
   const retry = useCallback(() => {
     setFetched(null)
     setAttempt((value) => value + 1)
   }, [])
+
+  if (!uf) return { state: { status: 'ready', data: EMPTY }, retry }
+  if (matchingSeed) return { state: { status: 'ready', data: matchingSeed }, retry }
+
+  const state: CandidatesLoadState =
+    fetched?.uf === uf ? fetched.state : { status: 'loading' }
 
   return { state, retry }
 }
