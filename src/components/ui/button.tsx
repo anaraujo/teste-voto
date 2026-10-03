@@ -14,7 +14,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary-soft shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_8px_24px_rgb(0_0_0/0.25)]',
+          'bg-tse-success text-primary-foreground hover:bg-white/20 shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_8px_24px_rgb(0_0_0/0.25)]',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary-soft',
         tertiary:

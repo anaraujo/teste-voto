@@ -39,8 +39,8 @@ const TITLES: Partial<Record<Route['name'], string>> = {
 
 function titleFor(route: Route): string | null {
   if (route.name === 'candidates') {
-    if (route.office === 'federal') return 'Deputados federais'
-    return route.uf === 'DF' ? 'Deputados distritais' : 'Deputados estaduais'
+    if (route.office === 'federal') return 'Deputados Federais'
+    return route.uf === 'DF' ? 'Deputados Distritais' : 'Deputados Estaduais'
   }
   return TITLES[route.name] ?? null
 }
@@ -63,7 +63,7 @@ export function AppHeader({ route, onNavigate, parent }: AppHeaderProps) {
      * telas estreitas. Sem título (ficha, pergunta), o botão continua no
      * início e as outras duas células ficam vazias.
      */
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center">
+    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
       <button
         type="button"
         onClick={() => onNavigate(target)}

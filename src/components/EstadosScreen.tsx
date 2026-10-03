@@ -4,6 +4,7 @@ import { statePath } from '../shared/router.ts'
 import type { OfficeKind } from '../shared/elections.ts'
 import { BrazilMap } from './BrazilMap.tsx'
 import { StateChooser } from './StateChooser.tsx'
+import { TileButton } from './ui/tile-button.tsx'
 import './EstadosScreen.css'
 
 interface EstadosScreenProps {
@@ -94,21 +95,26 @@ export function EstadosScreen({
               <li key={state.code}>
                 {isAvailable ? (
                   <StateChooser uf={state.code} onSelectState={onSelectState}>
-                    <a
-                      className="estados-cartao flex h-full flex-col gap-0.5 rounded-lg bg-muted-foreground px-3 py-2 text-tse-mist no-underline transition-colors hover:bg-tse-mist hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-panel md:gap-0 md:py-1.5"
-                      href={statePath(state.code)}
-                      onClick={(event) => {
-                        if (isModifiedClick(event)) return
-                        event.preventDefault()
-                      }}
+                    <TileButton
+                      asChild
+                      tone="ink"
+                      className="estados-cartao flex h-full flex-col gap-0.5 px-3 py-2 md:gap-0 md:py-1.5"
                     >
-                      <span className="estados-sigla font-space-grotesk text-lg font-semibold md:text-base">
-                        {state.code}
-                      </span>
-                      <span className="estados-nome font-sora text-xs md:text-[0.6875rem]">
-                        {state.name}
-                      </span>
-                    </a>
+                      <a
+                        href={statePath(state.code)}
+                        onClick={(event) => {
+                          if (isModifiedClick(event)) return
+                          event.preventDefault()
+                        }}
+                      >
+                        <span className="estados-sigla font-space-grotesk text-lg font-semibold md:text-base">
+                          {state.code}
+                        </span>
+                        <span className="estados-nome font-sora text-xs md:text-[0.6875rem]">
+                          {state.name}
+                        </span>
+                      </a>
+                    </TileButton>
                   </StateChooser>
                 ) : (
                   <div

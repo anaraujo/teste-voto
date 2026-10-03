@@ -3,6 +3,7 @@ import * as HoverCard from '@radix-ui/react-hover-card'
 import { officeFor, type OfficeKind } from '../shared/elections.ts'
 import { statePath } from '../shared/router.ts'
 import { isModifiedClick } from '../lib/links.ts'
+import { TileButton } from './ui/tile-button.tsx'
 
 interface StateChooserProps {
   /** Sigla da UF, para montar os caminhos de cada cargo. */
@@ -11,6 +12,8 @@ interface StateChooserProps {
   onSelectState: (code: string, office: OfficeKind) => void
   /** Elemento-gatilho (o cartão/forma da UF). Precisa aceitar ref e foco. */
   children: ReactNode
+  /** Força o seletor aberto (dev/estilo). Padrão: abre no hover/foco. */
+  open?: boolean
 }
 
 /**
@@ -25,11 +28,13 @@ export function StateChooser({
   uf,
   onSelectState,
   children,
+  open,
 }: StateChooserProps) {
+  const federalLabel = 'Deputado Federal'
   const estadualLabel =
     officeFor(uf, 'estadual') === 'DEPUTADO DISTRITAL'
-      ? 'Deputado distrital'
-      : 'Deputado estadual'
+      ? 'Deputado Distrital'
+      : 'Deputado Estadual'
 
   const navigate = (office: OfficeKind) => {
     return (event: MouseEvent<HTMLAnchorElement>) => {
@@ -40,27 +45,32 @@ export function StateChooser({
   }
 
   return (
-    <HoverCard.Root openDelay={150} closeDelay={150}>
+    <HoverCard.Root open={open} openDelay={150} closeDelay={150}>
       <HoverCard.Trigger asChild>{children}</HoverCard.Trigger>
       <HoverCard.Portal>
         <HoverCard.Content
           sideOffset={6}
-          className="z-50 flex w-44 flex-col gap-1 rounded-lg border border-input bg-card p-1.5 text-left shadow-md"
+          className="z-50 flex flex-col w-52 gap-1.5 rounded-lg border border-input bg-background/90 p-1.5 text-left shadow-md"
         >
-          <a
-            className="rounded-md px-2.5 py-2 text-sm font-medium text-foreground no-underline transition-colors hover:bg-muted"
-            href={statePath(uf, 'federal')}
-            onClick={navigate('federal')}
-          >
-            Deputado federal
-          </a>
-          <a
-            className="rounded-md px-2.5 py-2 text-sm font-medium text-foreground no-underline transition-colors hover:bg-muted"
-            href={statePath(uf, 'estadual')}
-            onClick={navigate('estadual')}
-          >
-            {estadualLabel}
-          </a>
+          <span className="text-cyan-950 font-mono text-[10px] leading-2.5 text-center uppercase tracking-[1.5px]">Quero encontrar um</span>
+          <div className="flex gap-1.5 font-mono text-[10px] leading-2.5 text-center uppercase tracking-[1.5px]">
+            <TileButton
+              tone="ink"
+              href={statePath(uf, 'federal')}
+              onClick={navigate('federal')}
+              className="rounded-sm flex-1 justify-center px-4 py-1 font-medium"
+            >
+              {federalLabel}
+            </TileButton>
+            <TileButton
+              tone="ink"
+              href={statePath(uf, 'estadual')}
+              onClick={navigate('estadual')}
+              className="rounded-sm flex-1 justify-center px-4 py-1 font-medium"
+            >
+              {estadualLabel}
+            </TileButton>
+          </div>
         </HoverCard.Content>
       </HoverCard.Portal>
     </HoverCard.Root>

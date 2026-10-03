@@ -336,20 +336,38 @@ algum dia der para cortar, o caminho é trocar a variável do Fraunces por duas 
 três instâncias estáticas do peso que o app usa — 67 KB é o preço do eixo `opsz`
 que ninguém pediu para remover.
 
-## Os dois botões: `SpecularButton` e `Button`
+## Os botões: `SpecularButton`, `Button` e `TileButton`
 
-O app tem **dois** botões, com fronteiras explícitas.
+O app tem **três** botões, com fronteiras explícitas.
 
-| Componente                                             | Quando                                                                  | Por quê                                                                                        |
-| ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `SpecularButton` (`src/components/SpecularButton.tsx`) | CTA de destaque: "Começar", "Ver candidatos", "Recomeçar"               | É a assinatura visual do app — um shader WebGL que segue o ponteiro. Só onde o brilho importa. |
-| `Button` (`src/components/ui/button.tsx`)              | Tudo o mais: opções do quiz, "Tentar novamente", voltar, ações de ficha | Botão comum, sem WebGL. É o que viabiliza listas longas.                                       |
+| Componente                                             | Quando                                                                         | Por quê                                                                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `SpecularButton` (`src/components/SpecularButton.tsx`) | CTA de destaque: "Começar", "Ver candidatos", "Recomeçar"                      | É a assinatura visual do app — um shader WebGL que segue o ponteiro. Só onde o brilho importa. |
+| `Button` (`src/components/ui/button.tsx`)              | Tudo o mais: opções do quiz, "Tentar novamente", voltar, ações de ficha        | Botão comum, sem WebGL. É o que viabiliza listas longas.                                       |
+| `TileButton` (`src/components/ui/tile-button.tsx`)     | Escolhas de navegação em bloco: o cartão de UF, a alternância federal/estadual | Superfície chapada com tom de cor, sem sombra. O layout fica com o chamador.                   |
 
 A fronteira não é estética, é de contexto WebGL: cada `SpecularButton` abre um
 contexto próprio, e o navegador aceita poucos. Por isso o resultado, quando
 mostra todos de uma vez, usa o `.sb-link` (um `<a>` de verdade), e a lista de
 428 candidatos usa os cards do `CandidateGrid`, que não abrem contexto nenhum.
 Ver o comentário em `src/index.css`.
+
+### O `TileButton` e seus tons
+
+O `TileButton` é a superfície chapada das escolhas de navegação: cor cheia,
+cantos arredondados e sem sombra. A cor vem do tom (`tone`), sempre um token do
+projeto:
+
+| tone      | estado                             | hover                                     |
+| --------- | ---------------------------------- | ----------------------------------------- |
+| `ink`     | `muted-foreground` + `tse-mist`    | inverte (`tse-mist` + `muted-foreground`) |
+| `primary` | `primary` + `primary-foreground`   | `primary-soft`                            |
+| `outline` | borda `border`, texto `foreground` | `accent`                                  |
+
+O layout (coluna, altura, padding fino) é do chamador, via `className` — o
+`TileButton` só entrega a casca de cor, raio, foco e transição. O estado
+"em breve" da lista de estados não é do `TileButton`: fica na tela, como `<div>`
+decorativo.
 
 ### O `SpecularButton` em detalhe
 

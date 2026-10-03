@@ -187,7 +187,7 @@ function App({
       className={cn(
         'min-h-screen px-4 py-8 sm:px-8 lg:px-12',
         route.name === 'candidates'
-          ? 'bg-tse-success/90 text-primary-on'
+          ? 'bg-tse-success/90 bg-linear-to-r from-tse-success/90 to-tse-success text-primary-on'
           : route.name === 'candidate'
             ? 'bg-tertiary/90 text-panel-on'
             : 'bg-tse-primary bg-linear-to-r from-tse-ink-700 to-tse-primary',

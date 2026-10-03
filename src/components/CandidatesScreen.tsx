@@ -16,6 +16,7 @@ import { Button } from './ui/button.tsx'
 import { Card } from './ui/card.tsx'
 import { Input } from './ui/input.tsx'
 import { Skeleton } from './ui/skeleton.tsx'
+import { TileButton } from './ui/tile-button.tsx'
 
 interface CandidatesScreenProps {
   state: CandidatesLoadState
@@ -155,10 +156,10 @@ export function CandidatesScreen({
 
   const toggleNav = (
     <nav aria-label="Cargo" className="flex flex-wrap gap-2">
-      <Button
+      <TileButton
         asChild
         size="sm"
-        variant={office === 'federal' ? 'default' : 'outline'}
+        tone={office === 'federal' ? 'primary' : 'outline'}
       >
         <a
           href={statePath(uf, 'federal')}
@@ -171,11 +172,11 @@ export function CandidatesScreen({
         >
           Deputados federais
         </a>
-      </Button>
-      <Button
+      </TileButton>
+      <TileButton
         asChild
         size="sm"
-        variant={office === 'estadual' ? 'default' : 'outline'}
+        tone={office === 'estadual' ? 'primary' : 'outline'}
       >
         <a
           href={statePath(uf, 'estadual')}
@@ -188,7 +189,7 @@ export function CandidatesScreen({
         >
           {officeLabelFor(uf, 'estadual')}
         </a>
-      </Button>
+      </TileButton>
     </nav>
   )
 

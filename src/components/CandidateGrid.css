@@ -41,17 +41,15 @@ main > section:has(> .candidate-grid) {
  * cards é igual ao vão entre o card e a borda do painel. Sendo uma variável só,
  * os dois não podem divergir.
  *
- * O `width: fit-content` é o que faz o espaçamento fechar. O `auto-fit` decide
- * quantas colunas cabem na largura disponível e o `fit-content` encolhe o
- * painel até exatamente essas colunas. Sem sobra, a borda do painel fica a
- * `--pad` do primeiro card — igual ao `--gap`. Com `width: 100%` sobra espaço
- * (o `justify-content: center` reparte a sobra entre os dois lados) e o vão da
- * borda fica maior que o vão entre cards; medido, dava 85px de borda contra 20
- * de gap num viewport de 1600px.
- *
- * O `max-width: min(100%, …)` é o teto de `--max-columns`: o nono card não
- * entra por maior que seja a tela, e o `100%` impede o painel de passar da
- * largura da section quando a viewport encolhe.
+ * O `width: 100%` toma a largura da section e o `auto-fit` decide quantas
+ * colunas do tamanho do card cabem nela. O que sobra vai para o
+ * `justify-content: space-between`: o primeiro card encosta no `--pad` da
+ * esquerda, o último no `--pad` da direita, e a sobra se reparte entre os vãos
+ * internos. Assim o vão da borda é sempre `--pad` e o vão entre cards nunca
+ * fica menor que `--gap` — que é o mesmo valor. Com `justify-content: center`
+ * a sobra ia toda para os dois lados do painel e o vão da borda ficava maior
+ * que o vão entre cards; medido, dava 85px de borda contra 20 de gap num
+ * viewport de 1600px.
  */
 .candidate-grid {
   --photo-width: 161px;
@@ -72,7 +70,7 @@ main > section:has(> .candidate-grid) {
   display: grid;
   /*
    * `auto-fit` resolve o número de colunas contra a largura disponível — a
-   * largura da section, já que o painel é `fit-content` — e as colunas são do
+   * largura da section, já que o painel é `width: 100%` — e as colunas são do
    * tamanho exato do card, sem esticar.
    */
   grid-template-columns: repeat(
@@ -80,9 +78,8 @@ main > section:has(> .candidate-grid) {
     minmax(var(--card-width), var(--card-width))
   );
   grid-auto-rows: auto;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--gap);
-  margin: 0 auto;
   padding: var(--pad);
   box-sizing: border-box;
   /*
@@ -115,10 +112,15 @@ main > section:has(> .candidate-grid) {
 /*
  * Abaixo de 480px sobra uma coluna só. O gap encolhe, e o padding acompanha
  * porque `--pad` aponta para `--gap` — os dois continuam iguais.
+ *
+ * Com uma coluna só o `space-between` não tem entre o que repartir e o card
+ * encostaria na esquerda; o `justify-content: center` centraliza o card (ou o
+ * grupo de colunas) na horizontal sem mexer no padding.
  */
 @media (max-width: 480px) {
   .candidate-grid {
     --gap: 0.75rem;
+    justify-content: center;
   }
 }
 
