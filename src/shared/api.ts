@@ -41,7 +41,24 @@ export interface ApiCandidate {
   accountsDeclared: boolean | null
   isIncumbent: boolean
   camaraPartyAcronym: string | null
+  quizPositions: ApiQuizPosition[]
+  quizMetrics: ApiQuizMetrics | null
   source: Source
+}
+
+export interface ApiQuizPosition {
+  pautaId: string
+  value: 'sim' | 'nao' | null
+  origin: 'candidato' | 'partido' | null
+  voto: string | null
+  partyAcronym: string | null
+  sourceUrl: string | null
+}
+
+export interface ApiQuizMetrics {
+  alinhamentoGoverno: number | null
+  alinhamentoOrigem: 'candidato' | 'partido' | null
+  trajetoria: number
 }
 
 export interface ApiCandidatesResponse {

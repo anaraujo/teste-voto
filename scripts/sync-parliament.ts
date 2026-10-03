@@ -44,6 +44,7 @@ import type {
   VotoValor,
 } from '../src/data-sources/parliament/types.ts'
 import { CURRENT_ELECTION } from '../src/shared/elections.ts'
+import { normalizeVoto } from '../src/data-sources/camara/voto.ts'
 import { PAUTAS_CHAVE } from '../src/shared/pautas.ts'
 
 const DATA_DIR = defaultDataDir()
@@ -58,19 +59,6 @@ const filter = {
   electionYear: CURRENT_ELECTION.year,
   state: CURRENT_ELECTION.state,
   office: CURRENT_ELECTION.office,
-}
-
-function normalizeVoto(voto: string): VotoValor | null {
-  const value = voto
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-  if (value === 'P-NRV' || value === '' || value === 'NRV') return null
-  if (value === 'SIM') return 'Sim'
-  if (value === 'NAO') return 'Não'
-  if (value === 'ABSTENCAO' || value === 'ABSTENÇÃO') return 'Abstenção'
-  if (value === 'OBSTRUCAO' || value === 'OBSTRUÇÃO') return 'Obstrução'
-  return null
 }
 
 const db = await openRepository(join(DATA_DIR, 'tse.db'))

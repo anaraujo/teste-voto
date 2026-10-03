@@ -19,7 +19,68 @@ A pergunta de nascimento usa o nome da UF (`nascido no Paraná`, `em São Paulo`
 Proveniência da regra: a ingestão percorre as 27 UFs (`electionFor` em
 `src/shared/elections.ts`); o quiz consome a lista da UF da rota.
 
-## As 5 perguntas
+## Perguntas atuais
+
+O quiz mistura perguntas de perfil (TSE e duas métricas numéricas) com
+perguntas de votação. As de votação são fixas: a lista vive em
+`content/quiz/pautas-quiz.json` e só muda com revisão humana e novo deploy,
+porque `content/` vai dentro da imagem.
+
+Cada pergunta de votação oferece Concordo, Discordo e Tanto faz. "Tanto faz"
+não entra na conta. O eleitor pode marcar a resposta como mais importante
+(peso 2). Concordo casa com voto ou orientação Sim; Discordo casa com Não.
+
+Quando o candidato tem voto nominal Sim ou Não, a pergunta usa esse voto.
+Abstenção e obstrução não viram Sim nem Não e também não caem para o partido.
+Sem voto nominal, usa a orientação oficial da bancada do partido ou da
+federação naquela data. Sem os dois, a pergunta fica sem dado e não conta
+como divergência.
+
+A linhagem partidária (fusão, renomeação, incorporação) está em
+`content/quiz/party-lineage.json`, cada item com fonte do TSE. Antecessores
+de uma fusão só valem se todos tiverem o mesmo lado. Incorporação não
+empresta o voto de quem foi incorporado.
+
+### Como uma votação entra na lista
+
+1. `npm run sync:votacoes` baixa os CSVs anuais da Câmara (2019–2026) para
+   `data/camara/` (não vai ao bucket) e grava só o plenário.
+2. `npm run rank:votacoes` monta `data/quiz/shortlist.json` (até 50). Entra
+   votação nominal de plenário da 56ª ou 57ª legislatura, de mérito (texto,
+   substitutivo, emenda, redação final, PEC/PL/PLP/MPV), disputada (Sim entre
+   25% e 75% de Sim+Não), com orientações divergentes entre os partidos de
+   2026 e cobertura de orientação para pelo menos 80% dos candidatos.
+   Requerimento, urgência, adiamento e pedidos semelhantes ficam de fora.
+3. `npm run classify:votacoes` chama um llama.cpp local
+   (`QUIZ_LLM_BASE_URL`, API compatível com OpenAI). O modelo só descreve a
+   votação (tema de uma lista fechada, pergunta, o que o Sim significa,
+   contexto). Não vê candidato nem partido. O rascunho vai para
+   `content/quiz/votacoes.draft.json`. Cache em `data/quiz/llm-cache/`.
+4. Uma pessoa escolhe de 8 a 10 votações, no máximo duas do mesmo tema, e
+   grava `content/quiz/pautas-quiz.json`. A lista que está no repositório saiu
+   da lista curta, com o texto de cada pergunta preso à ementa oficial. O
+   rascunho do modelo entra nessa revisão quando `QUIZ_LLM_BASE_URL` está
+   definido.
+5. `npm run build:quiz` grava `quiz_positions` e `quiz_metrics` no `tse.db`.
+   `npm run publish:data` leva o banco ao GCS.
+
+### Métricas
+
+- **Trajetória** substitui a pergunta antiga de mandato pela ocupação.
+  Conta mandatos eleitos ou suplentes no TSE desde 2004. O mandato atual só
+  soma 1 se a pessoa está em exercício e esse mandato federal ainda não
+  aparece no histórico. Faixas: renovação (0), alguma experiência (1–2),
+  carreira longa (3 ou mais).
+- **Alinhamento com o governo**: na 57ª legislatura, fração de lados iguais
+  à orientação "Governo", só em votações em que o Governo orientou Sim ou
+  Não. Usa o voto do candidato quando há pelo menos 5 comparações; senão, a
+  orientação do partido, com o mesmo mínimo. Governista é 70% ou mais,
+  oposição é 30% ou menos, o meio é independente. Abaixo de 5 comparações a
+  pergunta fica sem dado.
+
+Nenhuma das duas atribui esquerda, direita ou "anti-sistema".
+
+## As perguntas de perfil do TSE
 
 Cada pergunta tem um **resolvedor puro** (`src/data/quiz-source.ts`) que mapeia
 o candidato (dados oficiais) para uma opção. Perfil do candidato = o resultado
@@ -117,20 +178,24 @@ repetido aparece 18 vezes (4,2%). Nenhum candidato é indistinguível do set.
 
 ## Pontuação e desempate
 
-- Pontuação = nº de perguntas em que a resposta da pessoa coincide com o perfil
-  do candidato (0–5).
-- Ordenação: pontos (desc) → **raridade do perfil** (asc: perfis mais raros
-  primeiro) → nome de urna (`localeCompare` `pt-BR`).
-- O desempate por raridade favorece candidatos com perfil único — reduzindo a
-  vantagem estrutural de quem compartilha um perfil muito comum (o mais
-  repetido aparece em 4,2% dos candidatos; sem o desempate ele venceria em
-  igual proporção).
+- A nota é a fração ponderada de concordância nas perguntas respondidas e
+  conhecidas para aquele candidato. "Tanto faz" e pergunta sem dado ficam de
+  fora. Peso 2 quando a pessoa marca a resposta como mais importante.
+- Quem tem dado em menos da metade das perguntas respondidas fica atrás de
+  quem cobre pelo menos 50%, mesmo com nota mais alta.
+- Ordenação: cobertura mínima → nota (desc) → mais concordâncias vindas do
+  voto do próprio candidato → **raridade do perfil** (asc) → nome de urna
+  (`localeCompare` `pt-BR`).
 
 ## Auditoria de imparcialidade
 
-`scripts/check-distribution.ts` enumera as **480 combinações** de respostas e
-conta, para cada uma, o vencedor. Usa o mesmo `candidates` e o mesmo
-`rankResults` do app (fonte única da verdade).
+`scripts/check-distribution.ts` sorteia **50 mil** combinações com semente
+fixa (`20261004`) e conta o vencedor de cada amostra. A tela de
+imparcialidade usa a mesma função com uma amostra menor, para a página
+abrir. O contrato continua sendo nenhum candidato acima de ~5% das amostras.
+O relatório também compara a fatia de vitórias de cada partido com a fatia
+de candidatos, porque a orientação partidária repete o perfil entre quem é
+da mesma legenda.
 
 Métricas da base atual (428 candidatos):
 

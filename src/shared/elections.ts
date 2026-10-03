@@ -41,7 +41,22 @@ export interface ElectionConfig {
 }
 
 const YEAR = 2026
-const OFFICE = 'DEPUTADO FEDERAL'
+
+export const OFFICE_FEDERAL = 'DEPUTADO FEDERAL'
+export const OFFICE_ESTADUAL = 'DEPUTADO ESTADUAL'
+export const OFFICE_DISTRITAL = 'DEPUTADO DISTRITAL'
+
+/** Família de cargo a ingerir. O DF não tem estadual: é distrital. */
+export type OfficeKind = 'federal' | 'estadual'
+
+/**
+ * Cargo da família pedida para uma UF. A família `estadual` cobre as
+ * assembleias legislativas (26 UFs) e a Câmara Legislativa do DF.
+ */
+export function officeFor(state: string, kind: OfficeKind): string {
+  if (kind === 'federal') return OFFICE_FEDERAL
+  return state.trim().toUpperCase() === 'DF' ? OFFICE_DISTRITAL : OFFICE_ESTADUAL
+}
 
 const CANDIDATES_2026_URL =
   'https://cdn.tse.jus.br/estatistica/sead/odsele/consulta_cand/consulta_cand_2026.zip'
@@ -62,8 +77,11 @@ export const FEDERATION_UNITS: readonly string[] = BRAZIL_STATES.map(
 
 export { isFederationUnit }
 
-/** Eleição de deputado federal em 2026 para uma UF. */
-export function electionFor(state: string): ElectionConfig {
+/** Eleição de 2026 para uma UF, no cargo informado (padrão: federal). */
+export function electionFor(
+  state: string,
+  office: string = OFFICE_FEDERAL,
+): ElectionConfig {
   const uf = state.trim().toUpperCase()
   if (!isFederationUnit(uf)) {
     throw new Error(`UF desconhecida: ${state}`)
@@ -71,7 +89,7 @@ export function electionFor(state: string): ElectionConfig {
   return {
     year: YEAR,
     state: uf,
-    office: OFFICE,
+    office,
     candidateDatasetUrl: CANDIDATES_2026_URL,
     datasets: {
       candidates: {

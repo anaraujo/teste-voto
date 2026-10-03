@@ -14,8 +14,12 @@ import {
   getPoliticalMandates,
   listCandidates,
   listIncumbents,
+  listQuizMetrics,
+  listQuizPositions,
   type ElectionFilter,
   type IncumbentRow,
+  type QuizMetricRow,
+  type QuizPositionRow,
 } from './repository.ts'
 import { readEditorialFicha } from './parliament/editorial.ts'
 import { electionFor, isFederationUnit } from '../shared/elections.ts'
@@ -28,6 +32,8 @@ import type {
   ApiParliamentary,
   ApiParliamentaryRecord,
   ApiPoliticalMandate,
+  ApiQuizMetrics,
+  ApiQuizPosition,
   ApiVote,
 } from '../shared/api.ts'
 import type { CandidateRecord } from '../shared/domain.ts'
@@ -43,9 +49,31 @@ export function filterForState(state: string): ElectionFilter | null {
   }
 }
 
+function toApiQuizPosition(row: QuizPositionRow): ApiQuizPosition {
+  return {
+    pautaId: row.pautaId,
+    value: row.value,
+    origin: row.origin,
+    voto: row.voto,
+    partyAcronym: row.partyAcronym,
+    sourceUrl: row.sourceUrl,
+  }
+}
+
+function toApiQuizMetrics(row: QuizMetricRow | undefined): ApiQuizMetrics | null {
+  if (!row) return null
+  return {
+    alinhamentoGoverno: row.alinhamentoGoverno,
+    alinhamentoOrigem: row.alinhamentoOrigem,
+    trajetoria: row.trajetoria,
+  }
+}
+
 export function toApiCandidate(
   candidate: CandidateRecord,
   incumbent: IncumbentRow | undefined,
+  positions: readonly QuizPositionRow[] = [],
+  metrics?: QuizMetricRow,
 ): ApiCandidate {
   return {
     id: candidate.id,
@@ -78,6 +106,8 @@ export function toApiCandidate(
     accountsDeclared: candidate.accountsDeclared,
     isIncumbent: incumbent !== undefined,
     camaraPartyAcronym: incumbent?.camaraPartyAcronym ?? null,
+    quizPositions: positions.map(toApiQuizPosition),
+    quizMetrics: toApiQuizMetrics(metrics),
     source: candidate.source,
   }
 }
@@ -156,8 +186,15 @@ export function buildCandidatesPayload(
   filter: ElectionFilter,
 ): ApiCandidatesResponse {
   const incumbents = listIncumbents(db)
+  const positions = listQuizPositions(db)
+  const metrics = listQuizMetrics(db)
   const candidates = listCandidates(db, filter).map((candidate) =>
-    toApiCandidate(candidate, incumbents.get(candidate.id)),
+    toApiCandidate(
+      candidate,
+      incumbents.get(candidate.id),
+      positions.get(candidate.id) ?? [],
+      metrics.get(candidate.id),
+    ),
   )
   return {
     election: {
@@ -179,6 +216,8 @@ export async function buildCandidateDetailPayload(
   if (!candidate) return null
 
   const incumbent = listIncumbents(db).get(id)
+  const positions = listQuizPositions(db).get(id) ?? []
+  const metrics = listQuizMetrics(db).get(id)
   const { mandates, records, votes } = getParliamentary(db, id)
   const politicalMandates = getPoliticalMandates(db, id)
   const editorial = await readEditorialFicha(id)
@@ -193,7 +232,7 @@ export async function buildCandidateDetailPayload(
         }
 
   return {
-    ...toApiCandidate(candidate, incumbent),
+    ...toApiCandidate(candidate, incumbent, positions, metrics),
     campaignStatus: candidate.campaignStatus,
     nationality: candidate.nationality,
     email: candidate.email,

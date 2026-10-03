@@ -342,9 +342,19 @@ main > section:has(> .candidate-grid) {
   overflow-wrap: anywhere;
 }
 
-/* Footer: só a pílula da ficha. Sem fio no topo. */
+/* Footer: a pílula da ficha e, no resultado, a porcentagem. Sem fio no topo. */
 .candidate-foot {
   padding: 0.5rem var(--card-pad) 0.75rem;
+}
+
+.candidate-foot .result-score {
+  margin: 0 0 0.55rem;
+  color: var(--card-on, #fff);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 /*

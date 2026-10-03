@@ -1,0 +1,54 @@
+{
+  "aliases": {
+    "PODEMOS": "PODE",
+    "PCDOB": "PCDOB",
+    "SOLIDARIED": "SOLIDARIEDADE",
+    "UNIAO": "UNIAO",
+    "PATRI": "PATRIOTA",
+    "PATRIOTAS": "PATRIOTA"
+  },
+  "mergers": [
+    {
+      "kind": "rename",
+      "from": ["PPS"],
+      "to": "CIDADANIA",
+      "since": "2019-03-19",
+      "source": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse"
+    },
+    {
+      "kind": "rename",
+      "from": ["PR"],
+      "to": "PL",
+      "since": "2019-02-09",
+      "source": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse"
+    },
+    {
+      "kind": "fusion",
+      "from": ["PSL", "DEM"],
+      "to": "UNIAO",
+      "since": "2022-02-08",
+      "source": "https://www.tse.jus.br/comunicacao/noticias/2022/Fevereiro/tse-aprova-registro-do-partido-uniao-brasil"
+    },
+    {
+      "kind": "rename",
+      "from": ["PTC"],
+      "to": "AGIR",
+      "since": "2022-03-31",
+      "source": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse"
+    },
+    {
+      "kind": "incorporation",
+      "from": ["PSC"],
+      "to": "PODE",
+      "since": "2023-06-21",
+      "source": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse"
+    },
+    {
+      "kind": "fusion",
+      "from": ["PTB", "PATRIOTA"],
+      "to": "PRD",
+      "since": "2023-11-09",
+      "source": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-renovacao-democratica-prd"
+    }
+  ]
+}

@@ -2,9 +2,10 @@
  * CLI de ingestão de dados do TSE.
  *
  * Uso:
- *   npm run ingest                # baixa, valida, normaliza e sincroniza
- *   npm run ingest -- --inspect   # documenta o schema observado (docs/tse-schema.md)
- *   npm run ingest -- --force     # rebaixa os arquivos mesmo se já existirem
+ *   npm run ingest                          # baixa, valida, normaliza e sincroniza
+ *   npm run ingest -- --inspect             # documenta o schema observado (docs/tse-schema.md)
+ *   npm run ingest -- --force               # rebaixa os arquivos mesmo se já existirem
+ *   npm run ingest -- --office estadual     # deputados estaduais (distritais no DF)
  *
  * Execução: node --experimental-sqlite --experimental-strip-types scripts/ingest.ts
  */
@@ -19,7 +20,9 @@ import {
   electionFor,
   electionKey,
   isFederationUnit,
+  officeFor,
   type ElectionConfig,
+  type OfficeKind,
 } from '../src/shared/elections.ts'
 import {
   fetchCandidates,
@@ -54,13 +57,15 @@ const USAGE = `
 Ingestão de dados do TSE
 
 Uso:
-  ingest [--inspect] [--force] [--states PR,SC]
+  ingest [--inspect] [--force] [--states PR,SC] [--office federal|estadual]
   ingest --help
 
 Opções:
   --inspect        Documenta o schema do CSV baixado em docs/tse-schema.md e termina.
   --force          Rebaixa os arquivos ZIP mesmo que já existam.
   --states A,B     Limita as UFs (siglas separadas por vírgula). Padrão: as 27.
+  --office CARGO   Família de cargo: federal (padrão) ou estadual. No DF,
+                   "estadual" ingere DEPUTADO DISTRITAL.
   --help           Mostra esta ajuda.
 `
 
@@ -69,6 +74,8 @@ interface CliOptions extends FetchOptions {
   help: boolean
   /** null = todas as UFs. */
   states: string[] | null
+  /** Família de cargo a ingerir. */
+  office: OfficeKind
 }
 
 function parseStateList(value: string): string[] {
@@ -89,19 +96,36 @@ function parseStateList(value: string): string[] {
   return codes
 }
 
+function parseOfficeKind(value: string): OfficeKind {
+  const kind = value.trim().toLowerCase()
+  if (kind === 'federal' || kind === 'estadual') return kind
+  console.error(`cargo desconhecido: ${value} (use federal ou estadual)`)
+  process.exit(1)
+}
+
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     inspect: false,
     help: false,
     force: false,
     states: null,
+    office: 'federal',
   }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--inspect') options.inspect = true
     else if (arg === '--force') options.force = true
     else if (arg === '--help') options.help = true
-    else if (arg === '--states') {
+    else if (arg === '--office') {
+      const value = argv[++i]
+      if (!value) {
+        console.error('informe o cargo depois de --office')
+        process.exit(1)
+      }
+      options.office = parseOfficeKind(value)
+    } else if (arg.startsWith('--office=')) {
+      options.office = parseOfficeKind(arg.slice('--office='.length))
+    } else if (arg === '--states') {
       const value = argv[++i]
       if (!value) {
         console.error('informe as UFs depois de --states')
@@ -305,7 +329,11 @@ async function runIngest(options: CliOptions): Promise<void> {
   try {
     for (const state of states) {
       try {
-        await ingestElection(db, electionFor(state), options)
+        await ingestElection(
+          db,
+          electionFor(state, officeFor(state, options.office)),
+          options,
+        )
       } catch (error) {
         failed++
         logError(error)
@@ -315,7 +343,9 @@ async function runIngest(options: CliOptions): Promise<void> {
     db.close()
   }
 
-  log(`${states.length - failed}/${states.length} UFs sincronizadas (${dbPath})`)
+  log(
+    `${states.length - failed}/${states.length} UFs (${options.office}) sincronizadas (${dbPath})`,
+  )
   if (failed > 0) process.exit(1)
 }
 
@@ -481,7 +511,10 @@ async function main(): Promise<void> {
 
   if (options.inspect) {
     const state = options.states?.[0] ?? CURRENT_ELECTION.state
-    await runInspect(electionFor(state), options)
+    await runInspect(
+      electionFor(state, officeFor(state, options.office)),
+      options,
+    )
     return
   }
 

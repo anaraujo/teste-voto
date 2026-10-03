@@ -1,17 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { OptionId, QuestionId } from '../data/quiz.ts'
+import type { GivenAnswer, OptionId, QuestionId } from '../data/quiz.ts'
 
-type Answers = Record<QuestionId, OptionId>
+type Answers = Record<QuestionId, GivenAnswer>
 
 function storageKey(uf: string): string {
-  return `teste-voto:quiz:v1:${uf}`
+  return `teste-voto:quiz:v2:${uf}`
 }
 
 function readStoredAnswers(uf: string): Answers {
   if (typeof sessionStorage === 'undefined') return {}
   try {
     const raw = sessionStorage.getItem(storageKey(uf))
-    return raw ? (JSON.parse(raw) as Answers) : {}
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const answers = {} as Answers
+    for (const [id, value] of Object.entries(parsed)) {
+      if (!value || typeof value !== 'object') continue
+      const row = value as { optionId?: unknown; weight?: unknown }
+      if (typeof row.optionId !== 'string') continue
+      answers[id] = {
+        optionId: row.optionId,
+        weight: row.weight === 2 ? 2 : 1,
+      }
+    }
+    return answers
   } catch {
     return {}
   }
@@ -23,7 +35,7 @@ function readStoredAnswers(uf: string): Answers {
  */
 export function useQuizAnswers(uf: string | null): {
   answers: Answers
-  answer: (questionId: QuestionId, optionId: OptionId) => void
+  answer: (questionId: QuestionId, optionId: OptionId, weight?: 1 | 2) => void
   reset: () => void
 } {
   const [stored, setStored] = useState(() => ({
@@ -50,12 +62,18 @@ export function useQuizAnswers(uf: string | null): {
     }
   }, [stored])
 
-  const answer = useCallback((questionId: QuestionId, optionId: OptionId) => {
-    setStored((current) => ({
-      ...current,
-      answers: { ...current.answers, [questionId]: optionId },
-    }))
-  }, [])
+  const answer = useCallback(
+    (questionId: QuestionId, optionId: OptionId, weight: 1 | 2 = 1) => {
+      setStored((current) => ({
+        ...current,
+        answers: {
+          ...current.answers,
+          [questionId]: { optionId, weight },
+        },
+      }))
+    },
+    [],
+  )
 
   const reset = useCallback(() => {
     setStored((current) => ({ ...current, answers: {} }))

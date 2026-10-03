@@ -2,8 +2,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   FEDERATION_UNITS,
+  OFFICE_DISTRITAL,
+  OFFICE_ESTADUAL,
   electionFor,
   electionKey,
+  officeFor,
 } from '../src/shared/elections.ts'
 import { filterForState } from '../src/data-sources/apiPayload.ts'
 
@@ -27,6 +30,25 @@ test('electionFor monta os arquivos da UF e rejeita sigla inválida', () => {
 
   assert.equal(FEDERATION_UNITS.length, 27)
   assert.throws(() => electionFor('XX'), /UF desconhecida/)
+})
+
+test('officeFor mapeia a família de cargo e trata o DF como distrital', () => {
+  assert.equal(officeFor('PR', 'federal'), 'DEPUTADO FEDERAL')
+  assert.equal(officeFor('pr', 'estadual'), OFFICE_ESTADUAL)
+  assert.equal(officeFor('SP', 'estadual'), OFFICE_ESTADUAL)
+  assert.equal(officeFor('DF', 'estadual'), OFFICE_DISTRITAL)
+  assert.equal(officeFor('df', 'federal'), 'DEPUTADO FEDERAL')
+})
+
+test('electionFor aceita o cargo e mantém a chave com o cargo', () => {
+  const estadual = electionFor('SP', OFFICE_ESTADUAL)
+  assert.equal(estadual.office, OFFICE_ESTADUAL)
+  assert.equal(estadual.datasets.candidates.sourceFileMatch, 'consulta_cand_2026_SP')
+  assert.equal(electionKey(estadual), '2026:SP:DEPUTADO ESTADUAL')
+
+  const distrital = electionFor('DF', officeFor('DF', 'estadual'))
+  assert.equal(distrital.office, OFFICE_DISTRITAL)
+  assert.equal(electionKey(distrital), '2026:DF:DEPUTADO DISTRITAL')
 })
 
 test('filterForState só aceita sigla de UF', () => {

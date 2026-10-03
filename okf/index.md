@@ -27,6 +27,7 @@ abertura pública por variável.
 ## Operação
 
 * [Dia a dia](/operations/day-to-day.md) - Atualizar dados, deploy de código, liberar acesso, rollback.
+* [Quiz com votações](/operations/quiz-votacoes.md) - Plenário da Câmara, lista curta, llama.cpp local e pautas fixas.
 * [Privado → público](/operations/private-to-public.md) - Flip de `public_access` e reversão.
 * [Checklist go-live](/operations/go-live-checklist.md) - Validação antes de publicar.
 
