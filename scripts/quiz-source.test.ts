@@ -2,8 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { ApiCandidate } from '../src/shared/api.ts'
 import type { Candidate, OptionId, QuestionId } from '../src/data/quiz.ts'
+import { stateByCode } from '../src/data/brazil-map.ts'
 import {
-  QuizResolutionError,
   buildProfile,
   profileKey,
   questionProvenance,
@@ -16,7 +16,6 @@ import {
   resolveSector,
   toQuizCandidate,
 } from '../src/data/quiz-source.ts'
-import { stateByCode } from '../src/data/brazil-map.ts'
 
 function apiCandidate(
   overrides: Partial<
@@ -57,6 +56,8 @@ function apiCandidate(
     accountsDeclared: null,
     isIncumbent: false,
     camaraPartyAcronym: null,
+    quizPositions: [],
+    quizMetrics: null,
     source: {
       provider: 'TSE',
       url: 'https://example.com',
@@ -145,53 +146,31 @@ test('resolveLocal compara a UF de nascimento com a da eleição', () => {
   assert.equal(resolveLocal('', 'PR'), 'fora')
 })
 
-test('buildProfile resolve as cinco dimensões e valida as opções', () => {
-  const expected: Record<QuestionId, OptionId> = {
-    sector: 'setor:direito',
-    experience: 'experiencia:sem-mandato',
-    age: 'idade:40-49',
-    candidacy: 'agremiacao:isolado',
-    local: 'local:aqui',
-  }
+test('buildProfile resolve as dimensões oficiais e deixa métrica sem dado em null', () => {
   const profile = buildProfile(apiCandidate(), 'PR')
-  assert.deepEqual(profile, expected)
+  assert.equal(profile.sector, 'setor:direito')
+  assert.equal(profile.age, 'idade:40-49')
+  assert.equal(profile.candidacy, 'agremiacao:isolado')
+  assert.equal(profile.local, 'local:aqui')
+  assert.equal(profile.trajetoria, null)
+  assert.equal(profile.alinhamento, null)
   for (const question of quizQuestions) {
-    assert.ok(
-      question.options.some((option) => option.id === profile[question.id]),
-    )
+    if (question.kind === 'stance') continue
+    const optionId = profile[question.id]
+    if (optionId === null) continue
+    assert.ok(question.options.some((option) => option.id === optionId))
   }
 })
 
-test('buildProfile lança quando uma dimensão oficial está indisponível', () => {
-  assert.throws(
-    () => buildProfile(apiCandidate({ birthDate: null }), 'PR'),
-    QuizResolutionError,
-  )
+test('buildProfile deixa a idade em null quando a data não existe', () => {
+  const profile = buildProfile(apiCandidate({ birthDate: null }), 'PR')
+  assert.equal(profile.age, null)
+  assert.equal(profile.sector, 'setor:direito')
 })
 
 test('buildProfile sem ocupação cai em "outra área" sem quebrar', () => {
   const profile = buildProfile(apiCandidate({ occupation: null }), 'PR')
   assert.equal(profile.sector, 'setor:outros')
-  assert.equal(profile.experience, 'experiencia:sem-mandato')
-})
-
-test('profileKey é estável por conjunto de opções', () => {
-  const a = {
-    sector: 'setor:direito',
-    experience: 'experiencia:sem-mandato',
-    age: 'idade:40-49',
-    candidacy: 'agremiacao:isolado',
-    local: 'local:aqui',
-  } as Record<QuestionId, OptionId>
-  assert.equal(profileKey(a), profileKey(a))
-  assert.equal(profileKey(a).split('|').length, quizQuestions.length)
-})
-
-test('questionProvenance devolve a fonte de cada dimensão', () => {
-  for (const question of quizQuestions) {
-    assert.ok(questionProvenance(question.id).length > 0)
-  }
-  assert.ok(questionProvenance('desconhecida').length > 0)
 })
 
 test('a pergunta de nascimento usa a UF da eleição', () => {
@@ -209,6 +188,24 @@ test('a pergunta de nascimento usa a UF da eleição', () => {
   assert.equal(bornInPr.local, 'local:fora')
 })
 
+test('profileKey é estável por conjunto de opções', () => {
+  const a = {
+    sector: 'setor:direito',
+    age: 'idade:40-49',
+    candidacy: 'agremiacao:isolado',
+    local: 'local:pr',
+  } as Record<QuestionId, OptionId>
+  assert.equal(profileKey(a), profileKey(a))
+  assert.equal(profileKey(a).split('|').length, quizQuestions.length)
+})
+
+test('questionProvenance devolve a fonte de cada dimensão', () => {
+  for (const question of quizQuestions) {
+    assert.ok(questionProvenance(question.id).length > 0)
+  }
+  assert.ok(questionProvenance('desconhecida').length > 0)
+})
+
 test('toQuizCandidate espelha nome, foto e perfil da API', () => {
   const candidate: Candidate = toQuizCandidate(
     apiCandidate({ occupation: 'PEDAGOGO' }),
@@ -217,6 +214,7 @@ test('toQuizCandidate espelha nome, foto e perfil da API', () => {
   assert.equal(candidate.id, '2026-PR-1')
   assert.equal(candidate.name, 'FULANO DE TAL')
   assert.equal(candidate.photo, '/photos/1.jpg')
+  assert.equal(candidate.ballotNumber, '700')
   assert.equal(candidate.profile.sector, 'setor:educacao')
   assert.ok(candidate.description.includes('PX'))
 })

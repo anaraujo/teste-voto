@@ -45,6 +45,8 @@ function candidate(overrides: Partial<ApiCandidate> = {}): ApiCandidate {
     accountsDeclared: null,
     isIncumbent: false,
     camaraPartyAcronym: null,
+    quizPositions: [],
+    quizMetrics: null,
     source: SOURCE,
     ...overrides,
   }

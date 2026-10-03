@@ -242,6 +242,70 @@ function createSchema(db: DatabaseSync): void {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (candidate_id, ano, cargo, turno)
     );
+
+    CREATE TABLE IF NOT EXISTS plenary_votacoes (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      descricao TEXT NOT NULL,
+      votos_sim INTEGER NOT NULL,
+      votos_nao INTEGER NOT NULL,
+      votos_outros INTEGER NOT NULL,
+      source_url TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS plenary_orientations (
+      votacao_id TEXT NOT NULL,
+      sigla TEXT NOT NULL,
+      orientacao TEXT NOT NULL,
+      stance TEXT,
+      PRIMARY KEY (votacao_id, sigla)
+    );
+
+    CREATE TABLE IF NOT EXISTS plenary_votes (
+      votacao_id TEXT NOT NULL,
+      camara_id INTEGER NOT NULL,
+      voto TEXT NOT NULL,
+      partido TEXT,
+      PRIMARY KEY (votacao_id, camara_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS plenary_proposicoes (
+      votacao_id TEXT NOT NULL,
+      proposicao_id TEXT NOT NULL,
+      sigla_tipo TEXT,
+      numero TEXT,
+      ano TEXT,
+      titulo TEXT,
+      ementa TEXT,
+      PRIMARY KEY (votacao_id, proposicao_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_plenary_orientations_votacao
+      ON plenary_orientations (votacao_id);
+    CREATE INDEX IF NOT EXISTS idx_plenary_votes_votacao
+      ON plenary_votes (votacao_id);
+    CREATE INDEX IF NOT EXISTS idx_plenary_proposicoes_votacao
+      ON plenary_proposicoes (votacao_id);
+
+    CREATE TABLE IF NOT EXISTS quiz_positions (
+      candidate_id TEXT NOT NULL,
+      pauta_id TEXT NOT NULL,
+      value TEXT,
+      origin TEXT,
+      voto TEXT,
+      party_acronym TEXT,
+      source_url TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (candidate_id, pauta_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS quiz_metrics (
+      candidate_id TEXT PRIMARY KEY,
+      alinhamento_governo REAL,
+      alinhamento_origem TEXT,
+      trajetoria INTEGER NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `)
 }
 
@@ -1083,4 +1147,226 @@ export function listPoliticalMandates(
     }
   }
   return byCandidate
+}
+
+export interface PlenaryVotacaoInsert {
+  id: string
+  data: string
+  descricao: string
+  votosSim: number
+  votosNao: number
+  votosOutros: number
+  sourceUrl: string
+}
+
+export interface PlenaryOrientationInsert {
+  votacaoId: string
+  sigla: string
+  orientacao: string
+  stance: 'sim' | 'nao' | null
+}
+
+export interface PlenaryVoteInsert {
+  votacaoId: string
+  camaraId: number
+  voto: string
+  partido: string | null
+}
+
+export interface PlenaryProposicaoInsert {
+  votacaoId: string
+  proposicaoId: string
+  siglaTipo: string | null
+  numero: string | null
+  ano: string | null
+  titulo: string | null
+  ementa: string | null
+}
+
+export interface PlenaryWriter {
+  votacao(row: PlenaryVotacaoInsert): void
+  orientation(row: PlenaryOrientationInsert): void
+  vote(row: PlenaryVoteInsert): void
+  proposicao(row: PlenaryProposicaoInsert): void
+  commit(): void
+  rollback(): void
+}
+
+/** Apaga as votações de plenário e devolve insertores na mesma transação. */
+export function beginPlenaryReplace(db: DatabaseSync): PlenaryWriter {
+  db.exec('BEGIN')
+  db.exec('DELETE FROM plenary_votes')
+  db.exec('DELETE FROM plenary_orientations')
+  db.exec('DELETE FROM plenary_proposicoes')
+  db.exec('DELETE FROM plenary_votacoes')
+  const votacaoStmt = db.prepare(
+    `INSERT INTO plenary_votacoes (
+      id, data, descricao, votos_sim, votos_nao, votos_outros, source_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  )
+  const orientationStmt = db.prepare(
+    `INSERT OR REPLACE INTO plenary_orientations (
+      votacao_id, sigla, orientacao, stance
+    ) VALUES (?, ?, ?, ?)`,
+  )
+  const voteStmt = db.prepare(
+    `INSERT OR REPLACE INTO plenary_votes (
+      votacao_id, camara_id, voto, partido
+    ) VALUES (?, ?, ?, ?)`,
+  )
+  const proposicaoStmt = db.prepare(
+    `INSERT OR REPLACE INTO plenary_proposicoes (
+      votacao_id, proposicao_id, sigla_tipo, numero, ano, titulo, ementa
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  )
+  return {
+    votacao(row) {
+      votacaoStmt.run(
+        row.id,
+        row.data,
+        row.descricao,
+        row.votosSim,
+        row.votosNao,
+        row.votosOutros,
+        row.sourceUrl,
+      )
+    },
+    orientation(row) {
+      orientationStmt.run(row.votacaoId, row.sigla, row.orientacao, row.stance)
+    },
+    vote(row) {
+      voteStmt.run(row.votacaoId, row.camaraId, row.voto, row.partido)
+    },
+    proposicao(row) {
+      proposicaoStmt.run(
+        row.votacaoId,
+        row.proposicaoId,
+        row.siglaTipo,
+        row.numero,
+        row.ano,
+        row.titulo,
+        row.ementa,
+      )
+    },
+    commit() {
+      db.exec('COMMIT')
+    },
+    rollback() {
+      db.exec('ROLLBACK')
+    },
+  }
+}
+
+export interface QuizPositionRow {
+  candidateId: string
+  pautaId: string
+  value: 'sim' | 'nao' | null
+  origin: 'candidato' | 'partido' | null
+  voto: string | null
+  partyAcronym: string | null
+  sourceUrl: string | null
+}
+
+export interface QuizMetricRow {
+  candidateId: string
+  alinhamentoGoverno: number | null
+  alinhamentoOrigem: 'candidato' | 'partido' | null
+  trajetoria: number
+}
+
+export function replaceQuizDerived(
+  db: DatabaseSync,
+  positions: readonly QuizPositionRow[],
+  metrics: readonly QuizMetricRow[],
+): void {
+  db.exec('BEGIN')
+  try {
+    db.prepare(`DELETE FROM quiz_positions`).run()
+    db.prepare(`DELETE FROM quiz_metrics`).run()
+    const positionStmt = db.prepare(
+      `INSERT INTO quiz_positions (
+        candidate_id, pauta_id, value, origin, voto, party_acronym, source_url, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    const now = new Date().toISOString()
+    for (const row of positions) {
+      positionStmt.run(
+        row.candidateId,
+        row.pautaId,
+        row.value,
+        row.origin,
+        row.voto,
+        row.partyAcronym,
+        row.sourceUrl,
+        now,
+      )
+    }
+    const metricStmt = db.prepare(
+      `INSERT INTO quiz_metrics (
+        candidate_id, alinhamento_governo, alinhamento_origem, trajetoria, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`,
+    )
+    for (const row of metrics) {
+      metricStmt.run(
+        row.candidateId,
+        row.alinhamentoGoverno,
+        row.alinhamentoOrigem,
+        row.trajetoria,
+        now,
+      )
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
+export function listQuizPositions(
+  db: DatabaseSync,
+): Map<string, QuizPositionRow[]> {
+  const rows = db.prepare(`SELECT * FROM quiz_positions`).all() as unknown as Array<{
+    candidate_id: string
+    pauta_id: string
+    value: 'sim' | 'nao' | null
+    origin: 'candidato' | 'partido' | null
+    voto: string | null
+    party_acronym: string | null
+    source_url: string | null
+  }>
+  const map = new Map<string, QuizPositionRow[]>()
+  for (const row of rows) {
+    const item: QuizPositionRow = {
+      candidateId: row.candidate_id,
+      pautaId: row.pauta_id,
+      value: row.value,
+      origin: row.origin,
+      voto: row.voto,
+      partyAcronym: row.party_acronym,
+      sourceUrl: row.source_url,
+    }
+    const list = map.get(item.candidateId)
+    if (list) list.push(item)
+    else map.set(item.candidateId, [item])
+  }
+  return map
+}
+
+export function listQuizMetrics(db: DatabaseSync): Map<string, QuizMetricRow> {
+  const rows = db.prepare(`SELECT * FROM quiz_metrics`).all() as unknown as Array<{
+    candidate_id: string
+    alinhamento_governo: number | null
+    alinhamento_origem: 'candidato' | 'partido' | null
+    trajetoria: number
+  }>
+  const map = new Map<string, QuizMetricRow>()
+  for (const row of rows) {
+    map.set(row.candidate_id, {
+      candidateId: row.candidate_id,
+      alinhamentoGoverno: row.alinhamento_governo,
+      alinhamentoOrigem: row.alinhamento_origem,
+      trajetoria: row.trajetoria,
+    })
+  }
+  return map
 }

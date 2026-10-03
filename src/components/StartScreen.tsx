@@ -29,9 +29,9 @@ export function StartScreen({
     <section className="flex flex-col items-center justify-center gap-4">
       <h1 className="font-titulo text-4xl">Teste de Voto</h1>
       <p>
-        Descubra qual dos {candidateCount} candidatos a deputado federal combina
-        melhor com as suas prioridades respondendo {questionCount} perguntas
-        rápidas.
+        Responda {questionCount} perguntas sobre o perfil que você procura e
+        sobre votações reais da Câmara. O teste aponta, entre {candidateCount}{' '}
+        candidatos a deputado federal, quem mais se aproxima.
       </p>
 
       {loading && (

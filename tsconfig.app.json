@@ -19,6 +19,7 @@
      * deprecada no TypeScript 6 e `paths` resolve a partir deste arquivo.
      */
     "paths": { "@/*": ["./src/*"] },
+    "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,

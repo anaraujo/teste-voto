@@ -123,11 +123,11 @@ function App({
     [onNavigate],
   )
 
-  const handleAnswer = (optionId: OptionId) => {
+  const handleAnswer = (optionId: OptionId, weight: 1 | 2 = 1) => {
     if (route.name !== 'question') return
 
     const index = questionIndex(route.step, questions.length)
-    answer(questions[index].id, optionId)
+    answer(questions[index].id, optionId, weight)
     onNavigate(
       index === questions.length - 1
         ? resultPath(route.uf)
@@ -202,9 +202,6 @@ function App({
         (ranked.length > 0 ? (
           <ResultScreen
             ranked={ranked}
-            totalQuestions={questions.length}
-            answers={answers}
-            questions={questions}
             onRestart={handleRestart}
             onShowFairness={() => onNavigate(fairnessPath(route.uf))}
             onShowCandidate={showCandidate}
