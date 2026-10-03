@@ -69,13 +69,6 @@ main > section:has(> .candidate-grid) {
 
   position: relative;
   width: 100%;
-  /* max-width: min(
-    100%,
-    calc(
-      var(--max-columns) * var(--card-width) + (var(--max-columns) - 1) *
-        var(--gap) + 2 * var(--pad)
-    )
-  ); */
   display: grid;
   /*
    * `auto-fit` resolve o número de colunas contra a largura disponível — a
@@ -97,7 +90,7 @@ main > section:has(> .candidate-grid) {
    * cards, para o painel e os cards lerem como a mesma família de superfície.
    */
   border-radius: 24px;
-  background: var(--color-panel);
+  background: var(--color-background);
 }
 
 /*

@@ -1,0 +1,68 @@
+/*
+ * A grade de siglas na forma lado a lado.
+ *
+ * As duas coisas abaixo só valem de `md` para cima — abaixo disso a grade está no
+ * fluxo da página, que rola, e nada transborda dentro de caixa nenhuma.
+ *
+ * **O centro que não transborda.** Em cima de `md` a tela para na altura da
+ * janela (ver `docs/mapa-estados.md`) e a grade divide a linha com o mapa.
+ *
+ * **O degrau de compressão.** Com o console do navegador aberto a janela perde
+ * uns 200px e a tela parava de caber. O bloco de baixo encolhe, um degrau só, o
+ * que dá: o gap da seção, o título, o gap da grade e a tipografia do cartão
+ * (padding, sigla, nome e "Em breve").
+ *
+ * Um degrau, e não uma escala contínua em `clamp()`: em escala a sigla do cartão
+ * só ficaria legível numa faixa estreita de alturas, e o resto do app ganharia
+ * uma regra que ninguém consegue prever. No fim da escala a página volta a
+ * rolar — e só para baixo, por causa do `safe center`.
+ */
+
+@media (min-width: 48rem) {
+  /*
+   * `safe center` e não `center`: com o centro simples e as linhas maior que a
+   * caixa, o excesso saía pelos dois lados — a primeira linha de siglas subia
+   * por cima do `h1` e a última passava do rodapé. Com `safe`, a grade
+   * centraliza enquanto cabe e encosta em cima quando não cabe, e o excesso vai
+   * só para baixo, que é o sentido em que a página rola.
+   */
+  .estados-grade {
+    align-content: safe center;
+  }
+}
+
+@media (min-width: 48rem) and (max-height: 44rem) {
+  .estados-secao {
+    gap: 0.75rem;
+  }
+
+  .estados-titulo {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .estados-grade {
+    row-gap: 0.25rem;
+  }
+
+  .estados-cartao {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    row-gap: 0.125rem;
+  }
+
+  .estados-sigla {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .estados-nome {
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+
+  .estados-breve {
+    font-size: 0.5rem;
+    line-height: 0.625rem;
+  }
+}

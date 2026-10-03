@@ -16,12 +16,15 @@ export type Route =
   | { name: 'not-found'; path: string }
 
 export const START_PATH = '/'
+export const STATES_PATH = '/'
 export const CANDIDATES_PATH = '/candidatos'
-export const STATES_PATH = '/estados'
 export const CANDIDATE_PATH = '/candidato'
 export const FAIRNESS_PATH = '/imparcialidade'
 export const QUIZ_PATH = '/quiz'
 export const RESULT_PATH = '/resultado'
+
+/** Caminho antigo da seleção de estado, antes de ela virar a rota principal. */
+export const LEGACY_STATES_PATH = '/estados'
 
 /** Remove a barra final, para que `/candidatos/` case com `/candidatos`. */
 function normalize(pathname: string): string {
@@ -42,9 +45,10 @@ function decodeSegment(segment: string): string {
 export function matchRoute(pathname: string): Route {
   const path = normalize(pathname)
 
-  if (path === START_PATH) return { name: 'start' }
+  if (path === STATES_PATH || path === LEGACY_STATES_PATH) {
+    return { name: 'states' }
+  }
   if (path === CANDIDATES_PATH) return { name: 'candidates' }
-  if (path === STATES_PATH) return { name: 'states' }
   if (path === FAIRNESS_PATH) return { name: 'fairness' }
   if (path === RESULT_PATH) return { name: 'result' }
   if (path === QUIZ_PATH) return { name: 'question', step: 1 }
@@ -69,10 +73,10 @@ export function routeToPath(route: Route): string {
   switch (route.name) {
     case 'start':
       return START_PATH
-    case 'candidates':
-      return CANDIDATES_PATH
     case 'states':
       return STATES_PATH
+    case 'candidates':
+      return CANDIDATES_PATH
     case 'candidate':
       return `${CANDIDATE_PATH}/${encodeURIComponent(route.id)}`
     case 'fairness':
@@ -132,14 +136,15 @@ export function parseTab(search: string): Tab {
 
 /**
  * Tela "de onde se veio" de forma determinística — sem guardar histórico na
- * máquina de estados. Rotas cujo pai é a inicial voltam para `/`.
+ * máquina de estados. A seleção de estado é a rota principal (`/`), então é o
+ * destino de volta de quem está nos candidatos.
  */
 export function parentPath(route: Route): string {
   switch (route.name) {
     case 'candidates':
-      return START_PATH
+      return STATES_PATH
     case 'states':
-      return START_PATH
+      return STATES_PATH
     case 'candidate':
       return CANDIDATES_PATH
     case 'fairness':
@@ -151,5 +156,5 @@ export function parentPath(route: Route): string {
 
 /** Telas que mostram o botão de voltar no cabeçalho. */
 export function showsBackButton(route: Route): boolean {
-  return route.name !== 'start'
+  return route.name !== 'start' && route.name !== 'states'
 }

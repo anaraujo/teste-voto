@@ -168,7 +168,7 @@ src/
 ├── lib/links.ts            Clique com modificador (abrir em nova aba)
 ├── index.css               Design tokens (Tailwind v4 @theme) — veja docs/design-tokens.md
 ├── components/
-│   ├── StartScreen.tsx     Tela de boas-vindas
+│   ├── StartScreen.tsx     Tela de boas-vindas (fora do fluxo por ora)
 │   ├── CandidatesScreen.tsx Lista de candidatos oficiais (busca + grid)
 │   ├── CandidateGrid.tsx   Grid de cards (foto, número, partido e nome de urna)
 │   ├── CandidateDetailScreen.tsx Ficha: abas, seções e notas editoriais

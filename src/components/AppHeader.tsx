@@ -25,7 +25,6 @@ export function AppHeader({ route, onNavigate }: AppHeaderProps) {
   if (!showsBackButton(route)) return null
 
   const target = parentPath(route)
-  const label = target === '/' ? 'Início' : 'Voltar'
 
   return (
     <header>
@@ -35,7 +34,7 @@ export function AppHeader({ route, onNavigate }: AppHeaderProps) {
         className="-ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-tse-mist-100 transition-colors hover:bg-tse-ink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tse-mist-100"
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
-        {label}
+        Voltar
       </button>
     </header>
   )

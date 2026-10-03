@@ -29,13 +29,13 @@
 }
 
 /*
- * De `lg` para cima a tela para de crescer (ver `docs/mapa-estados.md`) e quem
+ * De `md` para cima a tela para de crescer (ver `docs/mapa-estados.md`) e quem
  * manda é a altura, não a largura: o mapa recebe a caixa que sobrou na linha e
- * a malha se ajusta nela. O `64rem` é o mesmo `lg` do Tailwind, dito aqui
+ * a malha se ajusta nela. O `48rem` é o mesmo `md` do Tailwind, dito aqui
  * porque esta é a folha do próprio `<svg>` — utilitário do Tailwind não
  * vence regra de CSS sem camada, e esta não está em nenhuma.
  */
-@media (min-width: 64rem) {
+@media (min-width: 48rem) {
   .brazil-map {
     height: 100%;
     max-height: none;
@@ -67,6 +67,19 @@
  */
 .brazil-map .uf--available .uf-forma {
   fill: var(--color-tse-success);
+}
+
+/*
+ * Cursor de "não dá": a UF ainda não tem lista, então nada acontece no clique.
+ *
+ * Os cartões "Em breve" da grade já herdam isso da base (`[aria-disabled='true']`
+ * em `index.css`); aqui o grupo é `aria-hidden`, não `aria-disabled`, então não
+ * casa com aquela regra — e dar `aria-disabled` a um grupo decorativo seria
+ * usar ARIA onde ela não vale. O cursor fica aqui, junto da hachura que já
+ * marca o mesmo estado.
+ */
+.brazil-map .uf--soon {
+  cursor: not-allowed;
 }
 
 .brazil-map .uf--soon .uf-forma {
