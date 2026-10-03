@@ -7,7 +7,7 @@
  *
  * A pílula é branca e derrete no filtro; as partículas, porém, vivem numa
  * camada própria (`.effect.particles`), fora do `contrast`, para manter a cor
- * sólida do partido em vez de virar um clarão branco. Sobre o eggshell da ficha
+ * sólida do partido em vez de virar um clarão branco. Sobre o canvas da ficha
  * — claro — a pílula branca sumiria sem a superfície escura, e é por isso que
  * a navegação traz a própria cápsula escura.
  */
@@ -75,7 +75,6 @@
   line-height: 1.1;
   color: inherit;
   white-space: nowrap;
-  cursor: pointer;
   border-radius: 100vw;
   text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
 }

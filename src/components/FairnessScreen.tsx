@@ -17,7 +17,7 @@ export function FairnessScreen({ questions, candidates }: FairnessScreenProps) {
 
   return (
     <section>
-      <h2>Imparcialidade do teste</h2>
+      <h2 className="font-titulo text-3xl">Imparcialidade do teste</h2>
       <p>
         O teste avalia todas as {distribution.totalCombinations} combinações
         possíveis de respostas. Em um teste equilibrado, cada candidato vence em

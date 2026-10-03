@@ -28,7 +28,7 @@ src/
 ├── data/
 │   ├── quiz.ts               Tipos + re-exportação das perguntas (contrato)
 │   ├── quiz-source.ts        Fonte oficial do quiz: perguntas + resolvedores
-│   └── brazil-map.ts         Contornos das 27 UFs (mapa de /estados, IBGE)
+│   └── brazil-map.ts         Contornos das 27 UFs (mapa da seleção de estado)
 ├── entry-server.tsx         Renderização no servidor (renderToString)
 ├── shared/
 │   ├── elections.ts          Configuração de eleições (2026/PR/DEPUTADO FEDERAL)
@@ -41,7 +41,7 @@ src/
 ├── lib/scoring.ts            Pontuação pura + desempate (ranking)
 ├── lib/search.ts             Busca fuzzy de candidatos (índice + ranking)
 ├── components/               Um componente por tela
-│   ├── StartScreen.tsx       Boas-vindas (com opção de ver candidatos)
+│   ├── StartScreen.tsx       Boas-vindas (fora do fluxo — código morto por ora)
 │   ├── EstadosScreen.tsx     Seleção de estado (mapa do Brasil + grade de UFs)
 │   ├── BrazilMap.tsx         Mapa do Brasil em SVG (uma UF por contorno)
 │   ├── CandidatesScreen.tsx  Lista de candidatos oficiais (busca + grid)
@@ -146,9 +146,8 @@ dá a rota é o `AppRouter.tsx` no navegador (History API) ou o build estático.
 
 | Rota              | Tela                    | Dados                 |
 | ----------------- | ----------------------- | --------------------- |
-| `/`               | `StartScreen`           | lista de candidatos   |
+| `/`               | `EstadosScreen`         | malha estática (IBGE) |
 | `/candidatos`     | `CandidatesScreen`      | lista de candidatos   |
-| `/estados`        | `EstadosScreen`         | malha estática (IBGE) |
 | `/candidato/:id`  | `CandidateDetailScreen` | ficha do candidato    |
 | `/quiz/:n`        | `QuestionStep`          | pergunta (n de 1 a 5) |
 | `/resultado`      | `ResultScreen`          | ranking das respostas |
@@ -163,14 +162,15 @@ testes.
 ```
 início ──▶ /candidatos ──▶ /candidato/:id
    │  ▲
-   │  └── /estados ──▶ /candidatos
+   │  └── / (estados) ──▶ /candidatos
    ▼
  /quiz/1 ──▶ … ──▶ /resultado ──▶ /imparcialidade
    ▲                             │          │
    └──────────── reinício ◀──────┘◀─────────┘
 ```
 
-- `/estados` é a porta de entrada por UF: mostra o **mapa do Brasil** e uma
+- A seleção de estado (`/`, o antigo `/estados`) é a porta de entrada por UF:
+  mostra o **mapa do Brasil** e uma
   grade com as 27 unidades. Hoje só o Paraná tem lista, então só ele navega; as
   demais aparecem como "em breve". A malha é **estática**
   (`src/data/brazil-map.ts`), sem biblioteca de mapa em tempo de execução — o

@@ -28,7 +28,11 @@ import type {
   RenderRouteInput,
   RouteMeta,
 } from '../src/shared/prerender.ts'
-import { routeToPath, type Route } from '../src/shared/router.ts'
+import {
+  LEGACY_STATES_PATH,
+  routeToPath,
+  type Route,
+} from '../src/shared/router.ts'
 import type {
   ApiCandidateDetail,
   ApiCandidatesResponse,
@@ -92,15 +96,6 @@ function candidateMeta(detail: ApiCandidateDetail): RouteMeta {
   }
 }
 
-function homeMeta(list: ApiCandidatesResponse): RouteMeta {
-  const { office, state } = list.election
-  return {
-    title: `Teste de Voto: qual dos ${list.total} candidatos a ${office} combina com você?`,
-    description: `Responda ${questions.length} perguntas e descubra qual candidato a deputado federal do ${state} combina melhor com as suas prioridades. Quiz imparcial, com dados oficiais do TSE.`,
-    path: '/',
-  }
-}
-
 const COMBINATIONS = questions.reduce(
   (total, question) => total * question.options.length,
   1,
@@ -113,10 +108,10 @@ const FAIRNESS_META: RouteMeta = {
 }
 
 const STATES_META: RouteMeta = {
-  title: 'Escolha o seu estado — candidatos por UF | Teste de Voto',
+  title: 'Selecione seu estado — candidatos por UF | Teste de Voto',
   description:
     'Mapa do Brasil para escolher o estado e ver os candidatos. O Paraná já está disponível; os demais estados chegam nas próximas rodadas.',
-  path: '/estados',
+  path: '/',
 }
 
 function sitemapXml(paths: string[]): string {
@@ -151,7 +146,6 @@ async function main(): Promise<void> {
   // respondeu, e por isso usa o shell vazio.
   const pages: Array<{ route: Route; meta: RouteMeta; data?: PrerenderData }> =
     [
-      { route: { name: 'start' }, meta: homeMeta(list), data: listData },
       { route: { name: 'candidates' }, meta: listMeta(list), data: listData },
       { route: { name: 'states' }, meta: STATES_META, data: listData },
       { route: { name: 'fairness' }, meta: FAIRNESS_META, data: listData },
@@ -204,6 +198,25 @@ async function main(): Promise<void> {
   }
 
   db.close()
+
+  // A seleção de estado virou a rota principal (`/`); o caminho antigo
+  // (`/estados`) fica como um redirecionamento simples, fora do sitemap.
+  await writePage(
+    LEGACY_STATES_PATH,
+    `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=${SITE_URL}/">
+<link rel="canonical" href="${SITE_URL}/">
+<title>Selecione seu estado | Teste de Voto</title>
+</head>
+<body>
+<a href="${SITE_URL}/">Selecione seu estado</a>
+</body>
+</html>
+`,
+  )
 
   await writeFile(join(DIST, CLIENT_SHELL), shell)
   await writeFile(join(DIST, 'sitemap.xml'), sitemapXml(written))

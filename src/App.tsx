@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { questions } from './data/quiz.ts'
 import type { OptionId } from './data/quiz.ts'
 import { toQuizCandidates } from './data/quiz-source.ts'
 import { rankResults } from './lib/scoring.ts'
+import { cn } from './lib/utils.ts'
 import { useCandidates } from './hooks/useCandidates.ts'
 import { useQuizAnswers } from './hooks/useQuizAnswers.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
@@ -10,6 +11,7 @@ import type { PrerenderData } from './shared/prerender.ts'
 import {
   candidatePath,
   DEFAULT_TAB,
+  STATES_PATH,
   type Route,
   type Tab,
 } from './shared/router.ts'
@@ -22,7 +24,6 @@ import { FairnessScreen } from './components/FairnessScreen.tsx'
 import { NotFoundScreen } from './components/NotFoundScreen.tsx'
 import { QuestionStep } from './components/QuestionStep.tsx'
 import { ResultScreen } from './components/ResultScreen.tsx'
-import { StartScreen } from './components/StartScreen.tsx'
 import { Button } from './components/ui/button.tsx'
 import { Card } from './components/ui/card.tsx'
 
@@ -102,33 +103,29 @@ function App({
     onNavigate('/')
   }
 
+  // A seleção de estado é a única tela que se prende à altura da janela: mapa
+  // e grade dividem a linha e a página para de rolar. As outras seguem
+  // crescendo com o conteúdo, porque uma ficha tem seis abas e o quiz é o que é.
+  const fillsViewport = route.name === 'states'
+
+  // A seleção de estado é a rota principal (`/`). O caminho antigo (`/estados`)
+  // ainda casa com a mesma tela; aqui a URL é devolvida ao canônico. A
+  // `StartScreen` segue no código, mas nenhuma rota a renderiza — código morto,
+  // ainda não removido.
+  useEffect(() => {
+    if (route.name === 'states' && window.location.pathname !== STATES_PATH) {
+      onNavigate(STATES_PATH, { replace: true })
+    }
+  }, [route.name, onNavigate])
+
   return (
     <main
-      className={
-        // A ficha é a única tela alta o bastante para passar da dobra. Com
-        // `items-center` o topo de um conteúdo mais longo que a tela some
-        // atrás do topo do documento; as demais telas continuam centralizadas.
-        route.name === 'candidate'
-          ? 'min-h-screen bg-eggshell flex items-start justify-center'
-          : 'min-h-screen bg-eggshell flex items-center justify-center'
-      }
+      className={cn(
+        'min-h-screen bg-tse-primary px-4 py-8 sm:px-8 lg:px-12',
+        fillsViewport && 'flex flex-col md:min-h-dvh md:h-dvh',
+      )}
     >
       <AppHeader route={route} onNavigate={onNavigate} />
-
-      {route.name === 'start' && (
-        <StartScreen
-          questionCount={questions.length}
-          candidateCount={candidates.length}
-          loading={candidatesState.status === 'loading'}
-          error={
-            candidatesState.status === 'error' ? candidatesState.message : null
-          }
-          onRetry={retryCandidates}
-          onStart={handleStart}
-          onShowCandidates={() => onNavigate('/candidatos')}
-          onShowStates={() => onNavigate('/estados')}
-        />
-      )}
 
       {route.name === 'states' && (
         <EstadosScreen

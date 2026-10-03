@@ -1,4 +1,7 @@
 # Banco SQLite local (binário) e build de produção
-data/
-dist/
-dist-ssr/
+/data/
+/dist/
+/dist-ssr/
+
+# Capturas e artefatos do OpenChamber
+/.openchamber/

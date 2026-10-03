@@ -36,9 +36,18 @@ export function QuestionStep({
         <Progress value={index} max={total} tone={tone} />
       </header>
 
-      <h2 className="text-2xl font-semibold tracking-tight text-balance">
-        {question.title}
-      </h2>
+      {/*
+       * A pergunta é o único texto do app que é fala da pessoa, e não dado:
+       * ela vai em `font-pergunta` (Instrument Serif) e não em Fraunces como
+       * os títulos. São as duas serifadas do app, em registros diferentes, e
+       * é justamente a soma delas que dá o ar de editorial sem virar
+       * campanha — a pergunta é o momento de ler, o título é o momento de
+       * orientar.
+       *
+       * Sem `font-semibold` de propósito: a Instrument Serif tem um peso só,
+       * e pedir 600 nela seria faux-bold. O peso visual vem do tamanho.
+       */}
+      <h2 className="font-pergunta text-3xl text-balance">{question.title}</h2>
       {question.hint && (
         <p className="text-sm text-muted-foreground">{question.hint}</p>
       )}
@@ -51,7 +60,7 @@ export function QuestionStep({
         {question.options.map((option) => (
           <label
             key={option.id}
-            className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background"
+            className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-canvas"
           >
             <RadioGroupItem
               value={option.id}

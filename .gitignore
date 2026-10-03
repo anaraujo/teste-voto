@@ -34,6 +34,10 @@ dist-ssr
 # Ancorado na raiz para não ignorar src/data/
 /data/
 
+# Capturas e artefatos do OpenChamber (painel de browser do agente)
+# Ancorado na raiz pelo mesmo motivo de /data/ acima
+/.openchamber/
+
 # Terraform (infra/)
 # Estado local no início; backend GCS é evolução futura (okf/infra/terraform-variables.md)
 infra/.terraform/

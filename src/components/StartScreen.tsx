@@ -27,7 +27,7 @@ export function StartScreen({
 
   return (
     <section className="flex flex-col items-center justify-center gap-4">
-      <h1>Teste de Voto</h1>
+      <h1 className="font-titulo text-4xl">Teste de Voto</h1>
       <p>
         Descubra qual dos {candidateCount} candidatos a deputado federal combina
         melhor com as suas prioridades respondendo {questionCount} perguntas
@@ -58,7 +58,15 @@ export function StartScreen({
         </Card>
       )}
 
-      <div className="flex gap-4">
+      {/*
+       * `flex-wrap` porque os três `SpecularButton` têm 172px de largura mínima
+       * (ver `MIN_WIDTH`): em três colunas eles somam 548px e estouravam a tela
+       * em qualquer celular, com "Começar" cortado de um lado e "Escolher
+       * estado" do outro. Quebrem a linha a partir de uns 620px de largura (onde
+       * 3 × 172 + 2 × 16 = 548 cabe na área útil); abaixo disso são duas ou uma
+       * por linha, e um por vez é o que o celular pede mesmo.
+       */}
+      <div className="flex flex-wrap items-center justify-center gap-4">
         <SpecularButton
           variant="primary"
           size="md"

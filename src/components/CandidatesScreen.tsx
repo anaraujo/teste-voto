@@ -55,6 +55,11 @@ function toCandidateItem(candidate: ApiCandidate): CandidateItem {
           event.preventDefault()
         }}
       >
+        {/* Decorativa: o link já diz "Ver ficha". `aria-hidden` porque repetir
+            a informação no leitor de tela só encarece a navegação de 428 itens. */}
+        <span className="candidate-ficha__arrow" aria-hidden="true">
+          →
+        </span>
         Ver ficha
       </a>
     ),
@@ -97,9 +102,11 @@ export function CandidatesScreen({
       <section
         aria-live="polite"
         aria-busy="true"
-        className="mx-auto flex w-full flex-col gap-3 px-4"
+        className="mx-auto flex w-full flex-col gap-3"
       >
-        <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+        <h2 className="font-titulo text-2xl font-semibold tracking-tight">
+          Candidatos
+        </h2>
         <span className="sr-only">Carregando candidatos...</span>
         {/*
          * O esqueleto usa a classe do grid de verdade em vez de contar
@@ -180,8 +187,10 @@ export function CandidatesScreen({
      * `--max-columns`, e a section só cede a largura que sobra. Ver o
      * comentário do `.candidate-grid`.
      */
-    <section className="mx-auto flex w-full flex-col gap-3 px-4">
-      <h2 className="text-xl font-semibold tracking-tight">Candidatos</h2>
+    <section className="mx-auto flex w-full flex-col gap-3">
+      <h2 className="font-titulo text-2xl font-semibold tracking-tight">
+        Candidatos
+      </h2>
       <p className="text-sm text-muted-foreground">
         {state.data.total} candidatos a {state.data.election.office} em{' '}
         {state.data.election.state} ({state.data.election.year}). Fonte:{' '}

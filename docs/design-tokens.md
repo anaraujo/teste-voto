@@ -1,7 +1,8 @@
 # Design tokens e o sistema visual
 
 Este documento é a página única onde o sistema visual do app é decidido: quais
-cores existem, onde vivem e como o código deve usá-las.
+cores existem, onde vivem e como o código deve usá-las, e qual fonte serve a
+título, a pergunta e o dado.
 
 ## Como o Tailwind está configurado
 
@@ -19,25 +20,70 @@ O projeto usa **Tailwind CSS v4**, integrado como plugin do Vite — não existe
 @import 'tailwindcss';
 
 @theme {
-  /* Verde — variante primary do botão */
-  --color-primary: #009739;
+  /* Paleta de origem: bandeira do Brasil */
+  --color-flag-green: #009739;
+  --color-flag-yellow: #fedd00;
+  --color-flag-blue: #012169;
+  --color-flag-white: #ffffff;
+
+  /* Paleta de origem: TSE (dadosabertos.tse.jus.br) */
+  --color-tse-primary: #206b82;
+  --color-tse-ink-900: #13404e;
+  --color-tse-ink-700: #1a5668;
+  --color-tse-ink-500: #2e759e;
+  --color-tse-ink-200: #90b5c1;
+  --color-tse-mist: #d2e1e6;
+  --color-tse-mist-100: #e9ecef;
+  --color-tse-body: #333333;
+  --color-tse-success: #3a833a;
+  --color-tse-danger: #d43f3a;
+  --color-tse-warning: #fd7e14;
+  --color-tse-info: #0dcaf0;
+
+  /* Paleta de origem: marca do TSE (logo tse.svg) */
+  --color-logo-yellow: #fcc200;
+  --color-logo-slate: #5f7199;
+  --color-logo-sage: #5b6e6e;
+
+  /* Papéis — referenciam as paletas, não repetem hex */
+  --color-primary: var(--color-flag-green);
   --color-primary-soft: #069400;
-
-  /* Laranja — variante secondary do botão */
-  --color-secondary: #fb3f13;
+  --color-secondary: var(--color-tse-warning);
   --color-secondary-soft: #f97316;
-
-  /* Amarelo — variante tertiary do botão */
   --color-tertiary: #f59e0b;
-  --color-tertiary-soft: #fedd00;
-
-  /* Neutros e superfícies */
+  --color-tertiary-soft: var(--color-flag-yellow);
+  --color-canvas: var(--color-tse-ink-200);
+  --color-panel: var(--color-logo-slate);
+  --color-deep: var(--color-flag-blue);
+  --color-link: var(--color-tse-primary);
+  --color-ink: #242424;
   --color-gray: #bcb7bc;
-  --color-eggshell: #f0ead6;
-  --color-canvas: #fad86a;
-  --color-panel: #5c719c;
 }
 ```
+
+### As três paletas de origem
+
+O app tem três fontes de cor, e elas não se misturam num gradiente: cada uma
+entra inteira, com o nome da fonte no prefixo do token.
+
+| Prefixo  | Fonte                                             | Uso no app                                     |
+| -------- | ------------------------------------------------- | ---------------------------------------------- |
+| `flag-*` | bandeira do Brasil (flagcolorcodes.com/brazil)    | verde e amarelo dos botões, azul de superfície |
+| `tse-*`  | portal de dados abertos (dadosabertos.tse.jus.br) | neutros de superfície, link, destrutivo        |
+| `logo-*` | logo do TSE (`tse.svg`)                           | o painel do grid                               |
+
+Três coisas que valem registrar:
+
+- **`tse-primary` (`#206b82`) é a cor do portal, não do logo.** O portal é um
+  Bootstrap 4 com a pele trocada: o TSE sobrescreveu `primary`/`blue` com um
+  teal e a escala `success`/`danger`/`warning`/`info`. O resto é cinza de tabela.
+- **O logo tem três preenchimentos e nenhum é o teal do site** — amarelo do
+  losango (`#fcc200`), azul-acinzentado do círculo (`#5f7199`) e
+  verde-acinzentado do triângulo (`#5b6e6e`). O `#5f7199` é o que virou
+  `--color-panel`.
+- **Nenhum papel aponta direto para um hex de paleta.** Todos referenciam pelo
+  nome, o que dá para responder "de onde veio essa cor?" olhando o token, e
+  trocar uma paleta inteira sem caçar hex solto pelo CSS.
 
 Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
@@ -47,26 +93,66 @@ Cada `--color-*` declarado em `@theme` gera, de uma vez:
 
 ### Tokens atuais
 
-| Token                    | Hex       | Papel                     | Uso principal                                      |
-| ------------------------ | --------- | ------------------------- | -------------------------------------------------- |
-| `--color-primary`        | `#009739` | Verde principal (escuro)  | texto/linha do botão primary                       |
-| `--color-primary-soft`   | `#069400` | Verde intermediário       | tint/borda do botão primary                        |
-| `--color-secondary`      | `#fb3f13` | Laranja                   | texto/linha do botão secondary                     |
-| `--color-secondary-soft` | `#f97316` | Laranja claro             | tint/borda do botão secondary                      |
-| `--color-tertiary`       | `#f59e0b` | Amarelo                   | texto/linha do botão tertiary                      |
-| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo              | tint/borda do botão tertiary                       |
-| `--color-primary-on`     | `#111111` | Texto sobre `primary`     | conteúdo sobre superfície primary                  |
-| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`   | conteúdo sobre superfície secondary                |
-| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`    | conteúdo sobre superfície tertiary                 |
-| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica  | detalhes de interface                              |
-| `--color-eggshell`       | `#f0ead6` | Creme da camada semântica | superfície base do kit (`--background`, `--card`)  |
-| `--color-canvas`         | `#fad86a` | Fundo do app              | fundo da página (`bg-canvas`)                      |
-| `--color-panel`          | `#5c719c` | Painel do grid            | fundo do grid de candidatos (`var(--color-panel)`) |
+| Token                    | Hex       | Papel                    | Uso principal                                         |
+| ------------------------ | --------- | ------------------------ | ----------------------------------------------------- |
+| `--color-primary`        | `#009739` | Verde principal (escuro) | texto/linha do botão primary                          |
+| `--color-primary-soft`   | `#069400` | Verde intermediário      | tint/borda do botão primary                           |
+| `--color-secondary`      | `#fd7e14` | Laranja                  | texto/linha do botão secondary                        |
+| `--color-secondary-soft` | `#f97316` | Laranja claro            | tint/borda do botão secondary                         |
+| `--color-tertiary`       | `#f59e0b` | Amarelo                  | texto/linha do botão tertiary                         |
+| `--color-tertiary-soft`  | `#fedd00` | Amarelo vivo             | tint/borda do botão tertiary                          |
+| `--color-primary-on`     | `#111111` | Texto sobre `primary`    | conteúdo sobre superfície primary                     |
+| `--color-secondary-on`   | `#111111` | Texto sobre `secondary`  | conteúdo sobre superfície secondary                   |
+| `--color-tertiary-on`    | `#111111` | Texto sobre `tertiary`   | conteúdo sobre superfície tertiary                    |
+| `--color-gray`           | `#bcb7bc` | Cinza da urna eletrônica | detalhes de interface                                 |
+| `--color-canvas`         | `#90b5c1` | Superfície média         | superfície sobre a qual o card se destaca             |
+| `--color-ink`            | `#242424` | Tinta do texto           | texto base, herdado por `body`; também o anel de foco |
+| `--color-panel`          | `#5f7199` | Painel do grid           | fundo do grid de candidatos (`var(--color-panel)`)    |
+| `--color-deep`           | `#012169` | Superfície escura        | a superfície mais escura do app                       |
+| `--color-link`           | `#206b82` | Link e fonte de dado     | link para a fonte oficial (ex.: o TSE)                |
 
-Os tokens `-on` existem porque nenhuma das três cores da marca passa em
-WCAG AA com texto branco (3,83:1, 3,61:1 e 2,15:1 contra `#ffffff`); com
-`#111` as três passam (4,93:1, 5,24:1 e 8,79:1). Quem pinta uma superfície
-com a cor cheia pega o `-on` correspondente.
+Os tokens `-on` existem porque as famílias pedem tintas opostas: verde e
+amarelo **só** passam em WCAG AA com `#111` (3,83:1, 2,57:1 e 2,15:1 contra
+`#ffffff`), enquanto o teal e o azul **só** passam com `#ffffff` (6,02:1 e
+14,76:1). Não dá para tratar "TSE + Brasil" como uma família única de cor, e
+por isso cada cor cheia tem o seu `-on`. Quem pinta uma superfície com a cor
+cheia pega o `-on` correspondente em vez de hardcodar branco.
+
+### A tinta e o fundo, medidos
+
+O fundo da página é `--color-tse-primary` (`#206b82`, o teal do portal) e a
+tinta do texto base é o `--color-tse-mist-100` (`#e9ecef`). São o par que mais
+aparece na tela, então vale registrar as razões de contraste:
+
+| Combinação                            | Razão  | WCAG            |
+| ------------------------------------- | ------ | --------------- |
+| texto base sobre o fundo teal         | 5,08:1 | AA texto normal |
+| texto base sobre o painel             | 4,11:1 | AA texto normal |
+| texto base sobre o card               | 1,08:1 | reprova         |
+| texto base sobre o branco             | 1,19:1 | reprova         |
+| texto secundário (`muted-foreground`) | 1,86:1 | reprova         |
+| borda (`border`) sobre o fundo teal   | 1,55:1 | reprova         |
+| anel de foco sobre o card             | 4,46:1 | passa de 3:1    |
+| anel de foco sobre o fundo teal       | 1,24:1 | reprova         |
+
+A tinta é clara porque o fundo é escuro: trocar o fundo para um teal médio
+inverteu a direção do par e deixou o texto base reprovando sobre o card, que é
+claro. Por isso `--color-panel-on` continua branco e o card precisa de tinta
+própria — ele não pode herdar a base.
+
+O que **não** acompanhou a inversão foram os tokens que ainda são escuros: o
+`--muted-foreground` (`ink-900`) e o `--border` (`ink-700`) continuam apontando
+para o teal quase-preto do TSE, e os dois se desfazem sobre o fundo teal. Vale
+registrar porque a correção é do fundo, não dos textos: ou o fundo volta a ser
+claro, ou esses dois tokens ganham uma variante clara.
+
+Duas medidas explicam por que o anel deixou de ser uma cor de marca: o verde da
+bandeira, que era a escolha antes, e o `--color-tse-primary` não chegam a 3:1
+sobre a superfície onde o anel aparece, o mínimo de WCAG para indicador não
+textual, e o anel de teclado é a única pista de foco de quem não usa mouse. O
+`--color-panel` foi o que sobrava com contraste suficiente no card — mas é
+justamente por ele não funcionar sobre o fundo teal que os elementos focáveis
+que vivem direto na página não podem usar `outline-panel`.
 
 ## A camada semântica (`:root`)
 
@@ -77,16 +163,17 @@ fonte**, `src/index.css` tem um segundo bloco, logo abaixo do `@theme`:
 
 ```css
 :root {
-  --foreground: #111111;
-  --background: var(--color-eggshell);
-  --card: color-mix(in srgb, var(--color-eggshell) 70%, #ffffff);
+  --foreground: var(--color-ink);
+  --background: var(--color-canvas);
+  --card: color-mix(in srgb, var(--color-tse-mist-100) 55%, #ffffff);
   --card-foreground: var(--foreground);
   --muted: color-mix(in srgb, var(--color-gray) 22%, transparent);
-  --accent: color-mix(in srgb, var(--color-primary-soft) 12%, transparent);
-  --border: color-mix(in srgb, var(--color-gray) 55%, transparent);
-  --input: color-mix(in srgb, var(--color-gray) 70%, transparent);
-  --ring: var(--color-primary);
-  --destructive: var(--color-secondary);
+  --muted-foreground: var(--color-tse-ink-900);
+  --accent: color-mix(in srgb, var(--color-tse-primary) 12%, transparent);
+  --border: color-mix(in srgb, var(--color-tse-ink-700) 65%, transparent);
+  --input: color-mix(in srgb, var(--color-tse-ink-700) 85%, transparent);
+  --ring: var(--color-ink);
+  --destructive: var(--color-tse-danger);
 }
 
 @theme inline {
@@ -103,8 +190,9 @@ fonte**, `src/index.css` tem um segundo bloco, logo abaixo do `@theme`:
 Três regras mantêm a "fonte única" de verdade:
 
 1. **A camada `:root` não repete hex da marca.** Cada valor aponta para um
-   token de `@theme`. Os dois hex que aparecem — `#111111` (texto base) e
-   `#ffffff` (misturado no card) — não são cores da marca.
+   token de `@theme`. O único hex que aparece é o `#ffffff` misturado no card,
+   que não é cor da marca. O texto base não aparece mais: é
+   `var(--color-ink)`.
 2. **`primary`, `secondary` e `tertiary` não são redeclarados.** O shadcn usa
    esses nomes com o mesmo sentido que o projeto já usava, então `bg-primary`
    continua resolvendo para `--color-primary`. O `@theme inline` expõe só os
@@ -144,6 +232,109 @@ background: var(--color-primary);
 
 Regra prática: se a cor fica em HTML/componente, use utilitária; se precisa
 calcular/compor com `color-mix` em runtime, use a variável CSS.
+
+## Tipografia: três famílias, três papéis
+
+O app tem três fontes, todas self-hosted em `public/fonts/` — nenhuma chamada de
+terceiro, para que o app não dependa da rede de ninguém e o layout não mude se
+ela não responder.
+
+| Papel            | Família              | Token `@theme`    | Onde aparece                                                          | Arquivo                         | Tamanho |
+| ---------------- | -------------------- | ----------------- | --------------------------------------------------------------------- | ------------------------------- | ------- |
+| Corpo e dado     | **Inter**            | `--font-sans`     | tudo que não é título: parágrafo, opção do quiz, card, dado           | `inter-latin-variable.woff2`    | 48 KB   |
+| Título de página | **Fraunces**         | `--font-titulo`   | `h1`/`h2` de tela: "Selecione seu estado", "Candidatos", nome de urna | `fraunces-latin-variable.woff2` | 67 KB   |
+| Pergunta do quiz | **Instrument Serif** | `--font-pergunta` | a frase da pergunta (`QuestionStep`)                                  | `instrument-serif-400.woff2`    | 15 KB   |
+
+Os três são variáveis de subconjunto `latin` (o mesmo `unicode-range` do
+Inter), o que cobre os acentos do português — `ã`, `ç`, `õ`, `é`, `ê` — sem
+baixar os arquivos `latin-ext`. O `Fraunces` tem `wght` (400–700) e eixo óptico
+`opsz`; o navegador ajusta o óptico sozinho (`font-optical-sizing: auto`), então
+o desenho de display vem nos títulos grandes sem trocar de arquivo. A
+Instrument Serif tem **um peso só**: por isso a pergunta não pede
+`font-semibold`, que nela seria faux-bold.
+
+### Por que duas serifadas
+
+Não é escolha de gosto, é função: são dois registros diferentes, e a diferença
+entre eles é o que segura o ar do app.
+
+- A **pergunta** é a única frase do app que é fala da pessoa, e não dado. Ela é
+  longa (a mais longa das cinco tem 66 caracteres) e é lida uma vez, com atenção.
+  A Instrument Serif é de alto contraste e um peso só: é feita para isso.
+- O **título** orienta. A Fraunces tem eixo óptico e formas de display, o que
+  dá autoridade sem engrossar, e aceita `tracking-tight` onde a Inter não
+  precisa.
+- O **corpo** continua Inter, porque é onde mora o dado: número de urna, sigla,
+  valor, fonte oficial. Uma serifada no meio de dado prejudica quem precisa
+  comparar número com número.
+
+### O banco de teste: as 10 famílias
+
+Enquanto a fonte do título não está decidida, `src/index.css` carrega **dez**
+famílias e `public/fonts/` guarda os dez arquivos. Sete são só candidatas e não
+têm utilidade nenhuma fora do teste:
+
+| Família             | Token                  | Arquivo                              | Peso  | Eixos                   |
+| ------------------- | ---------------------- | ------------------------------------ | ----- | ----------------------- |
+| Inter               | `--font-sans`          | `inter-latin-variable.woff2`         | 48 KB | `wght` 100–900          |
+| Fraunces            | `--font-titulo`        | `fraunces-latin-variable.woff2`      | 67 KB | `wght` 400–700 + `opsz` |
+| Instrument Serif    | `--font-pergunta`      | `instrument-serif-400.woff2`         | 15 KB | — (peso único)          |
+| Sora                | `--font-sora`          | `sora-latin-variable.woff2`          | 25 KB | `wght` 400–800          |
+| Manrope             | `--font-manrope`       | `manrope-latin-variable.woff2`       | 25 KB | `wght` 400–800          |
+| Bricolage Grotesque | `--font-bricolage`     | `bricolage-latin-variable.woff2`     | 75 KB | `wght` 400–800 + `opsz` |
+| Oswald              | `--font-oswald`        | `oswald-latin-variable.woff2`        | 28 KB | `wght` 200–700          |
+| Archivo             | `--font-archivo`       | `archivo-latin-variable.woff2`       | 88 KB | `wght` 100–900 + `wdth` |
+| Space Grotesk       | `--font-space-grotesk` | `space-grotesk-latin-variable.woff2` | 22 KB | `wght` 300–700          |
+| Figtree             | `--font-figtree`       | `figtree-latin-variable.woff2`       | 20 KB | `wght` 300–900          |
+
+Declarar uma família não custa nada: o `@font-face` só é baixado quando algum
+texto da página pede aquela família. Uma tela só com título em Fraunces baixa
+Inter e Fraunces (115 KB) e nunca toca nos outros 288 KB do banco.
+
+**Para provar uma família no app inteiro, muda-se uma linha** em `src/index.css`:
+
+```css
+--font-titulo: var(--font-oswald); /* era var(--font-fraunces) */
+```
+
+Os sete títulos mudam juntos, porque nenhum componente guarda o nome da
+família — todos usam `font-titulo`. Para mexer num texto só, use o utilitário
+da família direto (`className="font-sora"`); ele nasce no build seguinte, porque
+o Tailwind só gera a classe que o código usa.
+
+O `Archivo` é a única com eixo de largura, então é a única que aceita
+`font-stretch-expanded` (125%) — o "Expandido" sem trocar de arquivo.
+
+**Para sair do teste:** apagar o bloco "Banco de fontes" do `src/index.css`, os
+`--font-*` das sete candidatas, e os sete arquivos correspondentes em
+`public/fonts/`.
+
+### Como usar no código
+
+```tsx
+<h1 className="font-titulo text-3xl">Selecione seu estado</h1>
+<h2 className="font-pergunta text-3xl text-balance">{question.title}</h2>
+<p>corpo em Inter, sem classe nenhuma</p>
+```
+
+Em CSS ou estilo dinâmico, use a variável:
+
+```css
+font-family: var(--font-titulo);
+```
+
+**Título novo?** Receba `font-titulo`. **Pergunta nova?** `font-pergunta`. Se
+cabe num terceiro papel, provavelmente não cabe: são três e cada uma tem um
+motivo.
+
+### Tamanho
+
+Os três arquivos somam 130 KB, mas o navegador só baixa a família que a página
+usa: a home e a ficha puxam Inter e Fraunces (115 KB), o quiz puxa as três
+(130 KB), e nenhuma tela puxa uma fonte que não tem texto naquela fonte. Se
+algum dia der para cortar, o caminho é trocar a variável do Fraunces por duas ou
+três instâncias estáticas do peso que o app usa — 67 KB é o preço do eixo `opsz`
+que ninguém pediu para remover.
 
 ## Os dois botões: `SpecularButton` e `Button`
 

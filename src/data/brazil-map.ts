@@ -1,6 +1,6 @@
 /**
- * Contornos das 27 unidades federativas do Brasil, para o mapa da tela
- * `/estados`.
+ * Contornos das 27 unidades federativas do Brasil, para o mapa da tela de
+ * seleção de estado (a rota principal, `/`).
  *
  * A geometria chega embutida: nenhuma projeção ou biblioteca de mapa roda no
  * navegador. Cada `path` já vem simplificado e projetado, no mesmo espírito do
