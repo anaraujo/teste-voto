@@ -50,8 +50,12 @@ export function AppHeader({ route, onNavigate, parent }: AppHeaderProps) {
 
   const target = parent ?? parentPath(route)
   const title = titleFor(route)
-  // A lista de candidatos e a ficha de cada candidato compartilham o fundo
-  // âmbar, então as duas usam a mesma tinta escura no cabeçalho.
+  /*
+   * Cada tela tem a sua tinta de cabeçalho, e ela segue a superfície do
+   * `<main>`: azul na home, verde na lista, âmbar na ficha. No âmbar a tinta é
+   * escura — o `--color-tertiary-on` — e por isso o anel de foco e o fundo do
+   * hover também escurecem; nas outras duas, que são fundo saturado, clareiam.
+   */
   const onGreen = route.name === 'candidates'
   const onAmber = route.name === 'candidate'
 
@@ -67,12 +71,12 @@ export function AppHeader({ route, onNavigate, parent }: AppHeaderProps) {
       <button
         type="button"
         onClick={() => onNavigate(target)}
-        className={`justify-self-start -ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tse-mist-100 ${
+        className={`justify-self-start -ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
           onAmber
-            ? 'text-muted-foreground hover:bg-tse-mist-100'
+            ? 'text-tertiary-on hover:bg-black/10 focus-visible:outline-tertiary-on'
             : onGreen
-              ? 'text-primary-on hover:bg-white/20'
-              : 'text-tse-mist-100 hover:bg-tse-ink-700'
+              ? 'text-primary-on hover:bg-white/20 focus-visible:outline-tse-mist-100'
+              : 'text-tse-mist-100 hover:bg-tse-ink-700 focus-visible:outline-tse-mist-100'
         }`}
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
@@ -81,11 +85,7 @@ export function AppHeader({ route, onNavigate, parent }: AppHeaderProps) {
       {title && (
         <h1
           className={`font-titulo text-2xl font-semibold tracking-tight${
-            onAmber
-              ? ' text-muted-foreground'
-              : onGreen
-                ? ' text-primary-on'
-                : ''
+            onAmber ? ' text-tertiary-on' : onGreen ? ' text-primary-on' : ''
           }`}
         >
           {title}

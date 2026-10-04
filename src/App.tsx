@@ -189,7 +189,7 @@ function App({
         route.name === 'candidates'
           ? 'bg-tse-success/90 bg-linear-to-r from-tse-success/90 to-tse-success text-primary-on'
           : route.name === 'candidate'
-            ? 'bg-tertiary/90 text-panel-on'
+            ? 'bg-linear-to-tr from-logo-yellow to-tertiary text-tertiary-on'
             : 'bg-tse-primary bg-linear-to-r from-tse-ink-700 to-tse-primary',
         fillsViewport && 'flex flex-col md:min-h-dvh md:h-dvh',
       )}

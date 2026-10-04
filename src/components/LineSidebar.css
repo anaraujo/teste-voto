@@ -10,8 +10,31 @@
 
 .line-sidebar {
   --accent-color: var(--color-primary);
-  --text-color: #6b6560;
-  --marker-color: #b8b2a6;
+  /*
+   * A ficha é a única tela que usa o trilho, e ela é a superfície clara do app
+   * (o ouro do `<main>`). As duas cores abaixo são escritos para isso: o texto
+   * é o `ink-900` do TSE, que dá 5,23:1 no ouro, e o risco nasce de uma
+   * diluição dele em vez do cinza claro que ele substituiu — um cinza claro
+   * some no ouro (dava 1,03:1, ou seja, invisível).
+   */
+  --text-color: var(--color-tse-ink-900);
+  --marker-color: color-mix(in srgb, var(--color-tse-ink-900) 40%, transparent);
+  /*
+   * A cor do partido entra aqui como tinta, e tinta sobre fundo claro não
+   * aceita a cor pura: o amarelo de PSB e MISSÃO daria ~1,1:1 no ouro e o item
+   * ativo sumiria. Por isso o partido é diluído em direção ao `ink-900` antes de
+   * virar cor de risco.
+   *
+   * Os 25% não são roda-gigante: é o ponto em que o partido mais claro da
+   * tabela (PSB e MISSÃO, #f2c300) passa dos 3:1 que a WCAG pede de um
+   * indicador não textual, medido contra as duas pontas do gradiente — a 30% o
+   * pior caso dava 2,88:1. Os 31 partidos passam a partir daí.
+   */
+  --marker-accent: color-mix(
+    in srgb,
+    var(--accent-color) 25%,
+    var(--color-tse-ink-900)
+  );
   --marker-length: 56px;
   --marker-gap: 0px;
   --tick-scale: 0.5;
@@ -55,6 +78,13 @@
   inset: -6px -48px;
 }
 
+/*
+ * O efeito escurece o rótulo em vez de colori-lo: numa página clara, hover é
+ * "mais tinta", e a cor do partido fica reservada ao risco e à cápsula do
+ * GooeyNav — as duas superfícies, onde ela tem contraste garantido por mix
+ * próprio. As duas pontas da mistura passam: `ink-900` em 5,23:1 no ouro e
+ * `ink` em 7,23:1.
+ */
 .line-sidebar__label {
   position: relative;
   display: inline-flex;
@@ -63,7 +93,7 @@
   line-height: 1.2;
   color: color-mix(
     in srgb,
-    var(--accent-color) calc(var(--effect, 0) * 100%),
+    var(--color-ink) calc(var(--effect, 0) * 100%),
     var(--text-color)
   );
   transform: translateX(calc(var(--effect, 0) * var(--max-shift)));
@@ -89,7 +119,7 @@
   width: var(--marker-length);
   background-color: color-mix(
     in srgb,
-    var(--accent-color) calc(var(--effect, 0) * 100%),
+    var(--marker-accent) calc(var(--effect, 0) * 100%),
     var(--marker-color)
   );
   transform-origin: left center;
