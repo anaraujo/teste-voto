@@ -28,9 +28,12 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   vez de guardar o índice em estado próprio, os itens são `<button role="tab">`
   e não links, e as partículas só disparam no cliente — `Math.random` durante a
   renderização quebraria a hidratação das 436 páginas estáticas. As partículas
-  saem da primária do partido, em cor sólida — numa camada própria, fora do
-  `filter`/`blend` da pílula, para o `contrast(100)` não esmagá-las para
-  preto/branco. O efeito gooey depende
+  são filhas do elemento filtrado, junto com a pílula: `blur(7px) contrast(100)`
+  é técnica de metaball e só cria fusão onde duas formas borradas se tocam, então
+  uma camada só dentro do filtro devolveria a mesma forma, um círculo sem nada
+  derretido. A partícula é da cor da pílula em vez da cor do partido porque o
+  `contrast(100)` é um limiar duro — um tom médio sairia preto, e o preto é o que
+  o `lighten` esconde. O efeito gooey depende
   desse blend sobre fundo escuro, então a navegação traz a própria cápsula,
   tingida com a cor do partido e escurecida para o branco da pílula ter
   contraste. As abas viraram `tablist` de verdade — `role="tab"`,
@@ -50,6 +53,32 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   posição de rolagem da tela anterior, então sair de uma tela longa (a nova
   seleção de estados, por exemplo) abria a próxima já no meio. Agora o roteador
   volta ao topo a cada troca de rota, como a ficha já fazia ao trocar de aba.
+- **A cápsula da navegação gooey não era escurecida**: o comentário no arquivo
+  descrevia a cor do partido misturada a 55% com preto e a declaração apontava
+  para a cor pura. Nos partidos escuros a diferença passa despercebida, mas no
+  amarelo de PSB e MISSÃO a cápsula virava `#f2c300` e a etiqueta branca da aba
+  inativa caía para ~1,4:1 — sumia justamente nos dois partidos mais claros da
+  tabela. Medido com `contraste()` de `party-colors.ts`, os 30 partidos passam a
+  partir de 5,12:1. Nenhum partido passou a reprovar; a cápsula só ficou mais
+  escura.
+- **O efeito gooey não existia**: `blur() contrast(100)` só produz fusão e
+  filamento onde duas formas borradas se tocam, e o elemento filtrado tinha uma
+  forma só dentro — a pílula. O blur arredondava e o contraste reendurecia, e o
+  resultado era a mesma forma: um círculo, sem nada derretido. As partículas,
+  que são justamente o que fundiria com a pílula, viviam numa camada irmã, fora
+  do filtro. Voltaram para dentro dele, e com elas o `::before` preto que dá
+  tela ao `lighten` e impede que o filtro tosque as partículas na borda.
+- **Link da ficha saía sem cor e sem sublinhado**: o preflight do Tailwind zera
+  os dois no `<a>` e a folha da ficha não devolvia nada, então "registro
+  oficial" e "perfil oficial" eram indistinguíveis de texto comum.
+- **Conteúdo da ficha espremido numa coluna estreita**: quando a aba tem uma
+  seção só o trilho não é renderizado, e o conteúdo caía na trilha fixa de
+  210px — Votações, Posições e Fontes ficavam espremidas com o resto da página
+  vazio ao lado.
+- **Opção marcada do quiz nunca era pintada**: o seletor usava
+  `has-[[data-state=checked]]:`, que não é sintaxe válida no Tailwind v4 (é
+  `has-data-[state=checked]:`), então o estado marcado do `RadioGroup` não
+  recebia a borda nem o fundo.
 
 ### Removido
 
@@ -137,13 +166,30 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
+- **A ficha passou a ser a terceira superfície do app, em âmbar**
+  (`/candidato/:id`). Ela era a única tela com fundo saturado **e** texto
+  branco — `bg-tertiary/90` com `text-panel-on` dá ~2,1:1 — e agora segue a mesma
+  gramática das outras duas: gradiente horizontal de duas pontas da paleta e a
+  tinta do `-on` correspondente (`from-logo-yellow` → `to-tertiary` com
+  `tertiary-on`). O âmbar é a única cor cheia do projeto que não aceita branco,
+  então a ficha passou a ser a única superfície **clara** e a única de tinta
+  escura. São três superfícies agora: azul na home, verde na lista, âmbar na
+  ficha. As razões de contraste contra as duas pontas do gradiente estão em
+  `docs/design-tokens.md`.
+- A folha da ficha parou de carregar os cinzas quentes de canvas claro
+  (`#6b6560`, `#7d766e`, `#b8b2a6`) e o anel de foco deixou de usar o verde da
+  bandeira. Sobre o ouro os cinzas davam 2,7:1 e 1,03:1 — o cinza do trilho
+  sumia — e o verde dava 1,78:1, sendo o anel a única pista de foco de quem não
+  usa mouse. Agora a hierarquia é o `--color-tertiary-on` na base, o `ink-900`
+  no apoio e o `--color-ink` no anel.
 - **A lista de candidatos virou um grid de cards** (`CandidateGrid.tsx`): cada
   card traz a foto em 1:1 (161×225, sem upscale), o número de urna, a sigla do
   partido e o nome de urna, sobre a cor primária do partido e com a tinta
   escolhida por contraste (`readableOn`). O nome de urna encolhe em runtime para
   caber em uma linha. Junto vieram a fonte **Inter** (self-hospedada, variável) e
-  uma paleta de duas superfícies — fundo do app `#FAD86A` e painel do grid
-  `#5C719C` — mais o campo de busca (fuzzy) no topo da lista.
+  uma paleta de duas superfícies — o fundo do app da época `#FAD86A` e o painel
+  do grid `#5C719C` — mais o campo de busca (fuzzy) no topo da lista. O fundo
+  único foi depois cedendo lugar a um por rota; ver a ficha em âmbar acima.
 - **A lista de candidatos mostra os 428 de uma vez**: o botão "Mostrar mais"
   (50 por vez) foi removido. Ele existia só porque 428 cards de uma vez parecem
   caros, mas a medição mostra que não são: a API já devolve a lista inteira em
