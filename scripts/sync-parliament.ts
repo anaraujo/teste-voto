@@ -17,7 +17,7 @@
 import { join } from 'node:path'
 import {
   openRepository,
-  listCandidates,
+  listCandidatesByOffice,
   listIncumbents,
   replaceParliamentary,
 } from '../src/data-sources/repository.ts'
@@ -43,7 +43,7 @@ import type {
   ParliamentaryVote,
   VotoValor,
 } from '../src/data-sources/parliament/types.ts'
-import { CURRENT_ELECTION } from '../src/shared/elections.ts'
+import { CURRENT_ELECTION, FEDERATION_UNITS } from '../src/shared/elections.ts'
 import { normalizeVoto } from '../src/data-sources/camara/voto.ts'
 import { PAUTAS_CHAVE } from '../src/shared/pautas.ts'
 
@@ -55,16 +55,46 @@ const LEGISLATURAS = [
   { id: 57, dataInicio: '2023-02-01', dataFim: '2027-01-31' },
 ]
 
-const filter = {
-  electionYear: CURRENT_ELECTION.year,
-  state: CURRENT_ELECTION.state,
-  office: CURRENT_ELECTION.office,
-}
+/*
+ * O ano e o cargo saem de `CURRENT_ELECTION` porque o sync é sempre da eleição
+ * corrente, mas a UF **não** é mais filtro de nada: a Câmara é nacional e o
+ * casamento agora roda sobre o país inteiro (ver `UFS`).
+ */
+const YEAR = CURRENT_ELECTION.year
+const OFFICE = CURRENT_ELECTION.office
+
+/*
+ * UFs percorridas na busca de deputados.
+ *
+ * Antes era uma: o Paraná. A Câmara publica a lista de deputados por UF, então
+ * pedir uma só devolvia só os deputados daquele estado — e eram exatamente 41
+ * os registros de despesa que existiam na base, que é o número de deputados
+ * federais do Paraná numa legislatura. Percorrer as 27 UFs é o que leva a
+ * cobertura para o tamanho real da Câmara: 1.068 deputados nas três
+ * legislaturas, contando uma vez só quem repetiu mandato.
+ */
+const UFS: readonly string[] = FEDERATION_UNITS
+
+/*
+ * Deputados processados ao mesmo tempo.
+ *
+ * O `getJson` já trata 429 com espera crescente, e dentro de um deputado as
+ * chamadas continuam sequenciais — o paralelismo é só entre deputados. Sem isto
+ * a varredura nacional levaria horas: são ~1.070 deputados nas três
+ * legislaturas (a Câmara tem 513 por legislatura, e quem repite mandato aparece
+ * uma vez só), e cada um custa proposições, órgãos e as despesas paginadas de
+ * cada legislatura em que exerceu.
+ */
+const CONCURRENCY = 5
 
 const db = await openRepository(join(DATA_DIR, 'tse.db'))
 
 try {
-  const candidates = listCandidates(db, filter)
+  const candidates = listCandidatesByOffice(db, YEAR, OFFICE)
+  console.log(
+    `[casamento] pool de candidatos: ${candidates.length} ` +
+      `(${OFFICE}, todas as UFs)`,
+  )
   const incumbents = listIncumbents(db)
   // camaraId -> candidateId (casamentos já conhecidos).
   const incumbentByCamara = new Map<number, string>()
@@ -72,21 +102,55 @@ try {
     incumbentByCamara.set(entry.camaraId, entry.candidateId)
   }
 
-  // ---------- Câmara: deputados por legislatura ----------
+  // ---------- Câmara: deputados por legislatura, em todas as UFs ----------
+
+  /**
+   * Lista de deputados de uma UF, com nova tentativa no nível da UF.
+   *
+   * O `getJson` já repete 4 vezes dentro de uma chamada, mas falhar depois disso é
+   * a Câmara fora do ar naquele instante — e engolir isso custava caro demais
+   * agora: com uma UF só o estrago era um estado, e com as 27 seria o país inteiro
+   * naquela legislatura, sem nenhum sinal de que faltou. Uma segunda tentativa
+   * cobre o pico de 504, e o que sobrar entra no resumo do fim.
+   */
+  async function buscarDeputadosDaUf(
+    uf: string,
+    legislatura: number,
+  ): Promise<DeputadoLista[]> {
+    let ultimoErro: unknown = null
+    for (let tentativa = 1; tentativa <= 3; tentativa += 1) {
+      try {
+        return await fetchDeputadosPorLegislatura(uf, legislatura)
+      } catch (error) {
+        ultimoErro = error
+        if (tentativa < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 2000 * tentativa))
+        }
+      }
+    }
+    throw ultimoErro
+  }
+
+  const falhasCamara: string[] = []
   const deputiesByLeg = new Map<number, DeputadoLista[]>()
   for (const leg of LEGISLATURAS) {
-    let items: DeputadoLista[] = []
-    try {
-      items = await fetchDeputadosPorLegislatura(filter.state, leg.id)
-    } catch (error) {
-      console.log(
-        `[camara] aviso legislatura ${leg.id}: ` +
-          (error instanceof Error ? error.message : String(error)),
-      )
+    const items: DeputadoLista[] = []
+    for (const uf of UFS) {
+      try {
+        items.push(...(await buscarDeputadosDaUf(uf, leg.id)))
+      } catch (error) {
+        const motivo = error instanceof Error ? error.message : String(error)
+        falhasCamara.push(`${uf}/${leg.id}: ${motivo}`)
+        console.log(`[camara] aviso legislatura ${leg.id} ${uf}: ${motivo}`)
+      }
     }
     deputiesByLeg.set(leg.id, items)
+    console.log(`[camara] legislatura ${leg.id}: ${items.length} deputados`)
+  }
+  if (falhasCamara.length > 0) {
     console.log(
-      `[camara] legislatura ${leg.id}: ${items.length} deputados ${filter.state}`,
+      `[camara] ATENÇÃO: ${falhasCamara.length} lista(s) de deputados ficaram de fora; ` +
+        'esses ficam sem mandato, métrica e despesa, e a lista está no fim',
     )
   }
 
@@ -122,13 +186,22 @@ try {
   const unbound = [...camaraByDep.values()].filter(
     (dep) => !incumbentByCamara.has(dep.id),
   )
+  /*
+   * A UF vai junto para o casamento: é o que separa dois candidatos com o mesmo
+   * nome normalizado, e com o pool nacional os homônimos deixaram de ser um
+   * caso de canto. Vale a da legislatura mais recente, que é a que o candidato
+   * estar disputando — um deputado que mudou de estado entre legislaturas
+   * casaria com o candidato errado se usássemos a primeira.
+   */
   const people = await Promise.all(
     unbound.map(async (dep) => {
       const detail = await fetchDeputadoDetalhe(dep.id)
+      const ultimaLeg = dep.legs[dep.legs.length - 1]
       return {
         id: dep.id,
         nome: dep.nome,
         dataNascimento: detail?.dataNascimento ?? null,
+        uf: ultimaLeg ? (dep.ufs[ultimaLeg] ?? null) : null,
       }
     }),
   )
@@ -138,7 +211,8 @@ try {
     camaraToCandidate.set(camaraId, candidateId)
   }
   console.log(
-    `[camara] casamentos: ${camaraToCandidate.size}/428 (incumbentes + ex-deputados)`,
+    `[camara] casamentos: ${camaraToCandidate.size}/${camaraByDep.size} ` +
+      `(incumbentes + ex-deputados)`,
   )
   if (unmatchedCamara.length > 0) {
     console.log(
@@ -151,9 +225,20 @@ try {
   const mandates: ParliamentaryMandate[] = []
   const records: ParliamentaryRecord[] = []
 
-  for (const dep of camaraByDep.values()) {
+  /*
+   * A varredura nacional é o que multiplica o custo aqui, então os deputados
+   * entram por uma fila com `CONCURRENCY` trabalhadores. Cada um resolve as
+   * suas chamadas em sequência (o `getJson` já cuida de 429), e as listas de
+   * mandatos e registros são apenas empurradas — o event loop não interrupte um
+   * `push`, então não há corrida.
+   */
+  const fila = [...camaraByDep.values()]
+  let proximo = 0
+  let processados = 0
+
+  async function processarDeputado(dep: (typeof fila)[number]): Promise<void> {
     const candidateId = camaraToCandidate.get(dep.id)
-    if (!candidateId) continue
+    if (!candidateId) return
 
     let proposicoesPorAno: Record<string, number> = {}
     let comissoes: ParliamentaryRecord['comissoes'] = []
@@ -232,7 +317,23 @@ try {
       comissoes,
       despesasPorAno,
     })
+
+    processados += 1
+    if (processados % 50 === 0) {
+      console.log(`[camara] ${processados}/${fila.length} deputados`)
+    }
   }
+
+  async function trabalhador(): Promise<void> {
+    while (proximo < fila.length) {
+      const dep = fila[proximo]
+      proximo += 1
+      await processarDeputado(dep)
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => trabalhador()))
+
   console.log(
     `[camara] records: ${records.length} (mandatos: ${mandates.length})`,
   )
@@ -379,6 +480,10 @@ try {
   console.log(
     `[ficha] gravados ${mandates.length} mandatos, ${records.length} registros, ${votes.length} votos`,
   )
+  if (falhasCamara.length > 0) {
+    console.log('[camara] UFs/legislaturas que faltaram:')
+    for (const falha of falhasCamara) console.log(`  ${falha}`)
+  }
 } finally {
   db.close()
 }

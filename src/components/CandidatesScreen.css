@@ -18,7 +18,7 @@
   margin-block-start: 32px;
   gap: 32px;
   /*
-   * Tinta escura sobre o fundo âmbar da rota, o mesmo par que o `main` declara
+   * Tinta escura sobre o fundo verde da rota, o mesmo par que o `main` declara
    * em `App.tsx`. Ver `--color-primary-on` no index.css.
    */
   color: var(--color-primary-on);
@@ -40,10 +40,58 @@
   padding-inline: 1rem;
 }
 
+/*
+ * Busca à esquerda, alternância de cargo à direita, na mesma linha enquanto
+ * couber.
+ *
+ * O `flex-wrap: wrap` é o que impede a alternância de sumir. Sem ele os dois
+ * filhos ficam `nowrap` numa linha só, e como nenhum encolhe abaixo do seu
+ * min-content, a largura da linha vira a soma dos dois: medida, 481px em
+ * qualquer viewport. Abaixo disso o documento inteiro transbordava e a
+ * alternância saía pela borda direita — a 390px ela ficava cortada, e o grid
+ * de cards herda a largura e aparecia cortado junto.
+ *
+ * Com o `wrap`, a busca e a alternância ficam lado a lado enquanto houver
+ * lugar, e a alternância desce para a linha de baixo quando não há. O
+ * `space-between` continua valendo: na linha que tem um filho só ele encosta
+ * à esquerda, que é o mesmo alinhamento do `flex-start` do fim.
+ */
 .candidates-header {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
 
   gap: 1rem;
+}
+
+/*
+ * Abaixo de 56rem a alternância de cargo vem antes da busca.
+ *
+ * O critério não é "a busca ficou pequena", é onde a linha deixa de caber. As
+ * larguras intrínsecas são 427px para a busca e 375px para a alternância, e com
+ * o vão de 1rem e o `px-8` da página a linha só cabe a partir de ~882px — medido,
+ * 890px ainda embrulha e 900px já não. O `56rem` (896px) é o primeiro degrau
+ * acima dessa conta.
+ *
+ * Aqui a coluna é forçada em vez de só trocar a ordem, e é por isso que o
+ * `order` funciona sem deixar uma faixa em desacordo: com o `flex-wrap` do
+ * topo, a quebra é decidida pelo navegador conforme o conteúdo cabe, e um
+ * `order` de media query fixo discordaria dela numa faixa estreita — o nav iria
+ * para a esquerda com a busca ainda do lado. Com uma coluna não há decisão a
+ * tomar: cada filho ocupa a sua linha, na ordem do `order`.
+ *
+ * A partir de 56rem a linha cabe de verdade, então o `flex-wrap` do topo nunca
+ * chega a embrulhar ali — ele fica como rede de segurança para quando o
+ * conteúdo crescer.
+ */
+@media (max-width: 56rem) {
+  .candidates-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .candidates-header > nav {
+    order: -1;
+  }
 }

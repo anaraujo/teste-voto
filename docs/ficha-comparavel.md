@@ -16,7 +16,11 @@ separando o que é de cada camada.
    - **Câmara** (API de Dados Abertos): mandatos por legislatura (55ª, 56ª,
      57ª), proposições de autoria por ano, comissões e despesas reembolsadas por
      ano — além dos **votos em votações-chave** (reforma tributária, marco
-     temporal e regulação das plataformas).
+     temporal e regulação das plataformas). A varredura percorre as **27 UFs** e
+     casa sobre todos os candidatos federais; o casamento usa nome normalizado,
+     confirmado pela data de nascimento quando há, e desempate por UF nos
+     homônimos — sem um desempate único a pessoa fica sem histórico, em vez de
+     receber o mandato de outra.
    - **Senado** (Dados Abertos do Senado, XML): histórico de mandato por
      legislatura. O Senado **não expõe votações por API pública**; por isso a
      ficha registra apenas o mandato para ex-senadores.

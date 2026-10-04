@@ -107,6 +107,137 @@ test('matchHistoryPeople exige data de nascimento para nome de urna curto', () =
   assert.equal(naoCasou.length, 1)
 })
 
+test('matchHistoryPeople desempata homônimo pela UF', () => {
+  // Mesmo nome normalizado em duas UFs: com o pool nacional isso é comum, e
+  // sem a UF o casamento pegava o primeiro da lista — que pode ser o errado.
+  const sp = makeCandidate({
+    id: '2026-SP-9',
+    state: 'SP',
+    ballotName: 'JOSE DA SILVA',
+    fullName: 'JOSE DA SILVA',
+  })
+  const pr = makeCandidate({
+    id: '2026-PR-9',
+    state: 'PR',
+    ballotName: 'JOSE DA SILVA',
+    fullName: 'JOSE DA SILVA',
+  })
+  const { matched, unmatched } = matchHistoryPeople(
+    [sp, pr],
+    [{ id: 7, nome: 'José da Silva', dataNascimento: null, uf: 'PR' }],
+  )
+  assert.equal(matched.get(7), '2026-PR-9')
+  assert.equal(unmatched.length, 0)
+})
+
+test('matchHistoryPeople não casa homônimo sem UF que separe', () => {
+  // A regra de ouro da ficha: sem evidência que separe, é "não encontrei
+  // evidência suficiente" — nunca a escolha arbitrária de um dos homônimos.
+  const sp = makeCandidate({
+    id: '2026-SP-9',
+    state: 'SP',
+    ballotName: 'JOSE DA SILVA',
+    fullName: 'JOSE DA SILVA',
+  })
+  const pr = makeCandidate({
+    id: '2026-PR-9',
+    state: 'PR',
+    ballotName: 'JOSE DA SILVA',
+    fullName: 'JOSE DA SILVA',
+  })
+  const { matched, unmatched } = matchHistoryPeople(
+    [sp, pr],
+    [{ id: 7, nome: 'José da Silva', dataNascimento: null }],
+  )
+  assert.equal(matched.size, 0)
+  assert.equal(unmatched.length, 1)
+})
+
+test('matchHistoryPeople não casa quando a UF tem dois candidatos iguais', () => {
+  // Mesmo nome e mesma UF: a UF não desempata, então também não há evidência.
+  const a = makeCandidate({
+    id: '2026-PR-8',
+    state: 'PR',
+    ballotName: 'MARIA SOUSA',
+    fullName: 'MARIA SOUSA',
+  })
+  const b = makeCandidate({
+    id: '2026-PR-9',
+    state: 'PR',
+    ballotName: 'MARIA SOUSA',
+    fullName: 'MARIA SOUSA',
+  })
+  const { matched, unmatched } = matchHistoryPeople(
+    [a, b],
+    [{ id: 7, nome: 'Maria Sousa', dataNascimento: null, uf: 'PR' }],
+  )
+  assert.equal(matched.size, 0)
+  assert.equal(unmatched.length, 1)
+})
+
+test('matchHistoryPeople prefere a data de nascimento ao desempate por UF', () => {
+  const sp = makeCandidate({
+    id: '2026-SP-9',
+    state: 'SP',
+    ballotName: 'ANA LIMA',
+    fullName: 'ANA LIMA',
+    birthDate: '1970-01-01',
+  })
+  const pr = makeCandidate({
+    id: '2026-PR-9',
+    state: 'PR',
+    ballotName: 'ANA LIMA',
+    fullName: 'ANA LIMA',
+    birthDate: '1980-02-02',
+  })
+  const { matched } = matchHistoryPeople(
+    [sp, pr],
+    [
+      {
+        id: 7,
+        nome: 'Ana Lima',
+        dataNascimento: '1980-02-02',
+        uf: 'SP',
+      },
+    ],
+  )
+  // A data bate com o candidato do PR; a UF aponta para SP. A data vence, porque
+  // ela é mais específica que a UF.
+  assert.equal(matched.get(7), '2026-PR-9')
+})
+
+test('matchHistoryPeople não casa nome único de outra UF', () => {
+  // O caso mais perigoso dos dois: o nome existe uma vez só no país, mas em
+  // outra UF. Na validação nacional foram 14 assim — entre eles um deputado do
+  // RJ casado com uma candidata homônima de SC. Nome único não prova identidade.
+  const sc = makeCandidate({
+    id: '2026-SC-9',
+    state: 'SC',
+    ballotName: 'JAIR BOLSONARO',
+    fullName: 'JAIR BOLSONARO',
+  })
+  const { matched, unmatched } = matchHistoryPeople(
+    [sc],
+    [{ id: 7, nome: 'Jair Bolsonaro', dataNascimento: null, uf: 'RJ' }],
+  )
+  assert.equal(matched.size, 0)
+  assert.equal(unmatched.length, 1)
+})
+
+test('matchHistoryPeople aceita nome único quando a UF confere', () => {
+  const sc = makeCandidate({
+    id: '2026-SC-9',
+    state: 'SC',
+    ballotName: 'JAIR BOLSONARO',
+    fullName: 'JAIR BOLSONARO',
+  })
+  const { matched } = matchHistoryPeople(
+    [sc],
+    [{ id: 7, nome: 'Jair Bolsonaro', dataNascimento: null, uf: 'SC' }],
+  )
+  assert.equal(matched.get(7), '2026-SC-9')
+})
+
 test('parseParlamentar lê mandatos de Primeira e SegundaLegislatura', () => {
   const xml = `<?xml?><Parlamentar>
     <IdentificacaoParlamentar>
