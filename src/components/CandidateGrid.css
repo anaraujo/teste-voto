@@ -110,14 +110,14 @@ main > section:has(> .candidate-grid) {
 }
 
 /*
- * Abaixo de 480px sobra uma coluna só. O gap encolhe, e o padding acompanha
+ * Abaixo de 56rem sobra uma coluna só. O gap encolhe, e o padding acompanha
  * porque `--pad` aponta para `--gap` — os dois continuam iguais.
  *
  * Com uma coluna só o `space-between` não tem entre o que repartir e o card
  * encostaria na esquerda; o `justify-content: center` centraliza o card (ou o
  * grupo de colunas) na horizontal sem mexer no padding.
  */
-@media (max-width: 480px) {
+@media (max-width: 56rem) {
   .candidate-grid {
     --gap: 0.75rem;
     justify-content: center;
