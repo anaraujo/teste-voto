@@ -134,8 +134,10 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
     comissões, despesas reembolsadas e **votos nominais em votações-chave**
     (reforma tributária, marco temporal, regulação das plataformas); tabelas
     `parliamentary_mandates`, `parliamentary_records` e `votes`, com
-    sincronização idempotente e tolerante a falhas (70 mandatos, 41 registros,
-    117 votos para 39 candidatos com histórico).
+    sincronização idempotente e tolerante a falhas. **A varredura é nacional**:
+    as 27 UFs, com o casamento sobre todos os candidatos federais e desempate
+    por UF nos homônimos. Antes era só o Paraná, e eram 41 os candidatos com
+    despesa — o número de deputados federais do estado.
   - **Página de ficha no app** (`CandidateDetailScreen`, abas Resumo/Mandato e
     histórico/Posições anteriores/Votações/Posições/Fontes), acessível pela
     lista de candidatos e pelo resultado do quiz; `GET /api/candidates/:id`
