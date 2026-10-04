@@ -141,7 +141,14 @@ export function electionFor(
   }
 }
 
-/** Paraná, usado pelos syncs parlamentares que ainda não percorrem as UFs. */
+/**
+ * Paraná, usado pelos syncs que ainda não percorrem as UFs.
+ *
+ * O sync parlamentar é a exceção: ele já busca todas as UFs
+ * (`FEDERATION_UNITS`) e casa sobre todos os candidatos federais, porque a
+ * Câmara é nacional. O que fica preso ao Paraná aqui é a ingestão de candidatos
+ * (`npm run ingest`).
+ */
 export const CURRENT_ELECTION: ElectionConfig = electionFor('PR')
 
 export function electionKey(

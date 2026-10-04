@@ -737,6 +737,36 @@ export function listCandidates(
   return rows.map(toCandidate)
 }
 
+/**
+ * Candidatos ativos de um cargo em **todas** as UFs, em ordem alfabética do
+ * nome de urna.
+ *
+ * `listCandidates` exige uma UF, e isso limitava o sync parlamentar ao Paraná: os
+ * deputados são buscados por UF, então pedir só uma UF devolvia só os 41
+ * deputados federais do estado — e eram 41 os registros de despesa que existiam
+ * na base. Passando pelas 27 UFs, o casamento passa a operar sobre o país todo,
+ * que é o tamanho real da Câmara.
+ *
+ * A ordenação é alfabética e não por UF de propósito: o desempate por UF no
+ * casamento usa a ordem para ser determinístico quando dois candidatos têm o
+ * mesmo nome normalizado.
+ */
+export function listCandidatesByOffice(
+  db: DatabaseSync,
+  electionYear: number,
+  office: string,
+): CandidateRecord[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM candidates
+       WHERE election_year = ? AND office = ? AND is_active = 1
+       ORDER BY ballot_name COLLATE NOCASE`,
+    )
+    .all(electionYear, office) as unknown as CandidateRow[]
+
+  return rows.map(toCandidate)
+}
+
 export function getCandidate(
   db: DatabaseSync,
   id: string,
