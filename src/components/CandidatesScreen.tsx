@@ -127,7 +127,7 @@ export function CandidatesScreen({
       }}
     >
       <div className="flex min-w-0 flex-col gap-1.5">
-        <label className="text-sm font-medium" htmlFor="candidate-search">
+        <label className="text-figtree text-xs whitespace-nowrap uppercase font-medium" htmlFor="candidate-search">
           Buscar candidato
         </label>
         <Input

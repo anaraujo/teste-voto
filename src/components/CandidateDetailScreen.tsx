@@ -895,7 +895,7 @@ function FichaStructure({
            * `text-balance` segura a quebra em duas linhas, e o nome não encolhe
            * como o do card do grid — aqui ele é o assunto da página.
            */}
-          <h2 className="font-titulo text-3xl text-balance">
+          <h2 className="font-sora font-bold text-3xl text-balance">
             {candidate.ballotName}
           </h2>
           <p>

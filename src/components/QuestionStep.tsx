@@ -62,7 +62,7 @@ export function QuestionStep({
         {question.options.map((option) => (
           <label
             key={option.id}
-            className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-canvas"
+            className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-canvas"
           >
             <RadioGroupItem
               value={option.id}

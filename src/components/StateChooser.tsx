@@ -53,12 +53,12 @@ export function StateChooser({
           className="z-50 flex flex-col w-52 gap-1.5 rounded-lg border border-input bg-background/90 p-1.5 text-left shadow-md"
         >
           <span className="text-cyan-950 font-mono text-[10px] leading-2.5 text-center uppercase tracking-[1.5px]">Quero encontrar um</span>
-          <div className="flex gap-1.5 font-mono text-[10px] leading-2.5 text-center uppercase tracking-[1.5px]">
+          <div className="flex gap-1.5 font-mono leading-2.5 text-center uppercase tracking-[1.5px]">
             <TileButton
               tone="ink"
               href={statePath(uf, 'federal')}
               onClick={navigate('federal')}
-              className="rounded-sm flex-1 justify-center px-4 py-1 font-medium"
+              className="rounded-sm flex-1 justify-center px-2 py-1 font-medium text-[10px]"
             >
               {federalLabel}
             </TileButton>
@@ -66,7 +66,7 @@ export function StateChooser({
               tone="ink"
               href={statePath(uf, 'estadual')}
               onClick={navigate('estadual')}
-              className="rounded-sm flex-1 justify-center px-4 py-1 font-medium"
+              className="rounded-sm flex-1 justify-center px-2 py-1 font-medium text-[10px]"
             >
               {estadualLabel}
             </TileButton>

@@ -13,15 +13,15 @@ import { cn } from '@/lib/utils'
  * entrega a casca de cor, raio, foco e transição.
  */
 const tileButtonVariants = cva(
-  'border border-on inline-flex rounded-lg no-underline transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
+  ' text-sora text-sm font-semibold uppercase border border-tse-ink-900 inline-flex rounded-lg no-underline transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
   {
     variants: {
       tone: {
         ink: 'bg-muted-foreground text-tse-mist hover:bg-tse-mist hover:text-muted-foreground focus-visible:outline-panel',
         primary:
-          'bg-tse-success text-primary-foreground hover:bg-tse-soft focus-visible:outline-ring',
+          'text-flag-blue bg-tse-ink-200 hover:bg-tse-soft focus-visible:outline-ring',
         outline:
-          'bg-white/20 text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-ring',
+          'bg-white/20 text-flag-blue hover:bg-accent hover:text-accent-foreground focus-visible:outline-ring',
       },
       size: {
         sm: 'h-8 items-center justify-center gap-2 px-3 text-[0.85rem] font-medium',
