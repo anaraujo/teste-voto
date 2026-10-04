@@ -311,9 +311,9 @@
    * tela, que é o que faz o card ser legível.
    *
    * O canvas é o `ink-200` do TSE, um azul-acinzentado médio. Ele não é mais o
-   * fundo do app — esse passou a ser `--color-tse-primary` (ver o `<main>` em
-   * `src/App.tsx`) — e sim a superfície sobre a qual o card se destaca, o que a
-   * escolha do `ink-200` ainda resolve: contra o `mist-100` o card colaria a
+   * fundo do app — esse passou a ser o gradiente de cada rota (ver o `<main>`
+   * em `src/App.tsx`) — e sim a superfície sobre a qual o card se destaca, o que
+   * a escolha do `ink-200` ainda resolve: contra o `mist-100` o card colaria a
    * 1,10:1, aqui ele se separa em 2,03:1.
    */
   --color-canvas: var(--color-tse-ink-200);
@@ -453,9 +453,13 @@
      * A tinta do texto vem do token, não do default do navegador.
      *
      * Antes o texto herdava o preto do navegador (`#000`), que era legível só
-     * sobre o canvas claro. O fundo do app passou a ser `--color-tse-primary`,
+     * sobre o canvas claro. O fundo da home passou a ser `--color-tse-primary`,
      * e o preto nele dá 3,49:1 — abaixo de AA para texto normal. A tinta agora
      * é o `--color-tse-mist-100`, que dá 5,08:1 sobre esse teal.
+     *
+     * É a tinta base das três superfícies escuras (home, lista, quiz). A ficha é
+     * a clara, e o `<main>` troca a tinta dela para o `--color-tertiary-on` —
+     * ver as três superfícies em `docs/design-tokens.md`.
      */
     color: var(--color-tse-mist-100);
   }

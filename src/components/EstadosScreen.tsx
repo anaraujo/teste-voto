@@ -1,14 +1,17 @@
 import { BRAZIL_STATES } from '../data/brazil-map.ts'
 import { isModifiedClick } from '../lib/links.ts'
 import { statePath } from '../shared/router.ts'
+import type { OfficeKind } from '../shared/elections.ts'
 import { BrazilMap } from './BrazilMap.tsx'
+import { StateChooser } from './StateChooser.tsx'
+import { TileButton } from './ui/tile-button.tsx'
 import './EstadosScreen.css'
 
 interface EstadosScreenProps {
   /** Siglas das UFs que já têm lista. As demais aparecem como "em breve". */
   availableStates: readonly string[]
-  /** Chamado ao escolher uma UF disponível (clique simples). */
-  onSelectState: (code: string) => void
+  /** Chamado ao escolher uma UF disponível e um cargo (federal ou estadual). */
+  onSelectState: (code: string, office: OfficeKind) => void
 }
 
 /**
@@ -42,7 +45,7 @@ export function EstadosScreen({
   return (
     <section className="estados-secao mx-auto flex w-full flex-col gap-8 md:min-h-0 md:flex-1 md:gap-5">
       <header className="flex shrink-0 flex-col gap-2 text-center">
-        <h1 className="estados-titulo font-titulo text-3xl font-semibold">
+        <h1 className="font-titulo text-2xl font-semibold">
           Selecione seu estado
         </h1>
       </header>
@@ -60,10 +63,9 @@ export function EstadosScreen({
        */}
       <div className="flex flex-col gap-6 justify-center md:min-h-0 md:flex-row md:gap-6">
         <figure className="flex-1 mx-auto flex w-full md:w-auto flex-col md:mx-0 md:min-h-0">
-          <div className="min-h-0 md:flex-1">
+          <div className="min-h-0 lg:flex-1">
             <BrazilMap
               availableStates={availableStates}
-              hrefForState={statePath}
               onSelectState={onSelectState}
             />
           </div>
@@ -92,22 +94,28 @@ export function EstadosScreen({
             return (
               <li key={state.code}>
                 {isAvailable ? (
-                  <a
-                    className="estados-cartao flex h-full flex-col gap-0.5 rounded-lg bg-muted-foreground px-3 py-2 text-tse-mist no-underline transition-colors hover:bg-tse-mist hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-panel md:gap-0 md:py-1.5"
-                    href={statePath(state.code)}
-                    onClick={(event) => {
-                      if (isModifiedClick(event)) return
-                      event.preventDefault()
-                      onSelectState(state.code)
-                    }}
-                  >
-                    <span className="estados-sigla font-space-grotesk text-lg font-semibold md:text-base">
-                      {state.code}
-                    </span>
-                    <span className="estados-nome font-sora text-xs md:text-[0.6875rem]">
-                      {state.name}
-                    </span>
-                  </a>
+                  <StateChooser uf={state.code} onSelectState={onSelectState}>
+                    <TileButton
+                      asChild
+                      tone="ink"
+                      className="estados-cartao flex h-full flex-col gap-0.5 px-3 py-2 md:gap-0 md:py-1.5"
+                    >
+                      <a
+                        href={statePath(state.code)}
+                        onClick={(event) => {
+                          if (isModifiedClick(event)) return
+                          event.preventDefault()
+                        }}
+                      >
+                        <span className="estados-sigla font-space-grotesk text-lg font-semibold md:text-base">
+                          {state.code}
+                        </span>
+                        <span className="estados-nome font-sora text-xs md:text-[0.6875rem]">
+                          {state.name}
+                        </span>
+                      </a>
+                    </TileButton>
+                  </StateChooser>
                 ) : (
                   <div
                     aria-disabled="true"

@@ -24,6 +24,7 @@ import {
 import { defaultDataDir } from '../src/data-sources/tse/candidates.ts'
 import { questionsFor } from '../src/data/quiz.ts'
 import { BRAZIL_STATES, stateByCode } from '../src/data/brazil-map.ts'
+import { OFFICE_KINDS, type OfficeKind } from '../src/shared/elections.ts'
 import { renderPage } from '../src/shared/html.ts'
 import type {
   PrerenderData,
@@ -82,11 +83,11 @@ async function writePage(
   return { path, bytes: Buffer.byteLength(html) }
 }
 
-function listMeta(list: ApiCandidatesResponse): RouteMeta {
-  const { state, office, year } = list.election
-  const title = `Candidatos a ${office} — ${state} ${year} | Teste de Voto`
-  const description = `Os ${list.total} candidatos a ${office} em ${state} (${year}), com partido, ocupação, bens declarados, redes e dados oficiais do TSE.`
-  return { title, description, path: statePath(state) }
+function listMeta(list: ApiCandidatesResponse, office: OfficeKind): RouteMeta {
+  const { state, office: officeName, year } = list.election
+  const title = `Candidatos a ${officeName} — ${state} ${year} | Teste de Voto`
+  const description = `Os ${list.total} candidatos a ${officeName} em ${state} (${year}), com partido, ocupação, bens declarados, redes e dados oficiais do TSE.`
+  return { title, description, path: statePath(state, office) }
 }
 
 function candidateMeta(detail: ApiCandidateDetail): RouteMeta {
@@ -116,7 +117,7 @@ function fairnessMeta(list: ApiCandidatesResponse): RouteMeta {
 const STATES_META: RouteMeta = {
   title: 'Selecione seu estado — candidatos por UF | Teste de Voto',
   description:
-    'Mapa do Brasil para escolher o estado e ver os candidatos a deputado federal de cada UF.',
+    'Mapa do Brasil para escolher o estado e ver os candidatos a deputado federal ou estadual de cada UF.',
   path: '/',
 }
 
@@ -148,31 +149,40 @@ async function main(): Promise<void> {
     [{ route: { name: 'states' }, meta: STATES_META }]
 
   for (const brazil of BRAZIL_STATES) {
-    const filter = filterForState(brazil.code)
-    if (!filter) continue
-    const list = buildCandidatesPayload(db, filter)
-    const listData: PrerenderData = { kind: 'candidates', payload: list }
-    const questions = questionsFor(brazil)
-    pages.push(
-      {
-        route: { name: 'candidates', uf: brazil.code },
-        meta: listMeta(list),
+    for (const office of OFFICE_KINDS) {
+      const filter = filterForState(brazil.code, office)
+      if (!filter) continue
+      const list = buildCandidatesPayload(db, filter)
+      const listData: PrerenderData = { kind: 'candidates', payload: list }
+      pages.push({
+        route: { name: 'candidates', uf: brazil.code, office },
+        meta: listMeta(list, office),
         data: listData,
-      },
-      {
-        route: { name: 'fairness', uf: brazil.code },
-        meta: fairnessMeta(list),
-        data: listData,
-      },
-      ...questions.map((question, index) => ({
-        route: { name: 'question' as const, uf: brazil.code, step: index + 1 },
-        meta: {
-          title: `${question.title} | Teste de Voto`,
-          description: `${questions.length} perguntas, ${list.total} candidatos a deputado federal ${brazil.locative}: ${question.hint}`,
-          path: quizPath(brazil.code, index + 1),
+      })
+
+      // Quiz/resultado/imparcialidade ainda são só do federal (dados da Câmara).
+      if (office !== 'federal') continue
+      const questions = questionsFor(brazil)
+      pages.push(
+        {
+          route: { name: 'fairness', uf: brazil.code },
+          meta: fairnessMeta(list),
+          data: listData,
         },
-      })),
-    )
+        ...questions.map((question, index) => ({
+          route: {
+            name: 'question' as const,
+            uf: brazil.code,
+            step: index + 1,
+          },
+          meta: {
+            title: `${question.title} | Teste de Voto`,
+            description: `${questions.length} perguntas, ${list.total} candidatos a deputado federal ${brazil.locative}: ${question.hint}`,
+            path: quizPath(brazil.code, index + 1),
+          },
+        })),
+      )
+    }
   }
 
   const seen = new Set<string>()
@@ -199,19 +209,21 @@ async function main(): Promise<void> {
 
   let skipped = 0
   for (const brazil of BRAZIL_STATES) {
-    const filter = filterForState(brazil.code)
-    if (!filter) continue
-    for (const candidate of buildCandidatesPayload(db, filter).candidates) {
-      const detail = await buildCandidateDetailPayload(db, candidate.id)
-      if (!detail) {
-        skipped += 1
-        continue
+    for (const office of OFFICE_KINDS) {
+      const filter = filterForState(brazil.code, office)
+      if (!filter) continue
+      for (const candidate of buildCandidatesPayload(db, filter).candidates) {
+        const detail = await buildCandidateDetailPayload(db, candidate.id)
+        if (!detail) {
+          skipped += 1
+          continue
+        }
+        await emit({
+          route: { name: 'candidate', id: candidate.id },
+          meta: candidateMeta(detail),
+          data: { kind: 'candidate', payload: detail },
+        })
       }
-      await emit({
-        route: { name: 'candidate', id: candidate.id },
-        meta: candidateMeta(detail),
-        data: { kind: 'candidate', payload: detail },
-      })
     }
   }
 

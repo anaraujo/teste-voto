@@ -56,7 +56,6 @@ export function ResultScreen({
 
   return (
     <section className="mx-auto flex w-full flex-col gap-3 px-4">
-      <h2 className="font-titulo text-3xl">Resultado</h2>
       <p>
         O candidato mais alinhado concorda em {Math.round(first.score * 100)}%
         das perguntas que têm dado conhecido

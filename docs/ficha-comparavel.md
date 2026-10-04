@@ -77,9 +77,21 @@ posição editorial e não entra na aba Posições.
   navegação tem cápsula própria (a cor do partido escurecida) em vez de usar o
   fundo claro da página. As partículas só nascem no cliente: são `Math.random` e
   `document.createElement`, que quebrariam a hidratação das páginas estáticas.
-- As partículas saem da **primária do partido**, em cor sólida. Elas vivem numa
-  camada própria, fora do `filter: blur/contrast` da pílula: o `contrast(100)`
-  esmagaria a cor para preto/branco e o `lighten` esconderia o que fosse escuro.
+- As partículas são **filhas do elemento filtrado**, junto com a pílula, e é isso
+  que faz o efeito existir: `blur(7px) contrast(100)` é a técnica de metaball, e
+  ela só cria fusão e filamento onde duas formas borradas se tocam. Com uma
+  forma só dentro do filtro o blur arredonda e o contraste reendurece, e o
+  resultado é a mesma forma de antes — um círculo, sem nada derretido. Por isso
+  elas não podem viver numa camada irmã, fora do filtro.
+- A partícula é da **cor da pílula**, e não da cor do partido. O `contrast(100)`
+  é um limiar duro: um tom médio sai preto, e o preto é exatamente o que o
+  `lighten` esconde — nos partidos escuros o estouro simplesmente não apareceria.
+  Com a cor da pílula a fusão funciona nos 30 partidos.
+- O `::before` preto do elemento filtrado, com 75px de folga em volta do item,
+  faz duas coisas: impede que o filtro tosque as partículas na borda (elas voam
+  até ~90px) e dá ao `lighten` uma tela para comparar — `lighten(preto, o que
+está atrás)` devolve o que está atrás, então o bloco é invisível em qualquer
+  fundo.
 - Dentro de cada aba, um **trilho de seções** à esquerda
   (`src/components/LineSidebar.tsx`) marca em que parte do conteúdo a leitura
   está. As seções e o trilho saem da mesma função de âncoras, ao lado do
@@ -87,8 +99,15 @@ posição editorial e não entra na aba Posições.
   item do trilho não poder apontar para uma seção que não existe. Aba com uma
   seção só — Fontes, por exemplo — esconde o trilho. Ambos os componentes
   respeitam `prefers-reduced-motion` e o trilho some abaixo de 900px.
-- A cor de destaque da navegação e do trilho é a **primária** do partido
-  (`partyColor(candidate.partyAcronym).primary`). O card da lista usa
+- A cor de destaque vem da **primária** do partido
+  (`partyColor(candidate.partyAcronym).primary`), mas ela não pode ser tinta em
+  toda parte. Na navegação ela é a cápsula, escurecida a 55% de preto para o
+  branco da pílula ter contraste. No trilho, sobre o fundo âmbar da ficha, o
+  amarelo de PSB e MISSÃO daria ~1,1:1 com qualquer tinta que passasse com a cor
+  do partido — não há tinta que salve — então a primária entra diluída a 25% na
+  direção do `ink-900`, que é o ponto em que os 31 partidos passam dos 3:1 de
+  indicador não textual (a 30% o pior caso dava 2,88:1). O rótulo do item, por
+  isso, escurece no hover em vez de se colorir. O card da lista usa
   `secondary[0]` como fundo, então a ficha mostra justamente a cor que a lista
   não mostra.
 - A aba "Posições" mostra "Não encontrei evidência suficiente" enquanto o

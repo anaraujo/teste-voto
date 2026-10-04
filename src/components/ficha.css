@@ -4,9 +4,39 @@
  * A ordem é cabeçalho → navegação das abas → duas colunas (trilho de seções à
  * esquerda, conteúdo da aba à direita). A navegação fica no fluxo, logo abaixo
  * do cabeçalho, então não há rodapé reservado para ela.
+ *
+ * A ficha é a terceira superfície do app, e a única em que a cor do fundo é
+ * clara: o `<main>` pinta o gradiente âmbar do amarelo do logo do TSE
+ * (`from-logo-yellow to-tertiary`, ver `src/App.tsx`). Tudo aqui é escrito
+ * para tinta escura sobre esse ouro.
+ *
+ * A tinta base vem do `--color-tertiary-on` que o `<main>` deixa, e o resto é
+ * degradê dela: o secundário é o `ink-900` do TSE e as regras são o `ink-700`
+ * diluído. As medidas contra as duas pontas do gradiente estão em
+ * `docs/design-tokens.md`.
  */
 
 .ficha {
+  /*
+   * As três tintas da ficha, num lugar só. `--ficha-ink` é a base ( herdada do
+   * `<main>`), `--ficha-ink-soft` a hierarquia de apoio e `--ficha-ring` o
+   * anel de foco — que é a própria tinta do texto, como no resto do app.
+   */
+  --ficha-ink: var(--color-tertiary-on);
+  --ficha-ink-soft: var(--color-tse-ink-900);
+  --ficha-ring: var(--color-ink);
+  /*
+   * Dois pesos de fio. O estrutural (cabeçalho, rodapé) é forte o bastante para
+   * os 3:1 que a WCAG pede de um indicador não textual; o da linha de título de
+   * seção é decorativo e pode sumir um pouco no ouro.
+   */
+  --ficha-rule: color-mix(in srgb, var(--color-tse-ink-700) 85%, transparent);
+  --ficha-rule-soft: color-mix(
+    in srgb,
+    var(--color-tse-ink-700) 55%,
+    transparent
+  );
+
   width: 100%;
   max-width: 1040px;
   padding: 1.5rem 1.25rem 3rem;
@@ -19,13 +49,22 @@
   align-items: flex-start;
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid color-mix(in srgb, #000 10%, transparent);
+  border-bottom: 1px solid var(--ficha-rule);
 }
 
+/*
+ * A foto é a única peça da ficha que é uma imagem, e o ouro é claro o bastante
+ * para que ela pareça flutuar sem moldura. O anel fino de tinta é o que a
+ * separa do fundo, e a sombra difusa é a mesma elevação do card do grid — as
+ * duas superfícies leem como a mesma família.
+ */
 .ficha__cabecalho img {
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   object-fit: cover;
-  background: color-mix(in srgb, #000 6%, transparent);
+  background: color-mix(in srgb, var(--ficha-ink) 10%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ficha-ink) 18%, transparent),
+    0 12px 28px -12px rgb(0 0 0 / 0.45);
 }
 
 .ficha__cabecalho h2 {
@@ -50,6 +89,20 @@
   align-items: start;
 }
 
+/*
+ * A coluna do trilho existe só quando a aba tem mais de uma seção (ver
+ * `anchors.length > 1` em `CandidateDetailScreen.tsx`). Sem esta regra o
+ * conteúdo, único filho que sobra nesse caso, cai na trilha de 210px e a aba
+ * inteira fica espremida numa coluna estreita com o resto da página vazio —
+ * era o que acontecia em "Votações", "Posições" e "Fontes".
+ *
+ * O `:has()` vale aqui porque o trilho é filho direto do grid; onde não há
+ * suporte a regra simplesmente não casa e a ficha fica como estava.
+ */
+.ficha__corpo:not(:has(.ficha__trilho)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .ficha__trilho {
   position: sticky;
   top: 1.5rem;
@@ -60,7 +113,7 @@
 }
 
 .ficha__conteudo:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--ficha-ring);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -81,20 +134,25 @@
 }
 
 .ficha-section:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--ficha-ring);
   outline-offset: 6px;
   border-radius: 4px;
 }
 
+/*
+ * O título da seção é a peça de contexto: fica no `ink-900`, um degrau acima do
+ * texto, em caixa alta e com tracking longo. O fio de baixo é o decorativo, o
+ * que separa o bloco do anterior sem abrir uma linha forte no meio da página.
+ */
 .ficha-section__title {
   margin: 0 0 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6b6560;
+  color: var(--ficha-ink-soft);
   padding-bottom: 0.35rem;
-  border-bottom: 1px solid color-mix(in srgb, #000 8%, transparent);
+  border-bottom: 1px solid var(--ficha-rule-soft);
 }
 
 .ficha-section dl {
@@ -106,7 +164,7 @@
 
 .ficha-section dt {
   font-size: 0.78rem;
-  color: #7d766e;
+  color: var(--ficha-ink-soft);
   margin-bottom: 0.1rem;
 }
 
@@ -132,7 +190,62 @@
 .ficha__rodape {
   margin: 3rem 0 0;
   padding-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, #000 10%, transparent);
+  border-top: 1px solid var(--ficha-rule);
+}
+
+/*
+ * Link para a fonte oficial.
+ *
+ * O preflight do Tailwind zera a cor e o sublinhado do `<a>`, então sem esta
+ * regra o "registro oficial" e o "perfil oficial" saíam como texto comum — sem
+ * cor e sem sublinhado, sem nenhuma pista de que são links. A cor é o azul da
+ * bandeira, o mais escuro da paleta, o que o mantém acima de 4,5:1 no ouro sem
+ * introduzir uma família nova na tela.
+ *
+ * O sublinhado é fino e fica abaixo da linha (`text-underline-offset`), como o
+ * resto de link do app; no hover ele engrossa, e a tinta esquenta para o
+ * `ink-900`. A troca é de cor e espessura — nada de deslocamento, que num link
+ * de dentro do parágrafo empurra o texto seguinte.
+ */
+.ficha a {
+  color: var(--color-deep);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--color-deep) 45%, transparent);
+  transition:
+    color 150ms ease,
+    text-decoration-color 150ms ease;
+}
+
+.ficha a:hover {
+  color: var(--ficha-ink-soft);
+  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+}
+
+.ficha a:focus-visible {
+  outline: 2px solid var(--ficha-ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/*
+ * O `<mark>` marca dado, não ênfase: o rótulo do voto, o "Eleito" do mandato, a
+ * faixa de quem está em exercício. Recebe a tinta de apoio num bloco discreto em
+ * vez do amarelo do navegador, que é da mesma família do fundo e sumiria nele.
+ *
+ * O fundo é um véu da própria tinta, não uma cor cheia, porque o `mark` também
+ * marca a frase inteira do cabeçalho — um bloco escuro daquele tamanho cortaria
+ * a página ao meio. E o texto não muda de tinta: o contraste do dado é o mesmo do
+ * corpo, e o destaque vem da forma.
+ */
+.ficha mark {
+  background: color-mix(in srgb, var(--ficha-ink) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ficha-ink) 25%, transparent);
+  border-radius: 6px;
+  padding: 0.05em 0.4em;
+  font-weight: 600;
 }
 
 /*

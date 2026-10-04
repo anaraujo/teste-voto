@@ -1,6 +1,7 @@
 /**
  * Sincroniza o histórico de posições políticas ocupadas (eleitos + suplentes)
- * dos 428 candidatos a deputado federal pelo Paraná (2026).
+ * de todos os candidatos a deputado federal e estadual (distrital no DF) de
+ * todas as UFs (2026).
  *
  * Fonte: dados abertos do TSE, consultas de candidatos das eleições de
  * 2004 a 2024 (todas as posições: vereador, prefeito, vice-prefeito,
@@ -26,22 +27,35 @@ import {
   sortMandates,
   type PoliticalMandate,
 } from '../src/data-sources/tse/history.ts'
-import { CURRENT_ELECTION } from '../src/shared/elections.ts'
+import {
+  FEDERATION_UNITS,
+  OFFICE_KINDS,
+  officeFor,
+} from '../src/shared/elections.ts'
 
 const DATA_DIR = defaultDataDir()
-
-const filter = {
-  electionYear: CURRENT_ELECTION.year,
-  state: CURRENT_ELECTION.state,
-  office: CURRENT_ELECTION.office,
-}
+const YEAR = 2026
 
 const db = await openRepository(join(DATA_DIR, 'tse.db'))
 
 try {
-  const candidates = listCandidates(db, filter)
+  // Todos os candidatos ativos de 2026: as 27 UFs, nos dois cargos.
+  const candidates = []
+  for (const uf of FEDERATION_UNITS) {
+    for (const kind of OFFICE_KINDS) {
+      candidates.push(
+        ...listCandidates(db, {
+          electionYear: YEAR,
+          state: uf,
+          office: officeFor(uf, kind),
+        }),
+      )
+    }
+  }
+
   const mandates: PoliticalMandate[] = []
   let totalRows = 0
+  let totalMatched = 0
 
   for (const election of HISTORIC_ELECTIONS) {
     const { rows, erro } = await fetchHistoricCandidaturas(
@@ -55,11 +69,11 @@ try {
     totalRows += rows.length
     const matched = matchHistoricToCandidates(rows, candidates)
     mandates.push(...matched)
+    totalMatched += matched.length
     const eleitos = matched.filter((m) => m.status === 'eleito').length
-    const suplentes = matched.length - eleitos
     console.log(
-      `[historico] ${election.ano}: ${rows.length} candidaturas PR lidas, ` +
-        `${matched.length} mandatos (${eleitos} eleitos, ${suplentes} suplentes)`,
+      `[historico] ${election.ano}: ${rows.length} candidaturas lidas, ` +
+        `${matched.length} mandatos (${eleitos} eleitos, ${matched.length - eleitos} suplentes)`,
     )
   }
 
@@ -77,7 +91,7 @@ try {
     .join(' | ')
 
   console.log(
-    `[historico] gravados ${finalMandates.length} mandatos para ${withMandate}/428 candidatos ` +
+    `[historico] gravados ${finalMandates.length} mandatos para ${withMandate}/${candidates.length} candidatos ` +
       `(${totalRows} candidaturas lidas no total)`,
   )
   console.log(`[historico] por cargo: ${resumoCargos}`)

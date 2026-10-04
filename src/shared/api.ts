@@ -13,6 +13,9 @@ export interface ApiElection {
 export interface ApiCandidate {
   id: string
   tseSequence: string
+  electionYear: number
+  state: string
+  office: string
   ballotName: string
   fullName: string
   ballotNumber: string

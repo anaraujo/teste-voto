@@ -41,17 +41,15 @@ main > section:has(> .candidate-grid) {
  * cards é igual ao vão entre o card e a borda do painel. Sendo uma variável só,
  * os dois não podem divergir.
  *
- * O `width: fit-content` é o que faz o espaçamento fechar. O `auto-fit` decide
- * quantas colunas cabem na largura disponível e o `fit-content` encolhe o
- * painel até exatamente essas colunas. Sem sobra, a borda do painel fica a
- * `--pad` do primeiro card — igual ao `--gap`. Com `width: 100%` sobra espaço
- * (o `justify-content: center` reparte a sobra entre os dois lados) e o vão da
- * borda fica maior que o vão entre cards; medido, dava 85px de borda contra 20
- * de gap num viewport de 1600px.
- *
- * O `max-width: min(100%, …)` é o teto de `--max-columns`: o nono card não
- * entra por maior que seja a tela, e o `100%` impede o painel de passar da
- * largura da section quando a viewport encolhe.
+ * O `width: 100%` toma a largura da section e o `auto-fit` decide quantas
+ * colunas do tamanho do card cabem nela. O que sobra vai para o
+ * `justify-content: space-between`: o primeiro card encosta no `--pad` da
+ * esquerda, o último no `--pad` da direita, e a sobra se reparte entre os vãos
+ * internos. Assim o vão da borda é sempre `--pad` e o vão entre cards nunca
+ * fica menor que `--gap` — que é o mesmo valor. Com `justify-content: center`
+ * a sobra ia toda para os dois lados do painel e o vão da borda ficava maior
+ * que o vão entre cards; medido, dava 85px de borda contra 20 de gap num
+ * viewport de 1600px.
  */
 .candidate-grid {
   --photo-width: 161px;
@@ -72,7 +70,7 @@ main > section:has(> .candidate-grid) {
   display: grid;
   /*
    * `auto-fit` resolve o número de colunas contra a largura disponível — a
-   * largura da section, já que o painel é `fit-content` — e as colunas são do
+   * largura da section, já que o painel é `width: 100%` — e as colunas são do
    * tamanho exato do card, sem esticar.
    */
   grid-template-columns: repeat(
@@ -80,9 +78,8 @@ main > section:has(> .candidate-grid) {
     minmax(var(--card-width), var(--card-width))
   );
   grid-auto-rows: auto;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--gap);
-  margin: 0 auto;
   padding: var(--pad);
   box-sizing: border-box;
   /*
@@ -90,16 +87,40 @@ main > section:has(> .candidate-grid) {
    * cards, para o painel e os cards lerem como a mesma família de superfície.
    */
   border-radius: 24px;
-  background: var(--color-background);
+  /* background: var(--color-background);
+  background: -webkit-linear-gradient(
+    to right,
+    var(--color-background),
+    var(--color-tse-success)
+  );
+  background: linear-gradient(
+    to right,
+    var(--color-background),
+    var(--color-tse-success)
+  ); */
+  background: color-mix(
+    in srgb,
+    var(--color-tse-success) 55%,
+    var(--color-white)
+  );
+
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 8px 24px -8px rgb(0 0 0 / 0.4);
 }
 
 /*
  * Abaixo de 480px sobra uma coluna só. O gap encolhe, e o padding acompanha
  * porque `--pad` aponta para `--gap` — os dois continuam iguais.
+ *
+ * Com uma coluna só o `space-between` não tem entre o que repartir e o card
+ * encostaria na esquerda; o `justify-content: center` centraliza o card (ou o
+ * grupo de colunas) na horizontal sem mexer no padding.
  */
 @media (max-width: 480px) {
   .candidate-grid {
     --gap: 0.75rem;
+    justify-content: center;
   }
 }
 
@@ -152,7 +173,6 @@ main > section:has(> .candidate-grid) {
 .candidate-card:hover,
 .candidate-card:focus-within {
   border-color: var(--card-on, #fff);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
 }
 
 /*
@@ -353,8 +373,8 @@ main > section:has(> .candidate-grid) {
  * Como `readableOn` escolheu a tinta *contra* a cor do card, inverter devolve
  * exatamente a mesma razão, então o hover passa nas 30.
  *
- * A animação fica no que não interfere nessa relação: a seta entra, a borda
- * clareia e a pílula dá um salto curto. Nenhum dos três mexe no par
+ * A animação fica no que não interfere nessa relação: a seta entra, a sombra
+ * se aprofunda e a pílula dá um salto curto. Nenhum dos três mexe no par
  * fundo/texto, então a garantia do `party-colors.test.ts` continua valendo
  * durante e depois da transição.
  */
@@ -377,13 +397,20 @@ main > section:has(> .candidate-grid) {
   text-transform: uppercase;
   color: var(--card-on, #fff);
   background-color: color-mix(in srgb, var(--card-fill, #fff) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--card-fill, #fff) 55%, transparent);
   /*
-   * Só a borda e o transform animam. `background-color` e `color` ficam de fora
+   * A elevação é a do botão "Buscar" (variant `default` do kit): uma sombra
+   * difusa sob a pílula, no lugar da borda. Um `0 0 0 1px` não serve — é um
+   * anel sem desfoque, indistinguível de uma borda de verdade.
+   */
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 8px 24px rgb(255 255 255 / 0.1);
+  /*
+   * Só a sombra e o transform animam. `background-color` e `color` ficam de fora
    * de propósito, pelo motivo do comentário acima.
    */
   transition:
-    border-color 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0, 0.2, 1),
     transform 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
@@ -406,8 +433,10 @@ main > section:has(> .candidate-grid) {
 
 .candidate-foot .candidate-ficha:is(:hover, :focus-visible) {
   color: var(--card-base, #000);
-  border-color: var(--card-on, #fff);
-  background-color: var(--card-on, #fff);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 12px 28px rgb(0 0 0 / 0.3);
+  background-color: color-mix(in srgb, var(--card-on, #fff) 85%, transparent);
   transform: scale(1.02);
 }
 

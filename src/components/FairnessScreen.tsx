@@ -19,7 +19,6 @@ export function FairnessScreen({ questions, candidates }: FairnessScreenProps) {
 
   return (
     <section>
-      <h2 className="font-titulo text-3xl">Imparcialidade do teste</h2>
       <p>
         O teste sorteia {distribution.totalCombinations.toLocaleString('pt-BR')}{' '}
         combinações de respostas (a auditoria completa usa{' '}

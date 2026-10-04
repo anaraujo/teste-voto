@@ -118,9 +118,54 @@ amarelo **só** passam em WCAG AA com `#111` (3,83:1, 2,57:1 e 2,15:1 contra
 por isso cada cor cheia tem o seu `-on`. Quem pinta uma superfície com a cor
 cheia pega o `-on` correspondente em vez de hardcodar branco.
 
+### As três superfícies de página
+
+Cada rota tem o seu fundo, e o `<main>` em `src/App.tsx` é quem pinta. As três
+superfícies são gradientes de duas pontas, na horizontal:
+
+| Rota             | Gradiente                                | Tinta do texto         |
+| ---------------- | ---------------------------------------- | ---------------------- |
+| `/` (home)       | `from-tse-ink-700` → `to-tse-primary`    | `tse-mist-100` (claro) |
+| `/candidatos`    | `from-tse-success/90` → `to-tse-success` | `primary-on` (`#111`)  |
+| `/candidato/:id` | `from-logo-yellow` → `to-tertiary`       | `tertiary-on` (`#111`) |
+
+A ficha é a única das três com fundo **claro**, e é por isso que ela é a única
+que usa tinta escura. Isso não é escolha de gosto: o amarelo é a única cor cheia
+do app que não aceita branco (2,15:1 contra `#ffffff`, na tabela de `--color-*`
+acima), então o `--color-tertiary-on` já existia justamente para isso. Com ela a
+ficha passa em AA nas duas pontas do gradiente, e a folga é grande porque o ouro
+é claro:
+
+| Combinação                        | `#fcc200` | `#f59e0b` | WCAG            |
+| --------------------------------- | --------- | --------- | --------------- |
+| texto base (`tertiary-on`)        | 11,56:1   | 8,79:1    | AA texto normal |
+| apoio (`ink-900`, títulos e `dt`) | 6,87:1    | 5,23:1    | AA texto normal |
+| anel de foco (`ink`)              | 9,50:1    | 7,23:1    | passa de 3:1    |
+| link (`deep`, azul da bandeira)   | 9,04:1    | 6,87:1    | AA texto normal |
+| fio estrutural (`ink-700` a 85%)  | 4,22:1    | 3,21:1    | passa de 3:1    |
+
+Duas consequências que a ficha inherits e que valem como regra:
+
+- **O anel de foco escurece.** Nas outras duas superfícies, saturadas, ele
+  clareia (`outline-tse-mist-100`); no ouro ele seria `1,27:1` e a única pista de
+  foco de quem não usa mouse desapareceria. Por isso o anel da ficha é o
+  `--color-ink`, o mesmo token que o resto do app usa.
+- **A cor do partido não pode ser tinta.** `readableOn` resolve o party color
+  quando ele é _fundo_ (o card do grid, a cápsula do GooeyNav). Na ficha ele é
+  usado como _texto_ no trilho lateral, e aí não há tinta que salve: sobre o
+  ouro, o amarelo de PSB e MISSÃO daria ~1,1:1 com qualquer tinta que passasse
+  com o party color. O partido entra no trilho diluído a 25% na direção do
+  `ink-900` — o ponto em que os 31 partidos passam dos 3:1 de indicador não
+  textual, medido contra as duas pontas — e o rótulo do item escurece no hover
+  em vez de se colorir.
+
+Os números saíram com `contraste()` de `src/shared/party-colors.ts`, a mesma
+função que o card do grid usa, e o pior caso é sempre o partido mais claro da
+tabela (`#f2c300`).
+
 ### A tinta e o fundo, medidos
 
-O fundo da página é `--color-tse-primary` (`#206b82`, o teal do portal) e a
+O fundo da home é `--color-tse-primary` (`#206b82`, o teal do portal) e a
 tinta do texto base é o `--color-tse-mist-100` (`#e9ecef`). São o par que mais
 aparece na tela, então vale registrar as razões de contraste:
 
@@ -336,20 +381,38 @@ algum dia der para cortar, o caminho é trocar a variável do Fraunces por duas 
 três instâncias estáticas do peso que o app usa — 67 KB é o preço do eixo `opsz`
 que ninguém pediu para remover.
 
-## Os dois botões: `SpecularButton` e `Button`
+## Os botões: `SpecularButton`, `Button` e `TileButton`
 
-O app tem **dois** botões, com fronteiras explícitas.
+O app tem **três** botões, com fronteiras explícitas.
 
-| Componente                                             | Quando                                                                  | Por quê                                                                                        |
-| ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `SpecularButton` (`src/components/SpecularButton.tsx`) | CTA de destaque: "Começar", "Ver candidatos", "Recomeçar"               | É a assinatura visual do app — um shader WebGL que segue o ponteiro. Só onde o brilho importa. |
-| `Button` (`src/components/ui/button.tsx`)              | Tudo o mais: opções do quiz, "Tentar novamente", voltar, ações de ficha | Botão comum, sem WebGL. É o que viabiliza listas longas.                                       |
+| Componente                                             | Quando                                                                         | Por quê                                                                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `SpecularButton` (`src/components/SpecularButton.tsx`) | CTA de destaque: "Começar", "Ver candidatos", "Recomeçar"                      | É a assinatura visual do app — um shader WebGL que segue o ponteiro. Só onde o brilho importa. |
+| `Button` (`src/components/ui/button.tsx`)              | Tudo o mais: opções do quiz, "Tentar novamente", voltar, ações de ficha        | Botão comum, sem WebGL. É o que viabiliza listas longas.                                       |
+| `TileButton` (`src/components/ui/tile-button.tsx`)     | Escolhas de navegação em bloco: o cartão de UF, a alternância federal/estadual | Superfície chapada com tom de cor, sem sombra. O layout fica com o chamador.                   |
 
 A fronteira não é estética, é de contexto WebGL: cada `SpecularButton` abre um
 contexto próprio, e o navegador aceita poucos. Por isso o resultado, quando
 mostra todos de uma vez, usa o `.sb-link` (um `<a>` de verdade), e a lista de
 428 candidatos usa os cards do `CandidateGrid`, que não abrem contexto nenhum.
 Ver o comentário em `src/index.css`.
+
+### O `TileButton` e seus tons
+
+O `TileButton` é a superfície chapada das escolhas de navegação: cor cheia,
+cantos arredondados e sem sombra. A cor vem do tom (`tone`), sempre um token do
+projeto:
+
+| tone      | estado                             | hover                                     |
+| --------- | ---------------------------------- | ----------------------------------------- |
+| `ink`     | `muted-foreground` + `tse-mist`    | inverte (`tse-mist` + `muted-foreground`) |
+| `primary` | `primary` + `primary-foreground`   | `primary-soft`                            |
+| `outline` | borda `border`, texto `foreground` | `accent`                                  |
+
+O layout (coluna, altura, padding fino) é do chamador, via `className` — o
+`TileButton` só entrega a casca de cor, raio, foco e transição. O estado
+"em breve" da lista de estados não é do `TileButton`: fica na tela, como `<div>`
+decorativo.
 
 ### O `SpecularButton` em detalhe
 

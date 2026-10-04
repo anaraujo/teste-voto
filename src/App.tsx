@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { questionsFor } from './data/quiz.ts'
 import type { OptionId } from './data/quiz.ts'
 import { stateByCode, BRAZIL_STATES } from './data/brazil-map.ts'
@@ -9,6 +9,7 @@ import { useCandidates } from './hooks/useCandidates.ts'
 import { useQuizAnswers } from './hooks/useQuizAnswers.ts'
 import type { CandidatesLoadState } from './hooks/useCandidates.ts'
 import type { PrerenderData } from './shared/prerender.ts'
+import { officeKindOf, type OfficeKind } from './shared/elections.ts'
 import {
   candidatePath,
   DEFAULT_TAB,
@@ -16,6 +17,7 @@ import {
   quizPath,
   resultPath,
   statePath,
+  ufFromCandidateId,
   STATES_PATH,
   type Route,
   type Tab,
@@ -82,15 +84,25 @@ function App({
 
   const { answers, answer, reset } = useQuizAnswers(uf)
 
-  const seedCandidates =
-    data?.kind === 'candidates' && data.payload.election.state === uf
-      ? data.payload
-      : undefined
+  // A lista de candidatos tem cargo (federal/estadual); o resto do fluxo
+  // (quiz, resultado, imparcialidade) ainda é só do federal.
+  const office: OfficeKind =
+    route.name === 'candidates' ? route.office : 'federal'
+
+  const seedCandidates = data?.kind === 'candidates' ? data.payload : undefined
   const seedDetail = data?.kind === 'candidate' ? data.payload : undefined
 
-  const { state: candidatesState, retry: retryCandidates } = useCandidates(
-    uf,
-    seedCandidates,
+  const {
+    state: candidatesState,
+    retry: retryCandidates,
+    refetching: candidatesRefetching,
+  } = useCandidates(uf, office, seedCandidates)
+
+  // Cargo da ficha aberta: começa com o seed (página pré-renderizada) e é
+  // corrigido pela tela quando os dados chegam — o botão de voltar leva à
+  // lista do cargo certo, não só à federal.
+  const [candidateOffice, setCandidateOffice] = useState<OfficeKind>(() =>
+    seedDetail ? officeKindOf(seedDetail.office) : 'federal',
   )
 
   const apiCandidates = useMemo(
@@ -120,6 +132,11 @@ function App({
 
   const showCandidate = useCallback(
     (id: string) => onNavigate(candidatePath(id)),
+    [onNavigate],
+  )
+
+  const handleSelectState = useCallback(
+    (code: string, kind: OfficeKind) => onNavigate(statePath(code, kind)),
     [onNavigate],
   )
 
@@ -156,25 +173,43 @@ function App({
     }
   }, [route.name, onNavigate])
 
+  // O botão de voltar da ficha respeita o cargo: se o id traz UF válida, volta
+  // à lista daquele cargo; senão, cai no `parentPath` (seleção de estado).
+  const candidateUf =
+    route.name === 'candidate' ? ufFromCandidateId(route.id) : null
+  const headerParent =
+    route.name === 'candidate' && candidateUf
+      ? statePath(candidateUf, candidateOffice)
+      : undefined
+
   return (
     <main
       className={cn(
-        'min-h-screen bg-tse-primary px-4 py-8 sm:px-8 lg:px-12',
+        'min-h-screen px-4 py-8 sm:px-8 lg:px-12',
+        route.name === 'candidates'
+          ? 'bg-tse-success/90 bg-linear-to-r from-tse-success/90 to-tse-success text-primary-on'
+          : route.name === 'candidate'
+            ? 'bg-linear-to-tr from-logo-yellow to-tertiary text-tertiary-on'
+            : 'bg-tse-primary bg-linear-to-r from-tse-ink-700 to-tse-primary',
         fillsViewport && 'flex flex-col md:min-h-dvh md:h-dvh',
       )}
     >
-      <AppHeader route={route} onNavigate={onNavigate} />
+      <AppHeader route={route} onNavigate={onNavigate} parent={headerParent} />
 
       {route.name === 'states' && (
         <EstadosScreen
           availableStates={BRAZIL_STATES.map((item) => item.code)}
-          onSelectState={(code) => onNavigate(statePath(code))}
+          onSelectState={handleSelectState}
         />
       )}
 
       {route.name === 'candidates' && (
         <CandidatesScreen
           state={candidatesState as CandidatesLoadState}
+          uf={route.uf}
+          office={office}
+          refetching={candidatesRefetching}
+          onShowOffice={(kind) => onNavigate(statePath(route.uf, kind))}
           onRetry={retryCandidates}
           onShowCandidate={showCandidate}
         />
@@ -186,6 +221,7 @@ function App({
           initialData={seedDetail}
           tab={tab}
           onTabChange={onTabChange ?? noopTabChange}
+          onOfficeChange={setCandidateOffice}
         />
       )}
 

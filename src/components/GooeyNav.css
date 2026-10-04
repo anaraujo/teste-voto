@@ -5,11 +5,17 @@
  * `contrast(100)` no filtro, o `mix-blend-mode: lighten` que só revela o que
  * for *mais claro* que o fundo, e a cápsula escura do próprio contêiner.
  *
- * A pílula é branca e derrete no filtro; as partículas, porém, vivem numa
- * camada própria (`.effect.particles`), fora do `contrast`, para manter a cor
- * sólida do partido em vez de virar um clarão branco. Sobre o canvas da ficha
- * — claro — a pílula branca sumiria sem a superfície escura, e é por isso que
- * a navegação traz a própria cápsula escura.
+ * A pílula e as partículas estão **no mesmo elemento filtrado**, e é o que faz
+ * o efeito existir: `blur` + `contrast(100)` é a técnica de metaball, e só
+ * cria fusão e filamento onde duas formas borradas se cruzam. Com uma forma
+ * só dentro do filtro, o blur arredonda e o contraste reendurece, e o
+ * resultado é a mesma forma de antes — um círculo, sem nada derretido. Por
+ * isso o `.particle` é filho do `.effect.filter`, e não uma camada irmã.
+ *
+ * A pílula é branca e as partículas são da mesma cor, porque o `contrast(100)`
+ * é um limiar duro: um tom médio sairia preto, e o preto é o que o `lighten`
+ * esconde. Sobre o canvas da ficha — claro — a pílula branca sumiria sem a
+ * superfície escura, e é por isso que a navegação traz a própria cápsula.
  */
 
 .gooey-nav-container {
@@ -22,8 +28,14 @@
    * o partido mais claro — a 62% ela ficava em 3,95:1 e reprovava AA. Todos
    * os onze partidos atuais passam a partir daí; aba ativa é tinta escura na
    * pílula branca, 18,70:1, e não depende dessa mistura.
+   * Os 55% não são decorativos: a linha acima documentava o mix e a
+   * declaração apontava para a cor pura. Num partido escuro a diferença passa
+   * despercebida, mas no amarelo de PSB e MISSÃO a cápsula virava #f2c300 e a
+   * etiqueta branca da aba inativa caía para ~1,4:1 — some justamente nos dois
+   * partidos mais claros da tabela. Na ficha, onde o fundo é o ouro do `<main>`,
+   * a cápsula sem escurecer também se misturava com a página.
    */
-  --gooey-surface: var(--gooey-accent);
+  --gooey-surface: color-mix(in srgb, var(--gooey-accent) 55%, #000000);
   --gooey-pill: #ffffff;
   --gooey-ink: #14120f;
 
@@ -146,13 +158,21 @@
 }
 
 /*
- * Camada das partículas, separada do filtro de propósito: o `contrast(100)`
- * esmagaria qualquer cor para preto/branco, e o `lighten` esconderia o que
- * fosse escuro. Aqui a cor chega sólida, sem blur e sem blend — acima da
- * pílula, abaixo do texto das abas (`z-index: 3`).
+ * O fundo preto do filtro, com 75px de folga em volta do item.
+ *
+ * Duas funções, e as duas somem se o bloco sair. A folga existe porque o filtro
+ * corta tudo o que passa da caixa do elemento, e as partículas voam até ~90px:
+ * sem ela os pontinhos são tosados na borda da pílula. E o preto é o que dá ao
+ * `lighten` uma tela para comparar — `lighten(preto, o que está atrás)` devolve
+ * o que está atrás, então o bloco some em qualquer fundo, inclusive no ouro da
+ * ficha, e só a pílula e as partículas (claras) aparecem.
  */
-.gooey-nav-container .effect.particles {
-  z-index: 2;
+.gooey-nav-container .effect.filter::before {
+  content: '';
+  position: absolute;
+  inset: -75px;
+  z-index: -2;
+  background: #000;
 }
 
 .gooey-nav-container .effect.filter::after {
@@ -195,8 +215,18 @@
   animation: particle calc(var(--time)) ease 1 -350ms;
 }
 
+/*
+ * A partícula é da cor da pílula, e não da cor do partido.
+ *
+ * É uma consequência do filtro, não uma escolha: `contrast(100)` é um limiar
+ * duro, e qualquer tom médio sai preto ou branco. Uma partícula na cor do
+ * partido sairia preta nos partidos escuros (PT, PCB, MDB) e, com o `lighten`,
+ * o preto é justamente o que some — o estouro simplesmente não apareceria. Por
+ * isso a cor não passa pelo JS: nasce do mesmo token da pílula, e é isso que faz
+ * as duas se fundirem quando se cruzam.
+ */
 .point {
-  background: var(--color, #ffffff);
+  background: var(--gooey-pill);
   opacity: 1;
   animation: point calc(var(--time)) ease 1 -350ms;
 }

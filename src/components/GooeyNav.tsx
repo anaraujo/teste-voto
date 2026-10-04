@@ -6,12 +6,20 @@ import './GooeyNav.css'
  * GooeyNav — a navegação de abas, com a pílula que "derrete" (port do
  * componente homônimo do react-bits).
  *
- * A pílula é um elemento sob `filter: blur(7px) contrast(100) blur(0)` com
- * `mix-blend-mode: lighten`; o efeito gooey sai do contraste depois do blur. Ao
- * clicar, cada partícula é um `span` solto que voa do item para fora e some, e o
- * texto repetido por cima é o que parece escorrer junto com a pílula.
+ * A pílula e as partículas são **a mesma camada filtrada**, e é isso que produz
+ * o efeito: `blur(7px)` seguido de `contrast(100)` é a técnica de metaball, e
+ * ela só cria fusão e filamento onde duas formas borradas se tocam. Com uma
+ * forma só dentro do blur, o blur arredonda e o contraste reendurece, e o
+ * resultado é exatamente a mesma forma — um círculo, sem nada derretido.
  *
- * Três mudanças em relação ao original:
+ * Por isso as partículas são filhas do elemento com `filter`, e não uma camada
+ * irmã: fora do filtro elas viram pontinhos sólidos que voam e somem, que é o
+ * oposto de goo. A cor delas vem da pílula (`--gooey-pill`) pelo mesmo motivo —
+ * o `contrast(100)` é um limiar duro, e um tom médio sai preto (que o `lighten`
+ * esconde) ou branco. O `::before` preto com 75px de folga é o que dá tela para
+ * o `lighten` comparar e o que impede o filtro de tosar as partículas na borda.
+ *
+ * Quatro mudanças em relação ao original:
  *
  * 1. **Controlada.** O original guarda `activeIndex` em estado próprio e só o
  *    define na montagem. Aqui a aba mora na URL (`?tab=`), então o item ativo
@@ -19,13 +27,12 @@ import './GooeyNav.css'
  * 2. **`button` em vez de `a href`.** As abas não são links: são `role="tab"`
  *    dentro de um `tablist`, e um `href="#"` só custaria um salto de página.
  * 3. **Superfície escura.** O original compõe sobre preto, e é isso que faz o
- *    `lighten` funcionar: partícula clara sobre fundo escuro. Sobre o canvas
- *    da ficha elas sumiriam, então a cápsula escura é da própria navegação.
- *    A cor vem do partido, escurecida para o branco da pílula ter contraste.
- * 4. **Partículas em camada própria.** No original elas moram dentro do
- *    elemento filtrado, e o `contrast(100)` as esmaga para preto/branco. Aqui
- *    elas vivem num `span` à parte, sem filtro, para manter a cor sólida do
- *    partido.
+ *    `lighten` funcionar: partícula clara sobre fundo escuro. Sobre o canvas da
+ *    ficha elas sumiriam, então a cápsula escura é da própria navegação. A cor
+ *    vem do partido, escurecida para o branco da pílula ter contraste.
+ * 4. **Sem `palette`/`colors`.** O original deixa o JS escolher a cor de cada
+ *    partícula; aqui a cor é a da pílula, porque dentro do filtro uma cor de
+ *    partido não sobrevive ao `contrast(100)` — ver o `.point` no CSS.
  */
 
 export interface GooeyNavItem {
@@ -43,15 +50,6 @@ export interface GooeyNavProps {
   activeIndex: number
   /** Cor de destaque; a ficha passa a cor do partido. */
   accentColor?: string
-  /**
-   * Paleta das partículas, em ordem de precedência. Sem ela, as partículas
-   * usam só o `accentColor` — é o que a ficha faz, para o estouro sair sempre
-   * na primária do partido.
-   *
-   * As partículas vivem numa camada própria, sem o `contrast` do filtro, então
-   * a cor chega sólida ao `--color` de cada uma — nada de clarear.
-   */
-  palette?: string[]
   /** Quantas partículas por clique. */
   particleCount?: number
   /** Distâncias, em px, de origem e destino de cada partícula. */
@@ -62,8 +60,6 @@ export interface GooeyNavProps {
   animationTime?: number
   /** Variação aleatória do tempo, em ms. */
   timeVariance?: number
-  /** Peso de cada cor da paleta, em índices 1-based, repetíveis. */
-  colors?: number[]
   ariaLabel?: string
   className?: string
 }
@@ -72,25 +68,26 @@ export function GooeyNav({
   items,
   activeIndex,
   accentColor,
-  palette,
-  particleCount = 15,
-  particleDistances = [90, 10],
+  particleCount = 10,
+  particleDistances = [60, 0],
   particleR = 100,
-  animationTime = 600,
+  animationTime = 300,
   timeVariance = 300,
-  colors,
   ariaLabel = 'Abas da ficha',
   className = '',
 }: GooeyNavProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLUListElement>(null)
   const filterRef = useRef<HTMLSpanElement>(null)
-  const particlesRef = useRef<HTMLSpanElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
   const activeRef = useRef(activeIndex)
 
   /**
    * Move a pílula borrada e o texto por cima para cima do item ativo.
+   *
+   * Só dois elementos são posicionados: o filtrado — que agora carrega as
+   * partículas dentro de si — e a cópia do texto. Não há mais uma camada de
+   * partículas para acertar.
    *
    * Depende só de refs, então a identidade é estável e o efeito que a chama não
    * precisa de `activeIndex` na lista de dependências para não se refazer a
@@ -99,19 +96,12 @@ export function GooeyNav({
   const updateEffectPosition = useCallback((element: HTMLElement) => {
     const container = containerRef.current
     const filter = filterRef.current
-    const particles = particlesRef.current
     const text = textRef.current
-    if (!container || !filter || !particles || !text) return
+    if (!container || !filter || !text) return
 
     const containerRect = container.getBoundingClientRect()
     const pos = element.getBoundingClientRect()
     Object.assign(filter.style, {
-      left: `${pos.x - containerRect.x}px`,
-      top: `${pos.y - containerRect.y}px`,
-      width: `${pos.width}px`,
-      height: `${pos.height}px`,
-    })
-    Object.assign(particles.style, {
       left: `${pos.x - containerRect.x}px`,
       top: `${pos.y - containerRect.y}px`,
       width: `${pos.width}px`,
@@ -137,9 +127,8 @@ export function GooeyNav({
   useEffect(() => {
     const nav = navRef.current
     const filter = filterRef.current
-    const particles = particlesRef.current
     const text = textRef.current
-    if (!nav || !filter || !particles || !text) return
+    if (!nav || !filter || !text) return
 
     const activeLi = nav.querySelectorAll('li')[activeIndex]
     if (!activeLi) return
@@ -166,7 +155,7 @@ export function GooeyNav({
       return [distance * Math.cos(angle), distance * Math.sin(angle)]
     }
 
-    for (const particle of particles.querySelectorAll('.particle')) {
+    for (const particle of filter.querySelectorAll('.particle')) {
       particle.remove()
     }
     text.classList.remove('active')
@@ -181,25 +170,6 @@ export function GooeyNav({
     // Reinicia a pílula: sem remover o `active` aqui, o `add` do rAF lá embaixo
     // é um no-op e a animação `gooey-pill` só roda na primeira troca de aba.
     filter.classList.remove('active')
-
-    /**
-     * As cores que as partículas podem assumir. Sem paleta, a única cor é a do
-     * `accentColor` — a primária do partido —, sólida.
-     */
-    const cores = palette?.length ? palette : [accentColor ?? '#7a3ea3']
-
-    /**
-     * Cor da i-ésima partícula. Com `colors` o índice sai ponderado pela lista
-     * (1-based, repetível); sem ele, as cores se alternam para a paleta inteira
-     * aparecer. O índice dá a volta na paleta para uma lista longa não estourar.
-     */
-    const corDaParticula = (i: number) => {
-      const peso = colors?.length
-        ? colors[Math.floor(Math.random() * colors.length)]
-        : null
-      const indice = peso ?? (i % cores.length) + 1
-      return cores[(indice - 1 + cores.length) % cores.length] ?? '#ffffff'
-    }
 
     for (let i = 0; i < particleCount; i++) {
       const t = animationTime * 2 + noise(timeVariance * 2)
@@ -225,9 +195,6 @@ export function GooeyNav({
         particle.style.setProperty('--end-y', `${end[1]}px`)
         particle.style.setProperty('--time', `${t}ms`)
         particle.style.setProperty('--scale', `${1 + noise(0.2)}`)
-        // Cor sólida do partido: as partículas não passam mais pelo `contrast`
-        // do filtro (vivem numa camada própria), então a cor não é clareada.
-        particle.style.setProperty('--color', corDaParticula(i))
         particle.style.setProperty(
           '--rotate',
           `${rotate > 0 ? (rotate + particleR / 20) * 10 : (rotate - particleR / 20) * 10}deg`,
@@ -235,7 +202,14 @@ export function GooeyNav({
 
         point.className = 'point'
         particle.appendChild(point)
-        particles.appendChild(particle)
+        /*
+         * A partícula é filha do elemento com `filter`, e é isso que a faz
+         * participar do goo: o `blur` da camada já a alcança, o `contrast(100)`
+         * a solda na pílula quando as duas se cruzam, e o `lighten` só deixa
+         * passar o que é claro. Fora daqui ela seria um ponto sólido voando
+         * sozinho — o que o componente parecia ser antes.
+         */
+        filter.appendChild(particle)
         requestAnimationFrame(() => {
           filter.classList.add('active')
         })
@@ -247,9 +221,6 @@ export function GooeyNav({
   }, [
     activeIndex,
     animationTime,
-    accentColor,
-    colors,
-    palette,
     particleCount,
     particleDistances,
     particleR,
@@ -299,12 +270,13 @@ export function GooeyNav({
           ))}
         </ul>
       </nav>
+      {/*
+       * Uma camada só. A pílula é o `::after` do `filter` e as partículas são
+       * filhas dele — precisam estar no mesmo `filter` para que o blur as
+       * alcance e o `contrast` as funda com a pílula. O texto é a única coisa
+       * que fica de fora, acima, porque precisa ser nítida.
+       */}
       <span className="effect filter" ref={filterRef} aria-hidden="true" />
-      <span
-        className="effect particles"
-        ref={particlesRef}
-        aria-hidden="true"
-      />
       <span className="effect text" ref={textRef} aria-hidden="true" />
     </div>
   )

@@ -2,7 +2,7 @@
  * Histórico de posições políticas ocupadas (eleitos + suplentes), derivado
  * dos dados abertos do TSE (consultas de candidatos de cada eleição).
  *
- * Cobre eleições municipais e nacionais de 2004 em diante para o Paraná,
+ * Cobre eleições municipais e nacionais de 2004 em diante, de todas as UFs,
  * todas as posições: vereador, prefeito, vice-prefeito, deputado estadual,
  * deputado federal, senador, 1º/2º suplente de senador, governador e
  * vice-governador.
@@ -10,19 +10,20 @@
  * Não usamos a eleição corrente (2026): aqui cabe o histórico anterior.
  *
  * A consulta_do_ano é baixada do CDN do TSE (um ZIP nacional com arquivos
- * por UF), extraída no arquivo "consulta_cand_<ano>_PR", decodificada em
- * latin1 e casada por nome normalizado + data de nascimento com os
- * candidatos de 2026. Anos indisponíveis ou sem o arquivo do PR são
- * ignorados com aviso (sincronização tolerante).
+ * por UF), extraída por inteiro e lida UF a UF ("consulta_cand_<ano>_<UF>"),
+ * decodificada em latin1 e casada por nome normalizado + data de nascimento
+ * com os candidatos de 2026. Anos indisponíveis são ignorados com aviso
+ * (sincronização tolerante).
  */
 
 import { createWriteStream } from 'node:fs'
 import { mkdir, readFile, stat } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
+import { isFederationUnit } from '../../data/brazil-map.ts'
 import type { CandidateRecord } from '../../shared/domain.ts'
 import { normalizeName } from '../camara/identity.ts'
 import { buildHeaderIndex, parseCsv, readCell } from './csv.ts'
-import { extractZip, findEntry, listZipEntries } from './download.ts'
+import { extractZip, listZipEntries } from './download.ts'
 
 export type HistoricElectionType = 'municipal' | 'nacional'
 
@@ -148,8 +149,20 @@ export async function downloadZip(
 }
 
 /**
- * Baixa (com cache) e lê o CSV das candidaturas do PR de um ano.
- * Anos sem download ou sem o arquivo do PR são ignorados com aviso.
+ * Extrai a sigla da UF do nome de um arquivo `consulta_cand_<ano>_<UF>.csv`.
+ * Retorna null quando o nome não é um arquivo de UF (ex.: o consolidado
+ * BRASIL, ou um arquivo de outra natureza).
+ */
+function ufFromHistoryEntry(name: string, ano: number): string | null {
+  const base = basename(name).toUpperCase()
+  const match = new RegExp(`CONSULTA_CAND_${ano}_([A-Z]{2})\\.CSV$`).exec(base)
+  if (!match) return null
+  return isFederationUnit(match[1]) ? match[1] : null
+}
+
+/**
+ * Baixa (com cache) e lê os CSVs de candidaturas de todas as UFs de um ano.
+ * Anos sem download são ignorados com aviso (sincronização tolerante).
  */
 export async function fetchHistoricCandidaturas(
   ano: number,
@@ -168,52 +181,46 @@ export async function fetchHistoricCandidaturas(
   }
 
   const entries = listZipEntries(zipPath)
-  const entry = findEntry(entries, `consulta_cand_${ano}_PR`)
-  if (!entry) {
-    return {
-      rows: [],
-      erro: `arquivo do PR ausente no ZIP (entradas: ${entries
-        .map((e) => e.name)
-        .slice(0, 8)
-        .join(', ')}...)`,
-    }
-  }
-
   const extractDir = join(dataDir, 'download', 'extracted', `history-${ano}`)
   await extractZip(zipPath, extractDir)
-  const csvPath = join(extractDir, entry.name)
-  const buffer = await readFile(csvPath)
-  const parsed = parseCsv(buffer)
-  const index = buildHeaderIndex(parsed.headers)
-
-  const hasNome = HEADER_ALIASES.nome.some((alias) => index.has(alias))
-  if (!hasNome) {
-    return { rows: [], erro: 'coluna de nome não encontrada' }
-  }
 
   const rows: HistoricCandidacyRow[] = []
-  for (const row of parsed.rows) {
-    const nome = readAlias(index, row, HEADER_ALIASES.nome)
-    if (nome === '') continue
-    const uf = readAlias(index, row, HEADER_ALIASES.uf)
-    if (uf && uf.toUpperCase() !== 'PR') continue
+  for (const entry of entries) {
+    const entryUf = ufFromHistoryEntry(entry.name, ano)
+    if (!entryUf) continue
 
-    const nascimento = readAlias(index, row, HEADER_ALIASES.nascimento) || null
-    const turno = Number(readAlias(index, row, HEADER_ALIASES.turno)) || 0
-    rows.push({
-      ano,
-      nome,
-      dataNascimento: toIsoDate(nascimento),
-      cargo: readAlias(index, row, HEADER_ALIASES.cargo) || null,
-      uf: uf || null,
-      municipio: readAlias(index, row, HEADER_ALIASES.municipio) || null,
-      partidoSigla: readAlias(index, row, HEADER_ALIASES.partido) || null,
-      partidoNome: readAlias(index, row, HEADER_ALIASES.partidoNome) || null,
-      numero: readAlias(index, row, HEADER_ALIASES.numero) || null,
-      resultado: readAlias(index, row, HEADER_ALIASES.resultado) || null,
-      turno,
-      sqCandidato: readAlias(index, row, HEADER_ALIASES.sq) || null,
-    })
+    let parsed
+    try {
+      const buffer = await readFile(join(extractDir, entry.name))
+      parsed = parseCsv(buffer)
+    } catch {
+      continue
+    }
+    const index = buildHeaderIndex(parsed.headers)
+    if (!HEADER_ALIASES.nome.some((alias) => index.has(alias))) continue
+
+    for (const row of parsed.rows) {
+      const nome = readAlias(index, row, HEADER_ALIASES.nome)
+      if (nome === '') continue
+
+      const nascimento =
+        readAlias(index, row, HEADER_ALIASES.nascimento) || null
+      const turno = Number(readAlias(index, row, HEADER_ALIASES.turno)) || 0
+      rows.push({
+        ano,
+        nome,
+        dataNascimento: toIsoDate(nascimento),
+        cargo: readAlias(index, row, HEADER_ALIASES.cargo) || null,
+        uf: readAlias(index, row, HEADER_ALIASES.uf) || entryUf,
+        municipio: readAlias(index, row, HEADER_ALIASES.municipio) || null,
+        partidoSigla: readAlias(index, row, HEADER_ALIASES.partido) || null,
+        partidoNome: readAlias(index, row, HEADER_ALIASES.partidoNome) || null,
+        numero: readAlias(index, row, HEADER_ALIASES.numero) || null,
+        resultado: readAlias(index, row, HEADER_ALIASES.resultado) || null,
+        turno,
+        sqCandidato: readAlias(index, row, HEADER_ALIASES.sq) || null,
+      })
+    }
   }
 
   return { rows }
@@ -379,24 +386,9 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-/** Rótulo legível do cargo (para exibição/export). */
-export function formatCargoLabel(cargo: string): string {
-  const lower = cargo.toLowerCase()
-  const map: Record<string, string> = {
-    vereador: 'Vereador',
-    prefeito: 'Prefeito',
-    'vice-prefeito': 'Vice-prefeito',
-    'deputado estadual': 'Deputado estadual',
-    'deputado distrital': 'Deputado distrital',
-    'deputado federal': 'Deputado federal',
-    senador: 'Senador',
-    governador: 'Governador',
-    'vice-governador': 'Vice-governador',
-    '1º suplente de senador': '1º suplente de senador',
-    '2º suplente de senador': '2º suplente de senador',
-  }
-  return map[lower] ?? lower
-}
+import { formatCargoLabel } from '../../shared/cargo.ts'
+
+export { formatCargoLabel }
 
 /** Resumo textual de um mandato para o export ("2008 Vereador ... eleito"). */
 export function formatMandateSummary(mandate: PoliticalMandate): string {
